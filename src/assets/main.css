@@ -1,0 +1,89 @@
+/* Greyscale palette */
+:root {
+  --gs-900: #111111;
+  --gs-800: #222222;
+  --gs-700: #3a3a3a;
+  --gs-600: #555555;
+  --gs-400: #999999;
+  --gs-200: #cccccc;
+  --gs-100: #e8e8e8;
+  --gs-050: #f4f4f4;
+}
+
+body {
+  background-color: var(--gs-050);
+  color: var(--gs-800);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+/* Navbar */
+.app-navbar {
+  background-color: var(--gs-900);
+  border-bottom: 2px solid var(--gs-700);
+}
+
+.app-navbar .navbar-brand,
+.app-navbar .nav-link {
+  color: var(--gs-100) !important;
+}
+
+.app-navbar .nav-link:hover,
+.app-navbar .nav-link.router-link-active {
+  color: #ffffff !important;
+  text-decoration: underline;
+}
+
+/* Counter card */
+.counter-card {
+  background-color: var(--gs-100);
+  border: 2px solid var(--gs-200);
+  border-radius: 0.5rem;
+}
+
+.counter-label {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--gs-600);
+}
+
+.counter-value {
+  font-size: 3.5rem;
+  font-weight: 700;
+  color: var(--gs-900);
+  line-height: 1;
+}
+
+/* Buttons */
+.btn-press {
+  background-color: var(--gs-800);
+  color: var(--gs-050);
+  border: none;
+  border-radius: 0.4rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+.btn-press:hover {
+  background-color: var(--gs-900);
+  color: #ffffff;
+}
+
+.btn-press:active {
+  transform: scale(0.97);
+}
+
+.btn-reset {
+  background-color: transparent;
+  color: var(--gs-600);
+  border: 1px solid var(--gs-400);
+  border-radius: 0.4rem;
+  font-size: 0.9rem;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.btn-reset:hover {
+  color: var(--gs-800);
+  border-color: var(--gs-700);
+}
