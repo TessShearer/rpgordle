@@ -87,3 +87,22 @@ body {
   color: var(--gs-800);
   border-color: var(--gs-700);
 }
+
+/* Category dropdown */
+.gs-select {
+  background-color: var(--gs-100);
+  border: 1px solid var(--gs-200);
+  color: var(--gs-800);
+}
+
+.gs-select:focus {
+  border-color: var(--gs-600);
+  box-shadow: 0 0 0 0.2rem rgba(85, 85, 85, 0.25);
+}
+
+.category-badge {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--gs-600);
+}
