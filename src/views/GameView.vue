@@ -1,5 +1,5 @@
 <template>
-  <main class="container py-4">
+  <main class="container py-2">
     <div class="game-wrapper">
 
       <!-- ── Intro ──────────────────────────────────────────────────────── -->
@@ -48,57 +48,82 @@
           <button class="btn btn-press px-4" @click="startStage(stage)">Try Again</button>
         </div>
 
-        <template v-else>
-          <!-- Seer hint -->
-          <p v-if="playerClass === 'seer' && hintLetter" class="seer-hint mb-2">
-            This word has a <strong>{{ hintLetter }}</strong>
-          </p>
+        <div v-else class="game-layout">
 
-          <!-- Journey progress -->
-          <div class="text-center mb-3">
-            <p class="game-meta mb-2">Word {{ stage + 1 }} of {{ JOURNEY_LENGTH }}</p>
-            <div class="journey-dots mb-2">
-              <span
-                v-for="i in JOURNEY_LENGTH"
-                :key="i"
-                class="journey-dot"
-                :class="dotClass(i - 1)"
-              ></span>
-            </div>
-            <p class="game-meta">
-              {{ wordLength }}-letter word &middot; {{ guessesLeft }} guess{{ guessesLeft !== 1 ? 'es' : '' }} left
-            </p>
-          </div>
-
-          <!-- Board -->
-          <div class="board mb-3" :style="{ '--cols': wordLength, fontSize: tileFontSize }">
-            <template v-for="row in currentMaxGuesses" :key="row">
-              <div
-                v-for="col in wordLength"
-                :key="col"
-                class="tile"
-                :class="tileClass(row - 1, col - 1)"
-              >
-                {{ tileChar(row - 1, col - 1) }}
+          <!-- Left panel: class character art -->
+          <aside class="game-panel game-panel--left">
+            <div class="class-feature" :class="{ 'class-feature--reveal': playerClass === 'seer' }">
+              <div class="art-placeholder art-placeholder--feature">{{ featureArtText }}</div>
+              <div v-if="playerClass === 'seer'" class="feature-hint">
+                <p class="feature-label">this word has a...</p>
+                <p class="feature-letter">{{ hintLetter }}</p>
               </div>
-            </template>
-          </div>
+            </div>
+          </aside>
 
-          <p v-if="inputError" class="text-danger text-center small mb-2">{{ inputError }}</p>
+          <!-- Center: game board -->
+          <div class="game-center">
+            <!-- Journey progress -->
+            <div class="text-center mb-2">
+              <p class="game-meta mb-2">Word {{ stage + 1 }} of {{ JOURNEY_LENGTH }}</p>
+              <div class="journey-dots mb-2">
+                <span
+                  v-for="i in JOURNEY_LENGTH"
+                  :key="i"
+                  class="journey-dot"
+                  :class="dotClass(i - 1)"
+                ></span>
+              </div>
+              <p class="game-meta">
+                {{ wordLength }}-letter word &middot; {{ guessesLeft }} guess{{ guessesLeft !== 1 ? 'es' : '' }} left
+              </p>
+            </div>
 
-          <!-- Keyboard -->
-          <div v-if="gameState === 'playing'" class="keyboard">
-            <div v-for="(row, r) in KEY_ROWS" :key="r" class="key-row">
-              <button
-                v-for="key in row"
-                :key="key"
-                class="key"
-                :class="keyClass(key)"
-                @click="handleKey(key)"
-              >{{ key }}</button>
+            <!-- Board -->
+            <div class="board mb-2" :style="{ '--cols': wordLength }">
+              <template v-for="row in currentMaxGuesses" :key="row">
+                <div
+                  v-for="col in wordLength"
+                  :key="col"
+                  class="tile"
+                  :class="tileClass(row - 1, col - 1)"
+                >
+                  {{ tileChar(row - 1, col - 1) }}
+                </div>
+              </template>
+            </div>
+
+            <p v-if="inputError" class="text-danger text-center small mb-2">{{ inputError }}</p>
+
+            <!-- Keyboard -->
+            <div v-if="gameState === 'playing'" class="keyboard">
+              <div v-for="(row, r) in KEY_ROWS" :key="r" class="key-row">
+                <button
+                  v-for="key in row"
+                  :key="key"
+                  class="key"
+                  :class="keyClass(key)"
+                  @click="handleKey(key)"
+                >{{ key }}</button>
+              </div>
+            </div>
+
+            <div class="text-center mt-3">
+              <button class="btn btn-reset px-4 py-2" @click="restartJourney">
+                Start journey again
+              </button>
             </div>
           </div>
-        </template>
+
+          <!-- Right panel: monster art -->
+          <aside class="game-panel game-panel--right">
+            <div class="monster-section">
+              <div class="art-placeholder art-placeholder--monster">Art of monster</div>
+              <p class="monster-text">A monster appeared! Find the word of power to defeat it!</p>
+            </div>
+          </aside>
+
+        </div>
 
       </template>
 
@@ -107,6 +132,7 @@
         <div v-if="modal" class="modal-overlay">
           <div class="modal-card">
             <p class="modal-message">{{ MODAL_CONTENT[modal].message }}</p>
+            <p v-if="modal === 'lost'" class="modal-word">{{ secretWord.toLowerCase() }}</p>
             <button class="btn btn-press px-5 py-2" @click="handleModalAction">
               {{ MODAL_CONTENT[modal].button }}
             </button>
@@ -134,7 +160,7 @@ const KEY_ROWS = [
 const CLASSES = [
   { id: 'peasant', name: 'Peasant', description: 'Play as Peasant for no bonuses' },
   { id: 'seer',    name: 'Seer',    description: 'Play as Seer to reveal a letter in each word' },
-  { id: 'knight',  name: 'Knight',  description: 'Play as Knight for an extra life' },
+  { id: 'knight',  name: 'Knight',  description: 'Play as Knight for extra chances after failure' },
 ]
 
 const MODAL_CONTENT = {
@@ -166,12 +192,10 @@ const currentMaxGuesses = computed(() =>
   playerClass.value === 'knight' && armorGranted.value ? MAX_GUESSES + 3 : MAX_GUESSES
 )
 const guessesLeft  = computed(() => currentMaxGuesses.value - guesses.value.length)
-const tileFontSize = computed(() => {
-  const len = wordLength.value
-  if (len <= 4) return '2rem'
-  if (len <= 6) return '1.6rem'
-  if (len <= 8) return '1.3rem'
-  return '1.1rem'
+const featureArtText = computed(() => {
+  if (playerClass.value === 'seer')   return 'Art of seer thinking'
+  if (playerClass.value === 'knight') return armorGranted.value ? 'Art of naked knight' : 'Art of knight'
+  return 'Art of Peasant'
 })
 
 // ── Evaluation ────────────────────────────────────────────────────────────────
@@ -285,6 +309,13 @@ function handleModalAction() {
 }
 
 // ── Navigation ────────────────────────────────────────────────────────────────
+function restartJourney() {
+  screen.value      = 'intro'
+  playerClass.value = null
+  modal.value       = null
+  gameState.value   = 'loading'
+}
+
 function showClassSelect() {
   classesAnimated.value = false
   screen.value = 'class-select'

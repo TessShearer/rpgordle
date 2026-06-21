@@ -191,6 +191,113 @@ body {
   margin: 0 auto;
 }
 
+/* Three-panel layout */
+.game-layout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.game-center {
+  width: 100%;
+  max-width: 420px;
+}
+
+.game-panel {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  justify-content: center;
+}
+
+.game-panel--right {
+  display: none;
+}
+
+@media (min-width: 860px) {
+  .game-wrapper {
+    max-width: 860px;
+  }
+
+  .game-layout {
+    flex-direction: row;
+    align-items: stretch;
+    justify-content: center;
+    gap: 1.5rem;
+  }
+
+  .game-center {
+    flex: 0 1 420px;
+  }
+
+  /* Panels sit beside the board and center their content vertically */
+  .game-panel {
+    width: 160px;
+    max-width: 160px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .game-panel--right {
+    display: flex;
+  }
+
+  /* Non-seer: art stacks in a column, centered */
+  .game-panel--left .class-feature {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+  }
+
+  /* Seer: keep art + hint side-by-side if it fits */
+  .game-panel--left .class-feature--reveal {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .game-panel--left .art-placeholder--feature {
+    width: 60px;
+    height: 60px;
+    flex-shrink: 0;
+    font-size: 0.6rem;
+  }
+
+  .game-panel--left .feature-hint {
+    text-align: left;
+  }
+
+  .game-panel--left .feature-letter {
+    font-size: 2.8rem;
+  }
+
+  /* Monster panel */
+  .art-placeholder--monster {
+    width: 100%;
+    height: 130px;
+  }
+
+  .monster-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    text-align: center;
+  }
+}
+
 .game-meta {
   font-size: 0.85rem;
   text-transform: uppercase;
@@ -209,19 +316,22 @@ body {
 
 /* Board */
 .board {
+  --tile-size: min(44px, calc((300px - (var(--cols) - 1) * 4px) / var(--cols)));
   display: grid;
-  grid-template-columns: repeat(var(--cols), 1fr);
+  grid-template-columns: repeat(var(--cols), var(--tile-size));
   gap: 4px;
-  max-width: 360px;
+  justify-content: center;
   margin: 0 auto;
 }
 
 .tile {
-  aspect-ratio: 1;
+  width: var(--tile-size);
+  height: var(--tile-size);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
+  font-size: calc(var(--tile-size) * 0.52);
   text-transform: uppercase;
   border: 2px solid var(--gs-200);
   background: #fff;
@@ -231,39 +341,39 @@ body {
 }
 
 .tile--filled  { border-color: var(--gs-600); }
-.tile--correct { background: #538d4e; border-color: #538d4e; color: #fff; }
-.tile--present { background: #b59f3b; border-color: #b59f3b; color: #fff; }
-.tile--absent  { background: var(--gs-600); border-color: var(--gs-600); color: #fff; }
+.tile--correct { border-color: #538d4e; color: #7ab574; background: rgba(83,141,78,0.07); box-shadow: 0 0 8px 3px rgba(83,141,78,0.28); }
+.tile--present { border-color: #b59f3b; color: #cdb84a; background: rgba(181,159,59,0.07); box-shadow: 0 0 8px 3px rgba(181,159,59,0.28); }
+.tile--absent  { border-color: var(--gs-400); color: #adadad; background: rgba(0,0,0,0.03); }
 
 /* Keyboard */
 .keyboard {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 
 .key-row {
   display: flex;
-  gap: 5px;
+  gap: 4px;
 }
 
 .key {
-  height: 56px;
-  min-width: 36px;
-  padding: 0 6px;
+  height: 42px;
+  min-width: 30px;
+  padding: 0 5px;
   border: none;
   border-radius: 4px;
   background: var(--gs-200);
   color: var(--gs-900);
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 700;
   cursor: pointer;
   user-select: none;
   transition: filter 0.1s;
 }
 
-.key--action  { min-width: 58px; font-size: 0.72rem; }
+.key--action  { min-width: 50px; font-size: 0.68rem; }
 .key--correct { background: #538d4e; color: #fff; }
 .key--present { background: #b59f3b; color: #fff; }
 .key--absent  { background: var(--gs-600); color: #fff; }
@@ -322,11 +432,62 @@ body {
 .modal-enter-from,
 .modal-leave-to     { opacity: 0; }
 
-/* Seer hint */
-.seer-hint {
-  text-align: center;
-  font-size: 0.85rem;
+.modal-word {
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--gs-900);
+  margin-bottom: 1.25rem;
+  text-transform: uppercase;
+}
+
+/* Class feature art strip */
+.class-feature {
+  max-width: 360px;
+  margin: 0 auto;
+}
+
+.class-feature--reveal {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.art-placeholder--feature {
+  width: 70px;
+  height: 70px;
+  flex-shrink: 0;
+  font-size: 0.65rem;
+}
+
+.feature-hint {
+  display: flex;
+  flex-direction: column;
+  text-align: right;
+}
+
+.feature-label {
+  font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--gs-600);
+  margin-bottom: 0.1rem;
+}
+
+.feature-letter {
+  font-size: 4.5rem;
+  font-weight: 700;
+  color: var(--gs-900);
+  line-height: 1;
+  margin: 0;
+}
+
+.monster-text {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--gs-600);
+  margin: 0;
+  line-height: 1.4;
 }
