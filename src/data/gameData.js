@@ -14,6 +14,30 @@ export const MINIBOSSES = [
   { id: 'annoying-kid', name: 'Annoying Kid', regen: 1, health: 1, effect: 'He will make your first guess for you' },
 ]
 
+export const SHOP_ITEMS = [
+  {
+    id:          'health-potion',
+    name:        'Health Potion',
+    description: 'Restores 1 HP when used.',
+    effect:      'heal',
+    cost:        2,
+  },
+  {
+    id:          'shield',
+    name:        'Shield',
+    description: 'Blocks the boss ability for one guess. Reveals the obscured column for the Shadow Sorcerer; prevents double damage for the Gelatinous Cube.',
+    effect:      'shield',
+    cost:        4,
+  },
+  {
+    id:          'crystal-ball',
+    name:        'Crystal Ball',
+    description: 'Reveals a letter in the current word. Seers receive an additional letter they have not yet seen.',
+    effect:      'crystal-ball',
+    cost:        3,
+  },
+]
+
 export const BOSSES = [
   {
     id:                   'shadow-sorcerer',

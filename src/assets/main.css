@@ -508,6 +508,10 @@ body {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
 }
 
+.modal-card--wide {
+  max-width: 480px;
+}
+
 .modal-message {
   font-size: 1.3rem;
   font-weight: 700;
@@ -525,6 +529,45 @@ body {
   height: 120px;
   margin: 0 auto;
   font-size: 0.7rem;
+}
+
+.shop-items {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 1.25rem;
+}
+
+.shop-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border: 2px solid var(--gs-200);
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.15s;
+  width: 100px;
+}
+
+.shop-item:hover {
+  border-color: #0d7377;
+  transform: translateY(-3px);
+}
+
+.art-placeholder--item {
+  width: 72px;
+  height: 72px;
+  font-size: 0.6rem;
+}
+
+.shop-item-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
+  color: var(--gs-900);
+  margin: 0;
 }
 
 .modal-submessage {

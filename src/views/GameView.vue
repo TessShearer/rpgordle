@@ -120,7 +120,7 @@
           <div class="game-center">
             <!-- Journey progress -->
             <div class="text-center mb-2">
-              <p class="game-meta mb-2">Word {{ stage + 1 }} of {{ JOURNEY_LENGTH }}</p>
+              <p class="game-meta mb-2">Enemy {{ stage + 1 }} of {{ JOURNEY_LENGTH }}</p>
               <div class="journey-dots mb-2">
                 <span
                   v-for="i in JOURNEY_LENGTH"
@@ -204,7 +204,7 @@
       <!-- Modal (sits above all screens) -->
       <Transition name="modal">
         <div v-if="modal" class="modal-overlay">
-          <div class="modal-card">
+          <div class="modal-card" :class="{ 'modal-card--wide': modal === 'shop' }">
             <template v-if="modal === 'boss-announcement'">
               <div class="art-placeholder art-placeholder--modal-monster my-3">Art of {{ currentBoss.name }}</div>
               <p class="modal-message">{{ currentBoss.announcement }}</p>
@@ -222,12 +222,27 @@
               <div class="art-placeholder art-placeholder--modal-monster my-3">Art of {{ currentEnemy.name }} (damaged)</div>
               <p class="modal-message">{{ hitWord }} guessed, 1 damage!</p>
             </template>
+            <template v-else-if="modal === 'shop'">
+              <p class="modal-message">You found a shop!</p>
+              <p class="modal-submessage">Choose one item to purchase.</p>
+              <div class="shop-items">
+                <div
+                  v-for="item in SHOP_ITEMS"
+                  :key="item.id"
+                  class="shop-item"
+                  @click="buyItem(item)"
+                >
+                  <div class="art-placeholder art-placeholder--item">{{ item.name }}</div>
+                  <p class="shop-item-name">{{ item.name }}</p>
+                </div>
+              </div>
+            </template>
             <template v-else>
               <p class="modal-message">{{ MODAL_CONTENT[modal].message }}</p>
               <p v-if="modal === 'won' && lastRegen > 0" class="modal-submessage">You healed {{ lastRegen }} HP!</p>
               <p v-if="modal === 'lost'" class="modal-word">{{ secretWord.toLowerCase() }}</p>
             </template>
-            <button class="btn btn-press px-5 py-2 mt-3" @click="handleModalAction">
+            <button v-if="modal !== 'shop'" class="btn btn-press px-5 py-2 mt-3" @click="handleModalAction">
               {{ MODAL_CONTENT[modal].button }}
             </button>
           </div>
@@ -240,7 +255,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
-import { CLASSES, ENEMIES, MINIBOSSES, BOSSES } from '@/data/gameData.js'
+import { CLASSES, ENEMIES, MINIBOSSES, BOSSES, SHOP_ITEMS } from '@/data/gameData.js'
 
 const STAGE_SEQUENCE = ['enemy', 'miniboss', 'enemy']
 const JOURNEY_LENGTH = STAGE_SEQUENCE.length + 1  // 3 normal stages + 1 boss fight
@@ -286,6 +301,7 @@ const enemyHealth     = ref(0)
 const hitWord         = ref('')
 const lastRegen       = ref(0)
 const dangerLetters   = ref([])
+const inventory       = ref([])
 
 const obscuredCols = computed(() => {
   if (currentBoss.value?.id !== 'shadow-sorcerer') return []
@@ -404,7 +420,10 @@ function submitGuess() {
       playerHealth.value = Math.min(playerMaxHealth.value, playerHealth.value + regen)
       gameState.value = 'won'
       const isLast = stage.value === JOURNEY_LENGTH - 1
-      setTimeout(() => { modal.value = isLast ? 'complete' : 'won' }, 600)
+      const isMiniboss = MINIBOSSES.some(m => m.id === currentEnemy.value?.id)
+      setTimeout(() => {
+        modal.value = isLast ? 'complete' : isMiniboss ? 'shop' : 'won'
+      }, 600)
     } else {
       // Hit but not dead — show damage modal, then load a fresh word
       hitWord.value   = submitted.toLowerCase()
@@ -452,6 +471,7 @@ function handleModalAction() {
     currentEnemy.value    = null
     enemyHealth.value     = 0
     dangerLetters.value   = []
+    inventory.value       = []
   }
 }
 
@@ -558,6 +578,12 @@ async function loadWord(showModal) {
   }
 }
 
+
+function buyItem(item) {
+  inventory.value.push(item.id)
+  modal.value = null
+  startStage(stage.value + 1)
+}
 
 function articleFor(name) {
   return /^[aeiou]/i.test(name) ? 'An' : 'A'
