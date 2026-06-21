@@ -71,6 +71,19 @@
                   :class="{ 'health-pip--lost': n > playerHealth }"
                 ></span>
               </div>
+              <template v-if="crystalHints.length">
+                <p class="portrait-hint-label">crystal ball</p>
+                <p class="portrait-hint-value">{{ crystalHints.join(', ') }}</p>
+              </template>
+              <div v-if="inventoryItems.length" class="inventory mt-1">
+                <p class="portrait-hint-label">Inventory</p>
+                <div class="inventory-list">
+                  <div v-for="(item, i) in inventoryItems" :key="i" class="inventory-item" :title="item.description" @click="confirmUseItem(item)">
+                    <div class="art-placeholder art-placeholder--inv">{{ item.name }}</div>
+                    <p class="inventory-item-name">{{ item.name }}</p>
+                  </div>
+                </div>
+              </div>
             </div>
             <div v-if="currentEnemy" class="portrait-slot">
               <div class="art-placeholder art-placeholder--portrait">Art of {{ currentEnemy.name }}</div>
@@ -102,6 +115,10 @@
                 <p class="feature-label">this word is a...</p>
                 <p class="feature-word">{{ hintWordType }}</p>
               </div>
+              <div v-if="crystalHints.length" class="feature-hint">
+                <p class="feature-label">crystal ball reveals...</p>
+                <p class="feature-letter">{{ crystalHints.join(', ') }}</p>
+              </div>
               <div class="player-health mt-2">
                 <p class="feature-label">HP: {{ playerHealth }} / {{ playerMaxHealth }}</p>
                 <div class="player-health-pips">
@@ -111,6 +128,15 @@
                     class="health-pip health-pip--player"
                     :class="{ 'health-pip--lost': n > playerHealth }"
                   ></span>
+                </div>
+              </div>
+              <div v-if="inventoryItems.length" class="inventory mt-2">
+                <p class="feature-label">Inventory</p>
+                <div class="inventory-list">
+                  <div v-for="(item, i) in inventoryItems" :key="i" class="inventory-item" :title="item.description" @click="confirmUseItem(item)">
+                    <div class="art-placeholder art-placeholder--inv">{{ item.name }}</div>
+                    <p class="inventory-item-name">{{ item.name }}</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -237,12 +263,20 @@
                 </div>
               </div>
             </template>
+            <template v-else-if="modal === 'use-item'">
+              <p class="modal-message">Use {{ pendingUseItem.name }}?</p>
+              <p class="modal-submessage">{{ pendingUseItem.description }}</p>
+              <div class="modal-actions mt-3">
+                <button class="btn btn-press px-4 py-2" @click="useItem">Yes</button>
+                <button class="btn btn-reset px-4 py-2" @click="cancelUseItem">No</button>
+              </div>
+            </template>
             <template v-else>
               <p class="modal-message">{{ MODAL_CONTENT[modal].message }}</p>
               <p v-if="modal === 'won' && lastRegen > 0" class="modal-submessage">You healed {{ lastRegen }} HP!</p>
               <p v-if="modal === 'lost'" class="modal-word">{{ secretWord.toLowerCase() }}</p>
             </template>
-            <button v-if="modal !== 'shop'" class="btn btn-press px-5 py-2 mt-3" @click="handleModalAction">
+            <button v-if="modal !== 'shop' && modal !== 'use-item'" class="btn btn-press px-5 py-2 mt-3" @click="handleModalAction">
               {{ MODAL_CONTENT[modal].button }}
             </button>
           </div>
@@ -302,6 +336,10 @@ const hitWord         = ref('')
 const lastRegen       = ref(0)
 const dangerLetters   = ref([])
 const inventory       = ref([])
+const inventoryItems  = computed(() => inventory.value.map(id => SHOP_ITEMS.find(i => i.id === id)))
+const pendingUseItem  = ref(null)
+const shieldedRows    = ref(new Set())
+const crystalHints    = ref([])
 
 const obscuredCols = computed(() => {
   if (currentBoss.value?.id !== 'shadow-sorcerer') return []
@@ -357,19 +395,22 @@ function dotClass(i) {
   return 'dot--pending'
 }
 
-function isObscured(col) {
-  return obscuredCols.value.length > 0 && obscuredCols.value.includes(col) && gameState.value !== 'won'
+function isObscured(row, col) {
+  if (obscuredCols.value.length === 0 || !obscuredCols.value.includes(col)) return false
+  if (gameState.value === 'won') return false
+  if (shieldedRows.value.has(row)) return false
+  return true
 }
 
 function tileChar(row, col) {
-  if (isObscured(col)) return ''
+  if (isObscured(row, col)) return ''
   if (row < guesses.value.length)   return guesses.value[row][col] ?? ''
   if (row === guesses.value.length) return currentGuess.value[col] ?? ''
   return ''
 }
 
 function tileClass(row, col) {
-  if (isObscured(col)) return 'tile--obscured'
+  if (isObscured(row, col)) return 'tile--obscured'
   if (row < guesses.value.length) return `tile--${evaluatedRows.value[row][col].status}`
   if (row === guesses.value.length && gameState.value === 'playing')
     return currentGuess.value[col] ? 'tile--filled' : 'tile--empty'
@@ -385,7 +426,7 @@ function keyClass(key) {
 
 // ── Input ─────────────────────────────────────────────────────────────────────
 function handleKey(key) {
-  if (gameState.value !== 'playing') return
+  if (gameState.value !== 'playing' || modal.value) return
   inputError.value = ''
   if (key === '⌫') {
     currentGuess.value = currentGuess.value.slice(0, -1)
@@ -431,7 +472,10 @@ function submitGuess() {
       setTimeout(() => { modal.value = 'hit' }, 600)
     }
   } else {
-    const doubleDamage = currentBoss.value?.id === 'gelatinous-cube'
+    const guessRow     = guesses.value.length - 1
+    const isShielded   = shieldedRows.value.has(guessRow)
+    const doubleDamage = !isShielded
+                         && currentBoss.value?.id === 'gelatinous-cube'
                          && dangerLetters.value.length > 0
                          && dangerLetters.value.some(l => submitted.includes(l))
     playerHealth.value -= doubleDamage ? 2 : 1
@@ -472,6 +516,8 @@ function handleModalAction() {
     enemyHealth.value     = 0
     dangerLetters.value   = []
     inventory.value       = []
+    shieldedRows.value    = new Set()
+    crystalHints.value    = []
   }
 }
 
@@ -486,8 +532,10 @@ function restartJourney() {
   currentBoss.value     = null
   currentEnemy.value    = null
   enemyHealth.value     = 0
-  dangerLetter.value    = ''
-
+  dangerLetters.value   = []
+  inventory.value       = []
+  shieldedRows.value    = new Set()
+  crystalHints.value    = []
 }
 
 function showClassSelect() {
@@ -534,6 +582,8 @@ async function loadWord(showModal) {
   hintLetter.value      = ''
   hintWordType.value    = ''
   dangerLetters.value   = []
+  shieldedRows.value    = new Set()
+  crystalHints.value    = []
 
 
   const isBossFight = stage.value >= STAGE_SEQUENCE.length
@@ -583,6 +633,41 @@ function buyItem(item) {
   inventory.value.push(item.id)
   modal.value = null
   startStage(stage.value + 1)
+}
+
+function confirmUseItem(item) {
+  pendingUseItem.value = item
+  modal.value = 'use-item'
+}
+
+function cancelUseItem() {
+  pendingUseItem.value = null
+  modal.value = null
+}
+
+function useItem() {
+  const item = pendingUseItem.value
+  if (!item) return
+  if (item.effect === 'heal') {
+    playerHealth.value = Math.min(playerMaxHealth.value, playerHealth.value + 1)
+  } else if (item.effect === 'shield') {
+    shieldedRows.value = new Set([...shieldedRows.value, guesses.value.length])
+  } else if (item.effect === 'crystal-ball') {
+    revealCrystalHint()
+  }
+  const idx = inventory.value.indexOf(item.id)
+  if (idx !== -1) inventory.value.splice(idx, 1)
+  pendingUseItem.value = null
+  modal.value = null
+}
+
+function revealCrystalHint() {
+  const known = new Set(Object.keys(letterStatuses.value))
+  if (hintLetter.value) known.add(hintLetter.value)
+  const wordLetters = [...new Set(secretWord.value.split(''))]
+  const unknown = wordLetters.filter(l => !known.has(l))
+  const pool = unknown.length ? unknown : wordLetters
+  crystalHints.value = [...crystalHints.value, pool[Math.floor(Math.random() * pool.length)]]
 }
 
 function articleFor(name) {

@@ -25,14 +25,14 @@ export const SHOP_ITEMS = [
   {
     id:          'shield',
     name:        'Shield',
-    description: 'Blocks the boss ability for one guess. Reveals the obscured column for the Shadow Sorcerer; prevents double damage for the Gelatinous Cube.',
+    description: 'Blocks the boss ability for one guess.',
     effect:      'shield',
     cost:        4,
   },
   {
     id:          'crystal-ball',
     name:        'Crystal Ball',
-    description: 'Reveals a letter in the current word. Seers receive an additional letter they have not yet seen.',
+    description: 'Reveals a letter in the current word.',
     effect:      'crystal-ball',
     cost:        3,
   },
