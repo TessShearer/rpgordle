@@ -173,20 +173,6 @@
               <span class="testing-label">for testing</span>
               <p class="testing-reveal-label">reveal answer</p>
               <p class="debug-answer mb-2">{{ secretWord.toLowerCase() }}</p>
-              <button class="btn-testing-action" @click="showEnemyPicker = !showEnemyPicker">
-                add / switch enemy
-              </button>
-              <div v-if="showEnemyPicker" class="enemy-picker mt-2">
-                <button
-                  v-for="enemy in ENEMIES"
-                  :key="enemy.id"
-                  class="enemy-picker-btn"
-                  :class="{ 'enemy-picker-btn--active': currentEnemy?.id === enemy.id }"
-                  @click="selectTestEnemy(enemy)"
-                >
-                  {{ enemy.name }}
-                </button>
-              </div>
             </div>
           </div>
 
@@ -234,6 +220,7 @@
             </template>
             <template v-else>
               <p class="modal-message">{{ MODAL_CONTENT[modal].message }}</p>
+              <p v-if="modal === 'won' && lastRegen > 0" class="modal-submessage">You healed {{ lastRegen }} HP!</p>
               <p v-if="modal === 'lost'" class="modal-word">{{ secretWord.toLowerCase() }}</p>
             </template>
             <button class="btn btn-press px-5 py-2 mt-3" @click="handleModalAction">
@@ -292,8 +279,8 @@ const currentBoss     = ref(null)
 const currentEnemy    = ref(null)
 const enemyHealth     = ref(0)
 const hitWord         = ref('')
+const lastRegen       = ref(0)
 const dangerLetter    = ref('')
-const showEnemyPicker = ref(false)
 
 const obscuredCol = computed(() => {
   if (currentBoss.value?.id !== 'shadow-sorcerer') return -1
@@ -405,7 +392,9 @@ function submitGuess() {
   if (submitted === secretWord.value) {
     enemyHealth.value -= 1
     if (enemyHealth.value <= 0) {
-      playerHealth.value = Math.min(playerMaxHealth.value, playerHealth.value + currentEnemy.value.regen)
+      const regen = currentEnemy.value.regen
+      lastRegen.value = Math.min(regen, playerMaxHealth.value - playerHealth.value)
+      playerHealth.value = Math.min(playerMaxHealth.value, playerHealth.value + regen)
       gameState.value = 'won'
       const isLast = stage.value === JOURNEY_LENGTH - 1
       setTimeout(() => { modal.value = isLast ? 'complete' : 'won' }, 600)
@@ -469,7 +458,7 @@ function restartJourney() {
   currentEnemy.value    = null
   enemyHealth.value     = 0
   dangerLetter.value    = ''
-  showEnemyPicker.value = false
+
 }
 
 function showClassSelect() {
@@ -516,7 +505,7 @@ async function loadWord(showModal) {
   hintLetter.value      = ''
   hintWordType.value    = ''
   dangerLetter.value    = ''
-  showEnemyPicker.value = false
+
 
   const isBossFight = stage.value >= DIFFICULTY_SEQUENCE.length
   const [min, max]  = isBossFight ? [8, 12] : [4, 7]
@@ -556,11 +545,6 @@ async function loadWord(showModal) {
   }
 }
 
-function selectTestEnemy(enemy) {
-  currentEnemy.value    = enemy
-  enemyHealth.value     = enemy.health
-  showEnemyPicker.value = false
-}
 
 async function applyAnnoyingKidGuess() {
   let word
