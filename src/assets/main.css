@@ -649,6 +649,25 @@ body {
   filter: blur(0);
 }
 
+.enemy-health {
+  display: flex;
+  gap: 5px;
+  justify-content: center;
+  margin: 0.3rem 0;
+}
+
+.health-pip {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #c0392b;
+  transition: background 0.2s;
+}
+
+.health-pip--lost {
+  background: var(--gs-200);
+}
+
 .enemy-section {
   margin-top: 1rem;
   display: flex;

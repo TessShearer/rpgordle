@@ -134,7 +134,7 @@
                   v-for="enemy in ENEMIES"
                   :key="enemy.id"
                   class="enemy-picker-btn"
-                  :class="{ 'enemy-picker-btn--active': activeEnemies.some(e => e.id === enemy.id) }"
+                  :class="{ 'enemy-picker-btn--active': currentEnemy?.id === enemy.id }"
                   @click="selectTestEnemy(enemy)"
                 >
                   {{ enemy.name }}
@@ -143,15 +143,20 @@
             </div>
           </div>
 
-          <!-- Right panel: monster + enemy art -->
+          <!-- Right panel: current enemy -->
           <aside class="game-panel game-panel--right">
-            <div class="monster-section">
-              <div class="art-placeholder art-placeholder--monster">Art of {{ monsterType }}</div>
-              <p class="monster-text">A {{ monsterType }} appeared! Find the word of power to defeat it!</p>
-            </div>
-            <div v-for="enemy in activeEnemies" :key="enemy.id" class="enemy-section">
-              <div class="art-placeholder art-placeholder--enemy">Art of {{ enemy.name }}</div>
-              <p class="enemy-name">{{ enemy.name }}</p>
+            <div v-if="currentEnemy" class="enemy-section">
+              <div class="art-placeholder art-placeholder--monster">Art of {{ currentEnemy.name }}</div>
+              <p class="enemy-name">{{ currentEnemy.name }}</p>
+              <div class="enemy-health">
+                <span
+                  v-for="n in currentEnemy.health"
+                  :key="n"
+                  class="health-pip"
+                  :class="{ 'health-pip--lost': n > enemyHealth }"
+                ></span>
+              </div>
+              <p class="monster-text">{{ currentEnemy.effect }}</p>
             </div>
           </aside>
 
@@ -163,15 +168,14 @@
       <Transition name="modal">
         <div v-if="modal" class="modal-overlay">
           <div class="modal-card">
-            <template v-if="modal === 'enemy'">
-              <p class="modal-message">You've attracted the attention of a {{ latestEnemy.name }}!</p>
-              <div class="art-placeholder art-placeholder--modal-monster my-3">Art of {{ latestEnemy.name }}</div>
-              <p class="modal-submessage">From now on: {{ latestEnemy.effect }}</p>
+            <template v-if="modal === 'encounter'">
+              <p class="modal-message">A {{ currentEnemy.name }} blocks your path!</p>
+              <div class="art-placeholder art-placeholder--modal-monster my-3">Art of {{ currentEnemy.name }}</div>
+              <p class="modal-submessage">{{ currentEnemy.effect }}</p>
             </template>
-            <template v-else-if="modal === 'monster'">
-              <p class="modal-message">A {{ monsterType }} appeared!</p>
-              <div class="art-placeholder art-placeholder--modal-monster my-3">Art of {{ monsterType }}</div>
-              <p class="modal-submessage">Find the word of power to defeat it!</p>
+            <template v-else-if="modal === 'hit'">
+              <div class="art-placeholder art-placeholder--modal-monster my-3">Art of {{ currentEnemy.name }} (damaged)</div>
+              <p class="modal-message">{{ hitWord }} guessed, 1 damage!</p>
             </template>
             <template v-else>
               <p class="modal-message">{{ MODAL_CONTENT[modal].message }}</p>
@@ -192,8 +196,9 @@
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { CLASSES, ENEMIES } from '@/data/gameData.js'
 
-const MAX_GUESSES    = 6
-const JOURNEY_LENGTH = 7
+const MAX_GUESSES         = 6
+const DIFFICULTY_SEQUENCE = [1, 2, 1, 2, 3]
+const JOURNEY_LENGTH      = DIFFICULTY_SEQUENCE.length
 
 
 const KEY_ROWS = [
@@ -204,16 +209,13 @@ const KEY_ROWS = [
 
 
 const MODAL_CONTENT = {
-  enemy:    { button: 'Continue' },
-  monster:  { button: 'Begin!'   },
-  won:      { message: 'Word discovered! Continue?',               button: 'Continue'  },
-  lost:     { message: 'Oh no, you failed! Try again?',            button: 'Try Again' },
-  complete: { message: 'You completed your quest! New Game?',      button: 'New Game'  },
-  armor:    { message: 'The knight lost his armor but continues!', button: 'Continue'  },
+  encounter: { button: 'Begin!'    },
+  hit:       { button: 'Continue'  },
+  won:       { message: 'Enemy defeated! Continue?',               button: 'Continue'  },
+  lost:      { message: 'Oh no, you failed! Try again?',           button: 'Try Again' },
+  complete:  { message: 'You completed your quest! New Game?',     button: 'New Game'  },
+  armor:     { message: 'The knight lost his armor but continues!',button: 'Continue'  },
 }
-
-
-const ENEMY_TRIGGER_STAGE = 4
 
 // ── Screen / class ────────────────────────────────────────────────────────────
 const screen          = ref('intro')
@@ -230,13 +232,14 @@ const inputError   = ref('')
 const modal        = ref(null)
 const hintLetter   = ref('')
 const hintWordType = ref('')
-const armorGranted  = ref(false)
-const activeEnemies   = ref([])
+const armorGranted    = ref(false)
+const currentEnemy    = ref(null)
+const enemyHealth     = ref(0)
+const hitWord         = ref('')
 const showEnemyPicker = ref(false)
 
-const latestEnemy  = computed(() => activeEnemies.value[activeEnemies.value.length - 1] ?? null)
-const obscuredCol  = computed(() => {
-  if (!activeEnemies.value.some(e => e.id === 'shadow-sorcerer')) return -1
+const obscuredCol = computed(() => {
+  if (currentEnemy.value?.id !== 'shadow-sorcerer') return -1
   return Math.floor((wordLength.value - 1) / 2)
 })
 
@@ -246,7 +249,6 @@ const currentMaxGuesses = computed(() =>
   playerClass.value === 'knight' && armorGranted.value ? MAX_GUESSES + 3 : MAX_GUESSES
 )
 const guessesLeft  = computed(() => currentMaxGuesses.value - guesses.value.length)
-const monsterType = ref('monster')
 
 const featureArtText = computed(() => {
   if (playerClass.value === 'seer')    return 'Art of seer thinking'
@@ -343,9 +345,17 @@ function submitGuess() {
   currentGuess.value = ''
 
   if (submitted === secretWord.value) {
-    gameState.value = 'won'
-    const isLast = stage.value === JOURNEY_LENGTH - 1
-    setTimeout(() => { modal.value = isLast ? 'complete' : 'won' }, 600)
+    enemyHealth.value -= 1
+    if (enemyHealth.value <= 0) {
+      gameState.value = 'won'
+      const isLast = stage.value === JOURNEY_LENGTH - 1
+      setTimeout(() => { modal.value = isLast ? 'complete' : 'won' }, 600)
+    } else {
+      // Hit but not dead — show damage modal, then load a fresh word
+      hitWord.value   = submitted.toLowerCase()
+      gameState.value = 'won'
+      setTimeout(() => { modal.value = 'hit' }, 600)
+    }
   } else if (playerClass.value === 'knight' && !armorGranted.value && guesses.value.length >= MAX_GUESSES) {
     // Knight uses armor — grant 3 extra guesses instead of losing
     armorGranted.value = true
@@ -358,26 +368,27 @@ function submitGuess() {
 
 // ── Modal ─────────────────────────────────────────────────────────────────────
 function handleModalAction() {
-  if (modal.value === 'enemy') {
-    modal.value = 'monster'
-  } else if (modal.value === 'monster') {
+  if (modal.value === 'encounter') {
     modal.value = null
-    if (activeEnemies.value.some(e => e.id === 'annoying-kid')) {
+    if (currentEnemy.value?.id === 'annoying-kid') {
       applyAnnoyingKidGuess()
     } else {
       gameState.value = 'playing'
     }
+  } else if (modal.value === 'hit') {
+    loadWord(false)
   } else if (modal.value === 'won') {
     startStage(stage.value + 1)
   } else if (modal.value === 'armor') {
     modal.value = null  // game continues, keyboard stays active
   } else {
     // lost or complete → back to intro
-    screen.value        = 'intro'
-    playerClass.value   = null
-    modal.value         = null
-    gameState.value     = 'loading'
-    activeEnemies.value = []
+    screen.value         = 'intro'
+    playerClass.value    = null
+    modal.value          = null
+    gameState.value      = 'loading'
+    currentEnemy.value   = null
+    enemyHealth.value    = 0
   }
 }
 
@@ -387,7 +398,8 @@ function restartJourney() {
   playerClass.value     = null
   modal.value           = null
   gameState.value       = 'loading'
-  activeEnemies.value   = []
+  currentEnemy.value    = null
+  enemyHealth.value     = 0
   showEnemyPicker.value = false
 }
 
@@ -405,8 +417,16 @@ function selectClass(cls) {
 
 // ── Game lifecycle ────────────────────────────────────────────────────────────
 async function startStage(stageNum) {
+  stage.value = stageNum
+  const required     = DIFFICULTY_SEQUENCE[stageNum]
+  const pool         = ENEMIES.filter(e => e.difficulty === required)
+  currentEnemy.value = pool[Math.floor(Math.random() * pool.length)]
+  enemyHealth.value  = currentEnemy.value.health
+  await loadWord(true)
+}
+
+async function loadWord(showModal) {
   gameState.value    = 'loading'
-  stage.value        = stageNum
   secretWord.value   = ''
   guesses.value      = []
   currentGuess.value = ''
@@ -417,17 +437,7 @@ async function startStage(stageNum) {
   hintWordType.value    = ''
   showEnemyPicker.value = false
 
-  let min, max
-  if (stageNum >= JOURNEY_LENGTH - 1) {
-    monsterType.value = 'boss'
-    min = 8; max = 12
-  } else if (Math.random() < 0.5) {
-    monsterType.value = 'small monster'
-    min = 3; max = 4
-  } else {
-    monsterType.value = 'monster'
-    min = 5; max = 7
-  }
+  const [min, max] = currentEnemy.value?.id === 'boss' ? [8, 12] : [4, 7]
 
   try {
     const length = Math.floor(Math.random() * (max - min + 1)) + min
@@ -448,11 +458,12 @@ async function startStage(stageNum) {
       hintWordType.value = types.length ? types.join(', ') : 'word'
     }
     gameState.value = 'ready'
-    if (stageNum === ENEMY_TRIGGER_STAGE && activeEnemies.value.length === 0) {
-      activeEnemies.value = [ENEMIES[Math.floor(Math.random() * ENEMIES.length)]]
-      modal.value = 'enemy'
+    if (showModal) {
+      modal.value = 'encounter'
+    } else if (currentEnemy.value?.id === 'annoying-kid') {
+      applyAnnoyingKidGuess()
     } else {
-      modal.value = 'monster'
+      gameState.value = 'playing'
     }
   } catch {
     gameState.value = 'error'
@@ -460,7 +471,8 @@ async function startStage(stageNum) {
 }
 
 function selectTestEnemy(enemy) {
-  activeEnemies.value = [enemy]
+  currentEnemy.value    = enemy
+  enemyHealth.value     = enemy.health
   showEnemyPicker.value = false
 }
 
