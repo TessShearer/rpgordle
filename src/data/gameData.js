@@ -6,26 +6,31 @@ export const CLASSES = [
 ]
 
 export const ENEMIES = [
-  { id: 'useless-goblin', name: 'Useless Goblin', regen: 1, health: 1, effect: 'No effect',                            difficulty: 1 },
-  { id: 'cave-spider',    name: 'Cave Spider',     regen: 1, health: 1, effect: 'No effect',                            difficulty: 1 },
-  { id: 'annoying-kid',   name: 'Annoying Kid',    regen: 1, health: 1, effect: 'He will make your first guess for you', difficulty: 2 },
+  { id: 'useless-goblin', name: 'Goblin',     regen: 1, health: 1, effect: 'No effect' },
+  { id: 'cave-spider',    name: 'Cave Spider', regen: 1, health: 1, effect: 'No effect' },
+]
+
+export const MINIBOSSES = [
+  { id: 'annoying-kid', name: 'Annoying Kid', regen: 1, health: 1, effect: 'He will make your first guess for you' },
 ]
 
 export const BOSSES = [
   {
-    id:           'shadow-sorcerer',
-    name:         'Shadow Sorcerer',
-    health:       3,
-    regen:        0,
-    effect:       'The centermost column is obscured',
-    announcement: 'Your quest is to defeat the Shadow Sorcerer, who has cast a shadow over the center letter of your words.',
+    id:                   'shadow-sorcerer',
+    name:                 'Shadow Sorcerer',
+    health:               3,
+    regen:                0,
+    effect:               'The centermost column is obscured',
+    announcement:         'Your quest is to defeat the Shadow Sorcerer, who has cast a shadow over the center letter of your words.',
+    enhancedAnnouncement: 'You face the Shadow Sorcerer directly! The darkness deepens — now TWO columns are shrouded from your sight.',
   },
   {
-    id:           'gelatinous-cube',
-    name:         'Gelatinous Cube',
-    health:       3,
-    regen:        0,
-    effect:       'A chosen letter deals double damage each round',
-    announcement: 'Your quest is to defeat the Gelatinous Cube. Each round it marks a letter — any guess containing that letter deals 2 damage instead of 1.',
+    id:                   'gelatinous-cube',
+    name:                 'Gelatinous Cube',
+    health:               3,
+    regen:                0,
+    effect:               'A chosen letter deals double damage each round',
+    announcement:         'Your quest is to defeat the Gelatinous Cube. Each round it marks a letter — any guess containing that letter deals 2 damage instead of 1.',
+    enhancedAnnouncement: 'You face the Gelatinous Cube directly! It seethes with power — now THREE letters are marked for double damage each round.',
   },
 ]

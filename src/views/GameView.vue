@@ -55,7 +55,7 @@
             <div class="portrait-slot">
               <div class="art-placeholder art-placeholder--portrait">{{ featureArtText }}</div>
               <template v-if="playerClass === 'seer' && hintLetter">
-                <p class="portrait-hint-label">has a...</p>
+                <p class="portrait-hint-label">This word has a...</p>
                 <p class="portrait-hint-value">{{ hintLetter }}</p>
               </template>
               <template v-else-if="playerClass === 'scholar' && hintWordType">
@@ -83,9 +83,9 @@
                   :class="{ 'health-pip--lost': n > enemyHealth }"
                 ></span>
               </div>
-              <template v-if="dangerLetter">
-                <p class="portrait-hint-label">Danger letter</p>
-                <p class="danger-letter">{{ dangerLetter }}</p>
+              <template v-if="dangerLetters.length">
+                <p class="portrait-hint-label">Danger {{ dangerLetters.length > 1 ? 'letters' : 'letter' }}</p>
+                <p v-for="l in dangerLetters" :key="l" class="danger-letter">{{ l }}</p>
               </template>
             </div>
           </div>
@@ -190,9 +190,9 @@
                 ></span>
               </div>
               <p class="monster-text">{{ currentEnemy.effect }}</p>
-              <div v-if="dangerLetter" class="danger-display mt-1">
-                <p class="monster-text">Danger letter</p>
-                <p class="danger-letter">{{ dangerLetter }}</p>
+              <div v-if="dangerLetters.length" class="danger-display mt-1">
+                <p class="monster-text">Danger {{ dangerLetters.length > 1 ? 'letters' : 'letter' }}</p>
+                <p v-for="l in dangerLetters" :key="l" class="danger-letter">{{ l }}</p>
               </div>
             </div>
           </aside>
@@ -209,8 +209,12 @@
               <div class="art-placeholder art-placeholder--modal-monster my-3">Art of {{ currentBoss.name }}</div>
               <p class="modal-message">{{ currentBoss.announcement }}</p>
             </template>
+            <template v-else-if="modal === 'boss-fight'">
+              <div class="art-placeholder art-placeholder--modal-monster my-3">Art of {{ currentBoss.name }}</div>
+              <p class="modal-message">{{ currentBoss.enhancedAnnouncement }}</p>
+            </template>
             <template v-else-if="modal === 'encounter'">
-              <p class="modal-message">A {{ currentEnemy.name }} blocks your path!</p>
+              <p class="modal-message">{{ articleFor(currentEnemy.name) }} {{ currentEnemy.name }} blocks your path!</p>
               <div class="art-placeholder art-placeholder--modal-monster my-3">Art of {{ currentEnemy.name }}</div>
               <p class="modal-submessage">{{ currentEnemy.effect }}</p>
             </template>
@@ -236,10 +240,10 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
-import { CLASSES, ENEMIES, BOSSES } from '@/data/gameData.js'
+import { CLASSES, ENEMIES, MINIBOSSES, BOSSES } from '@/data/gameData.js'
 
-const DIFFICULTY_SEQUENCE = [1, 2, 1, 2]
-const JOURNEY_LENGTH      = DIFFICULTY_SEQUENCE.length + 1  // 4 normal stages + 1 boss fight
+const STAGE_SEQUENCE = ['enemy', 'miniboss', 'enemy']
+const JOURNEY_LENGTH = STAGE_SEQUENCE.length + 1  // 3 normal stages + 1 boss fight
 
 
 const KEY_ROWS = [
@@ -250,9 +254,10 @@ const KEY_ROWS = [
 
 
 const MODAL_CONTENT = {
-  'boss-announcement': { button: 'Begin Quest' },
-  encounter:           { button: 'Begin!'       },
-  hit:                 { button: 'Continue'     },
+  'boss-announcement': { button: 'Begin Quest'    },
+  'boss-fight':        { button: 'Face the Boss!' },
+  encounter:           { button: 'Begin!'          },
+  hit:                 { button: 'Continue'        },
   won:                 { message: 'Enemy defeated! Continue?',           button: 'Continue'  },
   lost:                { message: 'Oh no, you failed! Try again?',       button: 'Try Again' },
   complete:            { message: 'You completed your quest! New Game?', button: 'New Game'  },
@@ -280,11 +285,13 @@ const currentEnemy    = ref(null)
 const enemyHealth     = ref(0)
 const hitWord         = ref('')
 const lastRegen       = ref(0)
-const dangerLetter    = ref('')
+const dangerLetters   = ref([])
 
-const obscuredCol = computed(() => {
-  if (currentBoss.value?.id !== 'shadow-sorcerer') return -1
-  return Math.floor((wordLength.value - 1) / 2)
+const obscuredCols = computed(() => {
+  if (currentBoss.value?.id !== 'shadow-sorcerer') return []
+  const center = Math.floor((wordLength.value - 1) / 2)
+  const isBossFight = stage.value >= STAGE_SEQUENCE.length
+  return isBossFight ? [center, center + 1] : [center]
 })
 
 // ── Derived ───────────────────────────────────────────────────────────────────
@@ -335,7 +342,7 @@ function dotClass(i) {
 }
 
 function isObscured(col) {
-  return obscuredCol.value !== -1 && col === obscuredCol.value && gameState.value !== 'won'
+  return obscuredCols.value.length > 0 && obscuredCols.value.includes(col) && gameState.value !== 'won'
 }
 
 function tileChar(row, col) {
@@ -356,7 +363,7 @@ function tileClass(row, col) {
 function keyClass(key) {
   if (key === 'ENTER' || key === '⌫') return 'key--action'
   if (currentBoss.value?.id === 'shadow-sorcerer') return ''
-  if (dangerLetter.value && key === dangerLetter.value) return 'key--danger'
+  if (dangerLetters.value.length > 0 && dangerLetters.value.includes(key)) return 'key--danger'
   return letterStatuses.value[key] ? `key--${letterStatuses.value[key]}` : ''
 }
 
@@ -406,8 +413,8 @@ function submitGuess() {
     }
   } else {
     const doubleDamage = currentBoss.value?.id === 'gelatinous-cube'
-                         && dangerLetter.value
-                         && submitted.includes(dangerLetter.value)
+                         && dangerLetters.value.length > 0
+                         && dangerLetters.value.some(l => submitted.includes(l))
     playerHealth.value -= doubleDamage ? 2 : 1
     if (playerHealth.value <= 0) {
       gameState.value = 'lost'
@@ -420,6 +427,8 @@ function submitGuess() {
 function handleModalAction() {
   if (modal.value === 'boss-announcement') {
     startStage(0)
+  } else if (modal.value === 'boss-fight') {
+    loadWord(false)
   } else if (modal.value === 'encounter') {
     modal.value = null
     if (currentEnemy.value?.id === 'annoying-kid') {
@@ -442,7 +451,7 @@ function handleModalAction() {
     currentBoss.value     = null
     currentEnemy.value    = null
     enemyHealth.value     = 0
-    dangerLetter.value    = ''
+    dangerLetters.value   = []
   }
 }
 
@@ -481,14 +490,14 @@ function selectClass(cls) {
 // ── Game lifecycle ────────────────────────────────────────────────────────────
 async function startStage(stageNum) {
   stage.value = stageNum
-  const isBossFight = stageNum >= DIFFICULTY_SEQUENCE.length
+  const isBossFight = stageNum >= STAGE_SEQUENCE.length
   if (isBossFight) {
     currentEnemy.value = currentBoss.value
     enemyHealth.value  = currentBoss.value.health
-    await loadWord(false)  // boss was already announced — skip encounter modal
+    modal.value        = 'boss-fight'
   } else {
-    const required     = DIFFICULTY_SEQUENCE[stageNum]
-    const pool         = ENEMIES.filter(e => e.difficulty === required)
+    const stageType    = STAGE_SEQUENCE[stageNum]
+    const pool         = stageType === 'miniboss' ? MINIBOSSES : ENEMIES
     currentEnemy.value = pool[Math.floor(Math.random() * pool.length)]
     enemyHealth.value  = currentEnemy.value.health
     await loadWord(true)
@@ -504,10 +513,10 @@ async function loadWord(showModal) {
   modal.value        = null
   hintLetter.value      = ''
   hintWordType.value    = ''
-  dangerLetter.value    = ''
+  dangerLetters.value   = []
 
 
-  const isBossFight = stage.value >= DIFFICULTY_SEQUENCE.length
+  const isBossFight = stage.value >= STAGE_SEQUENCE.length
   const [min, max]  = isBossFight ? [8, 12] : [4, 7]
 
   try {
@@ -518,7 +527,11 @@ async function loadWord(showModal) {
     secretWord.value = data.word.toUpperCase()
     if (currentBoss.value?.id === 'gelatinous-cube') {
       const alpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-      dangerLetter.value = alpha[Math.floor(Math.random() * 26)]
+      const isBossFight = stage.value >= STAGE_SEQUENCE.length
+      const count = isBossFight ? 3 : 1
+      const picked = new Set()
+      while (picked.size < count) picked.add(alpha[Math.floor(Math.random() * 26)])
+      dangerLetters.value = [...picked]
     }
     if (playerClass.value === 'seer') {
       const idx = Math.floor(Math.random() * secretWord.value.length)
@@ -546,6 +559,10 @@ async function loadWord(showModal) {
 }
 
 
+function articleFor(name) {
+  return /^[aeiou]/i.test(name) ? 'An' : 'A'
+}
+
 async function applyAnnoyingKidGuess() {
   let word
   try {
@@ -558,8 +575,19 @@ async function applyAnnoyingKidGuess() {
     do { word = Array.from({ length: wordLength.value }, () => alpha[Math.floor(Math.random() * 26)]).join('') }
     while (word === secretWord.value)
   }
-  guesses.value   = [word]
-  gameState.value = 'playing'
+  guesses.value = [word]
+
+  const doubleDamage = currentBoss.value?.id === 'gelatinous-cube'
+                       && dangerLetters.value.length > 0
+                       && dangerLetters.value.some(l => word.includes(l))
+  playerHealth.value -= doubleDamage ? 2 : 1
+
+  if (playerHealth.value <= 0) {
+    gameState.value = 'lost'
+    setTimeout(() => { modal.value = 'lost' }, 600)
+  } else {
+    gameState.value = 'playing'
+  }
 }
 
 onMounted(() => window.addEventListener('keydown', onKeyDown))
