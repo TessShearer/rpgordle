@@ -506,6 +506,61 @@ body {
   text-transform: capitalize;
 }
 
+/* ── Game Info page ──────────────────────────────────────────────────────── */
+.info-section {
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.info-heading {
+  font-size: 1.3rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--gs-700);
+  border-bottom: 2px solid var(--gs-200);
+  padding-bottom: 0.5rem;
+}
+
+.info-note {
+  font-size: 0.85rem;
+  color: var(--gs-600);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 1rem;
+}
+
+.info-card {
+  background: var(--gs-100);
+  border: 2px solid var(--gs-200);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.info-name {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--gs-900);
+  margin: 0 0 0.3rem;
+}
+
+.info-desc {
+  font-size: 0.8rem;
+  color: var(--gs-600);
+  margin: 0;
+  line-height: 1.4;
+}
+
 .debug-answer {
   font-size: 0.85rem;
   color: var(--gs-600);

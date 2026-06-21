@@ -4,8 +4,13 @@ import HomeView from '@/views/HomeView.vue'
 const routes = [
   {
     path: '/',
-    name: 'home',
+    name: 'word-info',
     component: HomeView,
+  },
+  {
+    path: '/game-info',
+    name: 'game-info',
+    component: () => import('@/views/GameInfoView.vue'),
   },
   {
     path: '/game',
