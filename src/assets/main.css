@@ -106,3 +106,89 @@ body {
   letter-spacing: 0.08em;
   color: var(--gs-600);
 }
+
+/* ── Game ────────────────────────────────────────────────────────────────── */
+.game-wrapper {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.game-meta {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--gs-600);
+  margin: 0;
+}
+
+.game-status {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+}
+.game-status.won  { color: #538d4e; }
+.game-status.lost { color: #b33a2e; }
+
+/* Board */
+.board {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), 1fr);
+  gap: 4px;
+  max-width: 360px;
+  margin: 0 auto;
+}
+
+.tile {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  text-transform: uppercase;
+  border: 2px solid var(--gs-200);
+  background: #fff;
+  color: var(--gs-900);
+  border-radius: 4px;
+  user-select: none;
+}
+
+.tile--filled  { border-color: var(--gs-600); }
+.tile--correct { background: #538d4e; border-color: #538d4e; color: #fff; }
+.tile--present { background: #b59f3b; border-color: #b59f3b; color: #fff; }
+.tile--absent  { background: var(--gs-600); border-color: var(--gs-600); color: #fff; }
+
+/* Keyboard */
+.keyboard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.key-row {
+  display: flex;
+  gap: 5px;
+}
+
+.key {
+  height: 56px;
+  min-width: 36px;
+  padding: 0 6px;
+  border: none;
+  border-radius: 4px;
+  background: var(--gs-200);
+  color: var(--gs-900);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  user-select: none;
+  transition: filter 0.1s;
+}
+
+.key--action  { min-width: 58px; font-size: 0.72rem; }
+.key--correct { background: #538d4e; color: #fff; }
+.key--present { background: #b59f3b; color: #fff; }
+.key--absent  { background: var(--gs-600); color: #fff; }
+
+.key:hover  { filter: brightness(0.88); }
+.key:active { filter: brightness(0.75); }
