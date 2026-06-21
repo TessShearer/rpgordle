@@ -68,40 +68,54 @@ if ($uri === 'api/word/categories' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     exit;
 }
 
-// GET /api/word/random?category=animals
-// Returns a random English word, optionally filtered by category
+// GET /api/word/random?pos=n
+// Returns a random English word with full Datamuse metadata, optionally filtered by part of speech.
+// pos values: n (noun), v (verb), adj (adjective), adv (adverb)
 if ($uri === 'api/word/random' && $_SERVER['REQUEST_METHOD'] === 'GET') {
-    $category = $_GET['category'] ?? 'all';
-    if (!preg_match('/^[a-z_]+$/', $category)) $category = 'all';
+    $allowed_pos = ['n', 'v', 'adj', 'adv'];
+    $pos     = $_GET['pos'] ?? '';
+    if (!in_array($pos, $allowed_pos)) $pos = '';
 
-    $url = "https://random-words-api.kushcreates.com/api?language=en&words=1&category={$category}";
+    $length  = rand(4, 8);
+    $pattern = str_repeat('?', $length);
+
+    // md=d (definitions) p (parts of speech) f (frequency) s (syllables)
+    // max=200: results are frequency-ordered so the bottom of a larger list would only be rare words
+    $url = "https://api.datamuse.com/words?sp={$pattern}&max=200&md=dpfs";
     [$body, $code, $curlErr] = http_get($url);
 
     if ($body === false || $code !== 200) {
         http_response_code(502);
-        echo json_encode([
-            'error'    => 'Failed to reach word API',
-            'detail'   => $curlErr ?: "HTTP $code",
-        ]);
+        echo json_encode(['error' => 'Failed to reach Datamuse API', 'detail' => $curlErr ?: "HTTP $code"]);
         exit;
     }
 
-    $data = json_decode($body, true);
-
-    // Normalise across response shapes: ["word"], {"word":"..."}, or plain string
-    if (is_array($data) && isset($data[0])) {
-        $word = $data[0];
-    } elseif (is_array($data) && isset($data['word'])) {
-        $word = $data['word'];
-    } elseif (is_string($data)) {
-        $word = $data;
-    } else {
+    $words = json_decode($body, true);
+    if (!is_array($words) || count($words) === 0) {
         http_response_code(502);
-        echo json_encode(['error' => 'Unexpected API response', 'raw' => $body]);
+        echo json_encode(['error' => 'No words returned from Datamuse']);
         exit;
     }
 
-    echo json_encode(['word' => $word]);
+    // Always filter to words with frequency >= 0.1 per million (excludes obscure words)
+    $words = array_values(array_filter($words, function($w) {
+        foreach ($w['tags'] ?? [] as $tag) {
+            if (str_starts_with($tag, 'f:') && (float) substr($tag, 2) >= 0.1) return true;
+        }
+        return false;
+    }));
+
+    if ($pos !== '') {
+        $words = array_values(array_filter($words, fn($w) => in_array($pos, $w['tags'] ?? [])));
+    }
+
+    if (count($words) === 0) {
+        http_response_code(502);
+        echo json_encode(['error' => 'No words found matching the selected filters']);
+        exit;
+    }
+
+    echo json_encode($words[array_rand($words)]);
     exit;
 }
 
