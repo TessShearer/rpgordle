@@ -668,6 +668,19 @@ body {
   background: var(--gs-200);
 }
 
+.health-pip--player { width: 10px; height: 10px; background: #27ae60; }
+.health-pip--player.health-pip--lost { background: var(--gs-200); }
+
+.player-health { text-align: center; }
+.player-health-pips {
+  display: flex;
+  gap: 3px;
+  justify-content: center;
+  flex-wrap: wrap;
+  max-width: 140px;
+  margin: 0.2rem auto 0;
+}
+
 .enemy-section {
   margin-top: 1rem;
   display: flex;

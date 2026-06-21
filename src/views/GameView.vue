@@ -62,6 +62,17 @@
                 <p class="feature-label">this word is a...</p>
                 <p class="feature-word">{{ hintWordType }}</p>
               </div>
+              <div class="player-health mt-2">
+                <p class="feature-label">HP: {{ playerHealth }} / {{ playerMaxHealth }}</p>
+                <div class="player-health-pips">
+                  <span
+                    v-for="n in playerMaxHealth"
+                    :key="n"
+                    class="health-pip health-pip--player"
+                    :class="{ 'health-pip--lost': n > playerHealth }"
+                  ></span>
+                </div>
+              </div>
             </div>
           </aside>
 
@@ -78,14 +89,12 @@
                   :class="dotClass(i - 1)"
                 ></span>
               </div>
-              <p class="game-meta">
-                {{ wordLength }}-letter word &middot; {{ guessesLeft }} guess{{ guessesLeft !== 1 ? 'es' : '' }} left
-              </p>
+              <p class="game-meta">{{ wordLength }}-letter word</p>
             </div>
 
             <!-- Board -->
             <div class="board mb-2" :style="{ '--cols': wordLength }">
-              <template v-for="row in currentMaxGuesses" :key="row">
+              <template v-for="row in boardRows" :key="row">
                 <div
                   v-for="col in wordLength"
                   :key="col"
@@ -196,7 +205,6 @@
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { CLASSES, ENEMIES } from '@/data/gameData.js'
 
-const MAX_GUESSES         = 6
 const DIFFICULTY_SEQUENCE = [1, 2, 1, 2, 3]
 const JOURNEY_LENGTH      = DIFFICULTY_SEQUENCE.length
 
@@ -214,7 +222,6 @@ const MODAL_CONTENT = {
   won:       { message: 'Enemy defeated! Continue?',               button: 'Continue'  },
   lost:      { message: 'Oh no, you failed! Try again?',           button: 'Try Again' },
   complete:  { message: 'You completed your quest! New Game?',     button: 'New Game'  },
-  armor:     { message: 'The knight lost his armor but continues!',button: 'Continue'  },
 }
 
 // ── Screen / class ────────────────────────────────────────────────────────────
@@ -232,7 +239,8 @@ const inputError   = ref('')
 const modal        = ref(null)
 const hintLetter   = ref('')
 const hintWordType = ref('')
-const armorGranted    = ref(false)
+const playerHealth    = ref(0)
+const playerMaxHealth = ref(0)
 const currentEnemy    = ref(null)
 const enemyHealth     = ref(0)
 const hitWord         = ref('')
@@ -245,15 +253,14 @@ const obscuredCol = computed(() => {
 
 // ── Derived ───────────────────────────────────────────────────────────────────
 const wordLength        = computed(() => secretWord.value.length)
-const currentMaxGuesses = computed(() =>
-  playerClass.value === 'knight' && armorGranted.value ? MAX_GUESSES + 3 : MAX_GUESSES
+const boardRows = computed(() =>
+  guesses.value.length + (gameState.value === 'playing' ? 1 : 0)
 )
-const guessesLeft  = computed(() => currentMaxGuesses.value - guesses.value.length)
 
 const featureArtText = computed(() => {
   if (playerClass.value === 'seer')    return 'Art of seer thinking'
   if (playerClass.value === 'scholar') return 'Art of scholar'
-  if (playerClass.value === 'knight')  return armorGranted.value ? 'Art of naked knight' : 'Art of knight'
+  if (playerClass.value === 'knight')  return 'Art of knight'
   return 'Art of Peasant'
 })
 
@@ -347,6 +354,7 @@ function submitGuess() {
   if (submitted === secretWord.value) {
     enemyHealth.value -= 1
     if (enemyHealth.value <= 0) {
+      playerHealth.value = Math.min(playerMaxHealth.value, playerHealth.value + currentEnemy.value.regen)
       gameState.value = 'won'
       const isLast = stage.value === JOURNEY_LENGTH - 1
       setTimeout(() => { modal.value = isLast ? 'complete' : 'won' }, 600)
@@ -356,13 +364,12 @@ function submitGuess() {
       gameState.value = 'won'
       setTimeout(() => { modal.value = 'hit' }, 600)
     }
-  } else if (playerClass.value === 'knight' && !armorGranted.value && guesses.value.length >= MAX_GUESSES) {
-    // Knight uses armor — grant 3 extra guesses instead of losing
-    armorGranted.value = true
-    setTimeout(() => { modal.value = 'armor' }, 600)
-  } else if (guesses.value.length >= currentMaxGuesses.value) {
-    gameState.value = 'lost'
-    setTimeout(() => { modal.value = 'lost' }, 600)
+  } else {
+    playerHealth.value -= 1
+    if (playerHealth.value <= 0) {
+      gameState.value = 'lost'
+      setTimeout(() => { modal.value = 'lost' }, 600)
+    }
   }
 }
 
@@ -379,16 +386,16 @@ function handleModalAction() {
     loadWord(false)
   } else if (modal.value === 'won') {
     startStage(stage.value + 1)
-  } else if (modal.value === 'armor') {
-    modal.value = null  // game continues, keyboard stays active
   } else {
     // lost or complete → back to intro
-    screen.value         = 'intro'
-    playerClass.value    = null
-    modal.value          = null
-    gameState.value      = 'loading'
-    currentEnemy.value   = null
-    enemyHealth.value    = 0
+    screen.value          = 'intro'
+    playerClass.value     = null
+    modal.value           = null
+    gameState.value       = 'loading'
+    playerHealth.value    = 0
+    playerMaxHealth.value = 0
+    currentEnemy.value    = null
+    enemyHealth.value     = 0
   }
 }
 
@@ -398,6 +405,8 @@ function restartJourney() {
   playerClass.value     = null
   modal.value           = null
   gameState.value       = 'loading'
+  playerHealth.value    = 0
+  playerMaxHealth.value = 0
   currentEnemy.value    = null
   enemyHealth.value     = 0
   showEnemyPicker.value = false
@@ -410,8 +419,11 @@ function showClassSelect() {
 }
 
 function selectClass(cls) {
-  playerClass.value = cls
-  screen.value      = 'playing'
+  const classData       = CLASSES.find(c => c.id === cls)
+  playerClass.value     = cls
+  playerHealth.value    = classData.health
+  playerMaxHealth.value = classData.health
+  screen.value          = 'playing'
   startStage(0)
 }
 
@@ -432,7 +444,6 @@ async function loadWord(showModal) {
   currentGuess.value = ''
   inputError.value   = ''
   modal.value        = null
-  armorGranted.value    = false
   hintLetter.value      = ''
   hintWordType.value    = ''
   showEnemyPicker.value = false
