@@ -107,6 +107,84 @@ body {
   color: var(--gs-600);
 }
 
+/* ── Art placeholders ────────────────────────────────────────────────────── */
+.art-placeholder {
+  background: var(--gs-100);
+  border: 2px dashed var(--gs-400);
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gs-400);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-align: center;
+  padding: 0.5rem;
+}
+
+.art-placeholder--hero {
+  width: min(280px, 75vw);
+  height: min(280px, 75vw);
+  margin: 0 auto;
+}
+
+.art-placeholder--class {
+  width: 100px;
+  height: 100px;
+  flex-shrink: 0;
+  font-size: 0.7rem;
+}
+
+/* ── Class select ────────────────────────────────────────────────────────── */
+.class-options {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  overflow: hidden;
+  padding: 0.25rem 0.25rem;
+}
+
+.class-option {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  cursor: pointer;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  border: 2px solid transparent;
+  transform: translateX(-120%);
+  transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              border-color 0.15s ease;
+}
+
+.class-option.animated { transform: translateX(0); }
+
+.class-option:hover {
+  border-color: var(--gs-400);
+  background: var(--gs-050);
+}
+
+.class-text {
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.class-option.animated .class-text { opacity: 1; }
+
+.class-name {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--gs-900);
+  margin-bottom: 0.2rem;
+}
+
+.class-desc {
+  font-size: 0.85rem;
+  color: var(--gs-600);
+  margin: 0;
+}
+
 /* ── Game ────────────────────────────────────────────────────────────────── */
 .game-wrapper {
   max-width: 500px;
@@ -243,3 +321,12 @@ body {
 .modal-leave-active { transition: opacity 0.2s ease; }
 .modal-enter-from,
 .modal-leave-to     { opacity: 0; }
+
+/* Seer hint */
+.seer-hint {
+  text-align: center;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--gs-600);
+}

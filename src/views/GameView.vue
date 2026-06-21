@@ -2,63 +2,107 @@
   <main class="container py-4">
     <div class="game-wrapper">
 
-      <div v-if="gameState === 'loading'" class="text-center py-5">
-        <p class="game-meta">Loading word…</p>
+      <!-- ── Intro ──────────────────────────────────────────────────────── -->
+      <div v-if="screen === 'intro'" class="text-center">
+        <div class="art-placeholder art-placeholder--hero mb-4">Art goes here</div>
+        <button class="btn btn-press px-5 py-3 fs-5" @click="showClassSelect">
+          Start Adventure
+        </button>
       </div>
 
-      <div v-else-if="gameState === 'error'" class="text-center py-5">
-        <p class="text-danger mb-3">Could not load a word. Make sure the PHP server is running.</p>
-        <button class="btn btn-press px-4" @click="startStage(stage)">Try Again</button>
-      </div>
-
-      <template v-else>
-        <!-- Journey progress -->
-        <div class="text-center mb-3">
-          <p class="game-meta mb-2">Word {{ stage + 1 }} of {{ JOURNEY_LENGTH }}</p>
-          <div class="journey-dots mb-2">
-            <span
-              v-for="i in JOURNEY_LENGTH"
-              :key="i"
-              class="journey-dot"
-              :class="dotClass(i - 1)"
-            ></span>
-          </div>
-          <p class="game-meta">
-            {{ wordLength }}-letter word &middot; {{ guessesLeft }} guess{{ guessesLeft !== 1 ? 'es' : '' }} left
-          </p>
-        </div>
-
-        <!-- Board -->
-        <div class="board mb-3" :style="{ '--cols': wordLength, fontSize: tileFontSize }">
-          <template v-for="row in MAX_GUESSES" :key="row">
-            <div
-              v-for="col in wordLength"
-              :key="col"
-              class="tile"
-              :class="tileClass(row - 1, col - 1)"
-            >
-              {{ tileChar(row - 1, col - 1) }}
+      <!-- ── Class Select ───────────────────────────────────────────────── -->
+      <div v-else-if="screen === 'class-select'">
+        <p class="game-meta text-center mb-4">Choose your class</p>
+        <div class="class-options">
+          <div
+            v-for="(cls, i) in CLASSES"
+            :key="cls.id"
+            class="class-option"
+            :class="{ animated: classesAnimated }"
+            :style="{ transitionDelay: `${i * 0.15}s` }"
+            @click="selectClass(cls.id)"
+          >
+            <div class="art-placeholder art-placeholder--class">
+              Art for {{ cls.name }} goes here
             </div>
-          </template>
-        </div>
-
-        <p v-if="inputError" class="text-danger text-center small mb-2">{{ inputError }}</p>
-
-        <!-- Keyboard -->
-        <div class="keyboard">
-          <div v-for="(row, r) in KEY_ROWS" :key="r" class="key-row">
-            <button
-              v-for="key in row"
-              :key="key"
-              class="key"
-              :class="keyClass(key)"
-              @click="handleKey(key)"
-            >{{ key }}</button>
+            <div
+              class="class-text"
+              :style="{ transitionDelay: `${0.5 + i * 0.15}s` }"
+            >
+              <p class="class-name">{{ cls.name }}</p>
+              <p class="class-desc">{{ cls.description }}</p>
+            </div>
           </div>
         </div>
+      </div>
+
+      <!-- ── Game ───────────────────────────────────────────────────────── -->
+      <template v-else>
+
+        <div v-if="gameState === 'loading'" class="text-center py-5">
+          <p class="game-meta">Loading word…</p>
+        </div>
+
+        <div v-else-if="gameState === 'error'" class="text-center py-5">
+          <p class="text-danger mb-3">Could not load a word. Make sure the PHP server is running.</p>
+          <button class="btn btn-press px-4" @click="startStage(stage)">Try Again</button>
+        </div>
+
+        <template v-else>
+          <!-- Seer hint -->
+          <p v-if="playerClass === 'seer' && hintLetter" class="seer-hint mb-2">
+            This word has a <strong>{{ hintLetter }}</strong>
+          </p>
+
+          <!-- Journey progress -->
+          <div class="text-center mb-3">
+            <p class="game-meta mb-2">Word {{ stage + 1 }} of {{ JOURNEY_LENGTH }}</p>
+            <div class="journey-dots mb-2">
+              <span
+                v-for="i in JOURNEY_LENGTH"
+                :key="i"
+                class="journey-dot"
+                :class="dotClass(i - 1)"
+              ></span>
+            </div>
+            <p class="game-meta">
+              {{ wordLength }}-letter word &middot; {{ guessesLeft }} guess{{ guessesLeft !== 1 ? 'es' : '' }} left
+            </p>
+          </div>
+
+          <!-- Board -->
+          <div class="board mb-3" :style="{ '--cols': wordLength, fontSize: tileFontSize }">
+            <template v-for="row in currentMaxGuesses" :key="row">
+              <div
+                v-for="col in wordLength"
+                :key="col"
+                class="tile"
+                :class="tileClass(row - 1, col - 1)"
+              >
+                {{ tileChar(row - 1, col - 1) }}
+              </div>
+            </template>
+          </div>
+
+          <p v-if="inputError" class="text-danger text-center small mb-2">{{ inputError }}</p>
+
+          <!-- Keyboard -->
+          <div v-if="gameState === 'playing'" class="keyboard">
+            <div v-for="(row, r) in KEY_ROWS" :key="r" class="key-row">
+              <button
+                v-for="key in row"
+                :key="key"
+                class="key"
+                :class="keyClass(key)"
+                @click="handleKey(key)"
+              >{{ key }}</button>
+            </div>
+          </div>
+        </template>
+
       </template>
 
-      <!-- Modal -->
+      <!-- Modal (sits above all screens) -->
       <Transition name="modal">
         <div v-if="modal" class="modal-overlay">
           <div class="modal-card">
@@ -75,11 +119,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 
-const MAX_GUESSES     = 6
-const JOURNEY_LENGTH  = 8
-const JOURNEY_START   = 3  // first word is 3 letters, last is 10
+const MAX_GUESSES    = 6
+const JOURNEY_LENGTH = 8
+const JOURNEY_START  = 3  // stage 0 → 3 letters, stage 7 → 10 letters
 
 const KEY_ROWS = [
   ['Q','W','E','R','T','Y','U','I','O','P'],
@@ -87,12 +131,25 @@ const KEY_ROWS = [
   ['ENTER','Z','X','C','V','B','N','M','⌫'],
 ]
 
+const CLASSES = [
+  { id: 'peasant', name: 'Peasant', description: 'Play as Peasant for no bonuses' },
+  { id: 'seer',    name: 'Seer',    description: 'Play as Seer to reveal a letter in each word' },
+  { id: 'knight',  name: 'Knight',  description: 'Play as Knight for an extra life' },
+]
+
 const MODAL_CONTENT = {
-  won:      { message: 'Word discovered! Continue?',       button: 'Continue' },
-  lost:     { message: 'Oh no, you failed! Try again?',    button: 'Try Again' },
-  complete: { message: 'You completed your quest! New Game?', button: 'New Game' },
+  won:      { message: 'Word discovered! Continue?',               button: 'Continue'  },
+  lost:     { message: 'Oh no, you failed! Try again?',            button: 'Try Again' },
+  complete: { message: 'You completed your quest! New Game?',      button: 'New Game'  },
+  armor:    { message: 'The knight lost his armor but continues!', button: 'Continue'  },
 }
 
+// ── Screen / class ────────────────────────────────────────────────────────────
+const screen          = ref('intro')
+const playerClass     = ref(null)
+const classesAnimated = ref(false)
+
+// ── Game state ────────────────────────────────────────────────────────────────
 const stage        = ref(0)
 const secretWord   = ref('')
 const guesses      = ref([])
@@ -100,9 +157,15 @@ const currentGuess = ref('')
 const gameState    = ref('loading')
 const inputError   = ref('')
 const modal        = ref(null)
+const hintLetter   = ref('')
+const armorGranted = ref(false)
 
-const wordLength   = computed(() => secretWord.value.length)
-const guessesLeft  = computed(() => MAX_GUESSES - guesses.value.length)
+// ── Derived ───────────────────────────────────────────────────────────────────
+const wordLength        = computed(() => secretWord.value.length)
+const currentMaxGuesses = computed(() =>
+  playerClass.value === 'knight' && armorGranted.value ? MAX_GUESSES + 3 : MAX_GUESSES
+)
+const guessesLeft  = computed(() => currentMaxGuesses.value - guesses.value.length)
 const tileFontSize = computed(() => {
   const len = wordLength.value
   if (len <= 4) return '2rem'
@@ -112,63 +175,49 @@ const tileFontSize = computed(() => {
 })
 
 // ── Evaluation ────────────────────────────────────────────────────────────────
-
 function evaluateGuess(guess) {
   const status = Array(guess.length).fill('absent')
   const pool   = secretWord.value.split('')
 
   for (let i = 0; i < guess.length; i++) {
-    if (guess[i] === pool[i]) {
-      status[i] = 'correct'
-      pool[i]   = null
-    }
+    if (guess[i] === pool[i]) { status[i] = 'correct'; pool[i] = null }
   }
   for (let i = 0; i < guess.length; i++) {
     if (status[i] === 'correct') continue
     const j = pool.indexOf(guess[i])
-    if (j !== -1) {
-      status[i] = 'present'
-      pool[j]   = null
-    }
+    if (j !== -1) { status[i] = 'present'; pool[j] = null }
   }
 
   return guess.split('').map((letter, i) => ({ letter, status: status[i] }))
 }
 
-const evaluatedRows = computed(() => guesses.value.map(evaluateGuess))
-
+const evaluatedRows  = computed(() => guesses.value.map(evaluateGuess))
 const letterStatuses = computed(() => {
   const priority = { correct: 3, present: 2, absent: 1 }
   const map = {}
-  for (const row of evaluatedRows.value) {
-    for (const { letter, status } of row) {
-      if (!map[letter] || priority[status] > priority[map[letter]]) {
-        map[letter] = status
-      }
-    }
-  }
+  for (const row of evaluatedRows.value)
+    for (const { letter, status } of row)
+      if (!map[letter] || priority[status] > priority[map[letter]]) map[letter] = status
   return map
 })
 
-// ── Tile & key helpers ────────────────────────────────────────────────────────
-
+// ── Tile / key helpers ────────────────────────────────────────────────────────
 function dotClass(i) {
-  if (i < stage.value)  return 'dot--done'
+  if (i < stage.value)   return 'dot--done'
   if (i === stage.value) return 'dot--active'
   return 'dot--pending'
 }
 
 function tileChar(row, col) {
-  if (row < guesses.value.length) return guesses.value[row][col] ?? ''
+  if (row < guesses.value.length)   return guesses.value[row][col] ?? ''
   if (row === guesses.value.length) return currentGuess.value[col] ?? ''
   return ''
 }
 
 function tileClass(row, col) {
   if (row < guesses.value.length) return `tile--${evaluatedRows.value[row][col].status}`
-  if (row === guesses.value.length && gameState.value === 'playing') {
+  if (row === guesses.value.length && gameState.value === 'playing')
     return currentGuess.value[col] ? 'tile--filled' : 'tile--empty'
-  }
   return 'tile--empty'
 }
 
@@ -178,7 +227,6 @@ function keyClass(key) {
 }
 
 // ── Input ─────────────────────────────────────────────────────────────────────
-
 function handleKey(key) {
   if (gameState.value !== 'playing') return
   inputError.value = ''
@@ -211,25 +259,45 @@ function submitGuess() {
     gameState.value = 'won'
     const isLast = stage.value === JOURNEY_LENGTH - 1
     setTimeout(() => { modal.value = isLast ? 'complete' : 'won' }, 600)
-  } else if (guesses.value.length >= MAX_GUESSES) {
+  } else if (playerClass.value === 'knight' && !armorGranted.value && guesses.value.length >= MAX_GUESSES) {
+    // Knight uses armor — grant 3 extra guesses instead of losing
+    armorGranted.value = true
+    setTimeout(() => { modal.value = 'armor' }, 600)
+  } else if (guesses.value.length >= currentMaxGuesses.value) {
     gameState.value = 'lost'
     setTimeout(() => { modal.value = 'lost' }, 600)
   }
 }
 
 // ── Modal ─────────────────────────────────────────────────────────────────────
-
 function handleModalAction() {
   if (modal.value === 'won') {
     startStage(stage.value + 1)
+  } else if (modal.value === 'armor') {
+    modal.value = null  // game continues, keyboard stays active
   } else {
-    // lost or complete → restart from the beginning
-    startStage(0)
+    // lost or complete → back to intro
+    screen.value      = 'intro'
+    playerClass.value = null
+    modal.value       = null
+    gameState.value   = 'loading'
   }
 }
 
-// ── Game lifecycle ────────────────────────────────────────────────────────────
+// ── Navigation ────────────────────────────────────────────────────────────────
+function showClassSelect() {
+  classesAnimated.value = false
+  screen.value = 'class-select'
+  nextTick(() => { classesAnimated.value = true })
+}
 
+function selectClass(cls) {
+  playerClass.value = cls
+  screen.value      = 'playing'
+  startStage(0)
+}
+
+// ── Game lifecycle ────────────────────────────────────────────────────────────
 async function startStage(stageNum) {
   gameState.value    = 'loading'
   stage.value        = stageNum
@@ -238,25 +306,24 @@ async function startStage(stageNum) {
   currentGuess.value = ''
   inputError.value   = ''
   modal.value        = null
+  armorGranted.value = false
+  hintLetter.value   = ''
 
-  const targetLength = stageNum + JOURNEY_START
   try {
-    const res = await fetch(`/api/word/random?length=${targetLength}`)
+    const res = await fetch(`/api/word/random?length=${stageNum + JOURNEY_START}`)
     if (!res.ok) throw new Error()
     const data = await res.json()
     secretWord.value = data.word.toUpperCase()
-    gameState.value  = 'playing'
+    if (playerClass.value === 'seer') {
+      const idx = Math.floor(Math.random() * secretWord.value.length)
+      hintLetter.value = secretWord.value[idx]
+    }
+    gameState.value = 'playing'
   } catch {
     gameState.value = 'error'
   }
 }
 
-onMounted(() => {
-  startStage(0)
-  window.addEventListener('keydown', onKeyDown)
-})
-
-onUnmounted(() => {
-  window.removeEventListener('keydown', onKeyDown)
-})
+onMounted(() => window.addEventListener('keydown', onKeyDown))
+onUnmounted(() => window.removeEventListener('keydown', onKeyDown))
 </script>
