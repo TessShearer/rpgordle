@@ -561,6 +561,80 @@ body {
   line-height: 1.4;
 }
 
+/* ── Testing box ─────────────────────────────────────────────────────────── */
+.testing-box {
+  position: relative;
+  border: 2px dashed var(--gs-200);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem 0.75rem;
+  text-align: center;
+}
+
+.testing-label {
+  position: absolute;
+  top: -0.65rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--gs-050);
+  padding: 0 0.5rem;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--gs-400);
+  white-space: nowrap;
+}
+
+.testing-reveal-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--gs-400);
+  margin: 0 0 0.15rem;
+}
+
+.btn-testing-action {
+  background: transparent;
+  border: 1px solid var(--gs-200);
+  border-radius: 0.3rem;
+  color: var(--gs-600);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.2rem 0.6rem;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.btn-testing-action:hover {
+  border-color: var(--gs-400);
+  color: var(--gs-800);
+}
+
+.enemy-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  text-align: left;
+}
+
+.enemy-picker-btn {
+  background: var(--gs-100);
+  border: 1px solid var(--gs-200);
+  border-radius: 0.3rem;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s;
+}
+
+.enemy-picker-btn:hover { background: var(--gs-200); }
+
+.enemy-picker-btn--active {
+  border-color: var(--gs-700);
+  font-weight: 700;
+}
+
 .debug-answer {
   font-size: 0.85rem;
   color: var(--gs-600);

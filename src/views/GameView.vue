@@ -119,7 +119,27 @@
               <button class="btn btn-reset px-4 py-2" @click="restartJourney">
                 Start journey again
               </button>
-              <p class="debug-answer mt-2">{{ secretWord.toLowerCase() }}</p>
+            </div>
+
+            <!-- Testing box -->
+            <div class="testing-box mt-3">
+              <span class="testing-label">for testing</span>
+              <p class="testing-reveal-label">reveal answer</p>
+              <p class="debug-answer mb-2">{{ secretWord.toLowerCase() }}</p>
+              <button class="btn-testing-action" @click="showEnemyPicker = !showEnemyPicker">
+                add / switch enemy
+              </button>
+              <div v-if="showEnemyPicker" class="enemy-picker mt-2">
+                <button
+                  v-for="enemy in ENEMIES"
+                  :key="enemy.id"
+                  class="enemy-picker-btn"
+                  :class="{ 'enemy-picker-btn--active': activeEnemies.some(e => e.id === enemy.id) }"
+                  @click="selectTestEnemy(enemy)"
+                >
+                  {{ enemy.name }}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -211,7 +231,8 @@ const modal        = ref(null)
 const hintLetter   = ref('')
 const hintWordType = ref('')
 const armorGranted  = ref(false)
-const activeEnemies = ref([])
+const activeEnemies   = ref([])
+const showEnemyPicker = ref(false)
 
 const latestEnemy  = computed(() => activeEnemies.value[activeEnemies.value.length - 1] ?? null)
 const obscuredCol  = computed(() => {
@@ -362,11 +383,12 @@ function handleModalAction() {
 
 // ── Navigation ────────────────────────────────────────────────────────────────
 function restartJourney() {
-  screen.value        = 'intro'
-  playerClass.value   = null
-  modal.value         = null
-  gameState.value     = 'loading'
-  activeEnemies.value = []
+  screen.value          = 'intro'
+  playerClass.value     = null
+  modal.value           = null
+  gameState.value       = 'loading'
+  activeEnemies.value   = []
+  showEnemyPicker.value = false
 }
 
 function showClassSelect() {
@@ -390,9 +412,10 @@ async function startStage(stageNum) {
   currentGuess.value = ''
   inputError.value   = ''
   modal.value        = null
-  armorGranted.value = false
-  hintLetter.value   = ''
-  hintWordType.value = ''
+  armorGranted.value    = false
+  hintLetter.value      = ''
+  hintWordType.value    = ''
+  showEnemyPicker.value = false
 
   let min, max
   if (stageNum >= JOURNEY_LENGTH - 1) {
@@ -434,6 +457,11 @@ async function startStage(stageNum) {
   } catch {
     gameState.value = 'error'
   }
+}
+
+function selectTestEnemy(enemy) {
+  activeEnemies.value = [enemy]
+  showEnemyPicker.value = false
 }
 
 async function applyAnnoyingKidGuess() {
