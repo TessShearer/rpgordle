@@ -13,13 +13,13 @@
       <div class="collapse navbar-collapse" id="navMenu">
         <ul class="navbar-nav ms-auto">
           <li class="nav-item">
-            <RouterLink class="nav-link" to="/">Word Info</RouterLink>
+            <RouterLink class="nav-link" to="/">Game</RouterLink>
           </li>
           <li class="nav-item">
             <RouterLink class="nav-link" to="/game-info">Game Info</RouterLink>
           </li>
           <li class="nav-item">
-            <RouterLink class="nav-link" to="/game">Game</RouterLink>
+            <RouterLink class="nav-link" to="/word-info">Word Info</RouterLink>
           </li>
         </ul>
       </div>

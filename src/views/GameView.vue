@@ -50,7 +50,47 @@
 
         <div v-else class="game-layout">
 
-          <!-- Left panel: class character art -->
+          <!-- Mobile-only portraits strip (hidden on desktop) -->
+          <div class="mobile-portraits">
+            <div class="portrait-slot">
+              <div class="art-placeholder art-placeholder--portrait">{{ featureArtText }}</div>
+              <template v-if="playerClass === 'seer' && hintLetter">
+                <p class="portrait-hint-label">has a...</p>
+                <p class="portrait-hint-value">{{ hintLetter }}</p>
+              </template>
+              <template v-else-if="playerClass === 'scholar' && hintWordType">
+                <p class="portrait-hint-label">is a...</p>
+                <p class="portrait-hint-value portrait-hint-value--word">{{ hintWordType }}</p>
+              </template>
+              <p class="portrait-stat">HP: {{ playerHealth }}/{{ playerMaxHealth }}</p>
+              <div class="player-health-pips portrait-pips">
+                <span
+                  v-for="n in playerMaxHealth"
+                  :key="n"
+                  class="health-pip health-pip--player"
+                  :class="{ 'health-pip--lost': n > playerHealth }"
+                ></span>
+              </div>
+            </div>
+            <div v-if="currentEnemy" class="portrait-slot">
+              <div class="art-placeholder art-placeholder--portrait">Art of {{ currentEnemy.name }}</div>
+              <p class="portrait-stat">{{ currentEnemy.name }}</p>
+              <div class="enemy-health portrait-pips">
+                <span
+                  v-for="n in currentEnemy.health"
+                  :key="n"
+                  class="health-pip"
+                  :class="{ 'health-pip--lost': n > enemyHealth }"
+                ></span>
+              </div>
+              <template v-if="dangerLetter">
+                <p class="portrait-hint-label">Danger letter</p>
+                <p class="danger-letter">{{ dangerLetter }}</p>
+              </template>
+            </div>
+          </div>
+
+          <!-- Left panel: class character art (desktop only) -->
           <aside class="game-panel game-panel--left">
             <div class="class-feature" :class="{ 'class-feature--reveal': playerClass === 'seer' || playerClass === 'scholar' }">
               <div class="art-placeholder art-placeholder--feature">{{ featureArtText }}</div>
@@ -124,11 +164,9 @@
               </div>
             </div>
 
-            <div class="text-center mt-3">
-              <button class="btn btn-reset px-4 py-2" @click="restartJourney">
-                Start journey again
-              </button>
-            </div>
+            <button class="btn btn-reset btn-restart-fixed" @click="restartJourney">
+              Start journey again
+            </button>
 
             <!-- Testing box -->
             <div class="testing-box mt-3">
@@ -166,6 +204,10 @@
                 ></span>
               </div>
               <p class="monster-text">{{ currentEnemy.effect }}</p>
+              <div v-if="dangerLetter" class="danger-display mt-1">
+                <p class="monster-text">Danger letter</p>
+                <p class="danger-letter">{{ dangerLetter }}</p>
+              </div>
             </div>
           </aside>
 
@@ -177,7 +219,11 @@
       <Transition name="modal">
         <div v-if="modal" class="modal-overlay">
           <div class="modal-card">
-            <template v-if="modal === 'encounter'">
+            <template v-if="modal === 'boss-announcement'">
+              <div class="art-placeholder art-placeholder--modal-monster my-3">Art of {{ currentBoss.name }}</div>
+              <p class="modal-message">{{ currentBoss.announcement }}</p>
+            </template>
+            <template v-else-if="modal === 'encounter'">
               <p class="modal-message">A {{ currentEnemy.name }} blocks your path!</p>
               <div class="art-placeholder art-placeholder--modal-monster my-3">Art of {{ currentEnemy.name }}</div>
               <p class="modal-submessage">{{ currentEnemy.effect }}</p>
@@ -203,10 +249,10 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
-import { CLASSES, ENEMIES } from '@/data/gameData.js'
+import { CLASSES, ENEMIES, BOSSES } from '@/data/gameData.js'
 
-const DIFFICULTY_SEQUENCE = [1, 2, 1, 2, 3]
-const JOURNEY_LENGTH      = DIFFICULTY_SEQUENCE.length
+const DIFFICULTY_SEQUENCE = [1, 2, 1, 2]
+const JOURNEY_LENGTH      = DIFFICULTY_SEQUENCE.length + 1  // 4 normal stages + 1 boss fight
 
 
 const KEY_ROWS = [
@@ -217,11 +263,12 @@ const KEY_ROWS = [
 
 
 const MODAL_CONTENT = {
-  encounter: { button: 'Begin!'    },
-  hit:       { button: 'Continue'  },
-  won:       { message: 'Enemy defeated! Continue?',               button: 'Continue'  },
-  lost:      { message: 'Oh no, you failed! Try again?',           button: 'Try Again' },
-  complete:  { message: 'You completed your quest! New Game?',     button: 'New Game'  },
+  'boss-announcement': { button: 'Begin Quest' },
+  encounter:           { button: 'Begin!'       },
+  hit:                 { button: 'Continue'     },
+  won:                 { message: 'Enemy defeated! Continue?',           button: 'Continue'  },
+  lost:                { message: 'Oh no, you failed! Try again?',       button: 'Try Again' },
+  complete:            { message: 'You completed your quest! New Game?', button: 'New Game'  },
 }
 
 // ── Screen / class ────────────────────────────────────────────────────────────
@@ -241,13 +288,15 @@ const hintLetter   = ref('')
 const hintWordType = ref('')
 const playerHealth    = ref(0)
 const playerMaxHealth = ref(0)
+const currentBoss     = ref(null)
 const currentEnemy    = ref(null)
 const enemyHealth     = ref(0)
 const hitWord         = ref('')
+const dangerLetter    = ref('')
 const showEnemyPicker = ref(false)
 
 const obscuredCol = computed(() => {
-  if (currentEnemy.value?.id !== 'shadow-sorcerer') return -1
+  if (currentBoss.value?.id !== 'shadow-sorcerer') return -1
   return Math.floor((wordLength.value - 1) / 2)
 })
 
@@ -319,6 +368,8 @@ function tileClass(row, col) {
 
 function keyClass(key) {
   if (key === 'ENTER' || key === '⌫') return 'key--action'
+  if (currentBoss.value?.id === 'shadow-sorcerer') return ''
+  if (dangerLetter.value && key === dangerLetter.value) return 'key--danger'
   return letterStatuses.value[key] ? `key--${letterStatuses.value[key]}` : ''
 }
 
@@ -365,7 +416,10 @@ function submitGuess() {
       setTimeout(() => { modal.value = 'hit' }, 600)
     }
   } else {
-    playerHealth.value -= 1
+    const doubleDamage = currentBoss.value?.id === 'gelatinous-cube'
+                         && dangerLetter.value
+                         && submitted.includes(dangerLetter.value)
+    playerHealth.value -= doubleDamage ? 2 : 1
     if (playerHealth.value <= 0) {
       gameState.value = 'lost'
       setTimeout(() => { modal.value = 'lost' }, 600)
@@ -375,7 +429,9 @@ function submitGuess() {
 
 // ── Modal ─────────────────────────────────────────────────────────────────────
 function handleModalAction() {
-  if (modal.value === 'encounter') {
+  if (modal.value === 'boss-announcement') {
+    startStage(0)
+  } else if (modal.value === 'encounter') {
     modal.value = null
     if (currentEnemy.value?.id === 'annoying-kid') {
       applyAnnoyingKidGuess()
@@ -394,8 +450,10 @@ function handleModalAction() {
     gameState.value       = 'loading'
     playerHealth.value    = 0
     playerMaxHealth.value = 0
+    currentBoss.value     = null
     currentEnemy.value    = null
     enemyHealth.value     = 0
+    dangerLetter.value    = ''
   }
 }
 
@@ -407,8 +465,10 @@ function restartJourney() {
   gameState.value       = 'loading'
   playerHealth.value    = 0
   playerMaxHealth.value = 0
+  currentBoss.value     = null
   currentEnemy.value    = null
   enemyHealth.value     = 0
+  dangerLetter.value    = ''
   showEnemyPicker.value = false
 }
 
@@ -423,18 +483,27 @@ function selectClass(cls) {
   playerClass.value     = cls
   playerHealth.value    = classData.health
   playerMaxHealth.value = classData.health
+  currentBoss.value     = BOSSES[Math.floor(Math.random() * BOSSES.length)]
   screen.value          = 'playing'
-  startStage(0)
+  gameState.value       = 'ready'
+  modal.value           = 'boss-announcement'
 }
 
 // ── Game lifecycle ────────────────────────────────────────────────────────────
 async function startStage(stageNum) {
   stage.value = stageNum
-  const required     = DIFFICULTY_SEQUENCE[stageNum]
-  const pool         = ENEMIES.filter(e => e.difficulty === required)
-  currentEnemy.value = pool[Math.floor(Math.random() * pool.length)]
-  enemyHealth.value  = currentEnemy.value.health
-  await loadWord(true)
+  const isBossFight = stageNum >= DIFFICULTY_SEQUENCE.length
+  if (isBossFight) {
+    currentEnemy.value = currentBoss.value
+    enemyHealth.value  = currentBoss.value.health
+    await loadWord(false)  // boss was already announced — skip encounter modal
+  } else {
+    const required     = DIFFICULTY_SEQUENCE[stageNum]
+    const pool         = ENEMIES.filter(e => e.difficulty === required)
+    currentEnemy.value = pool[Math.floor(Math.random() * pool.length)]
+    enemyHealth.value  = currentEnemy.value.health
+    await loadWord(true)
+  }
 }
 
 async function loadWord(showModal) {
@@ -446,9 +515,11 @@ async function loadWord(showModal) {
   modal.value        = null
   hintLetter.value      = ''
   hintWordType.value    = ''
+  dangerLetter.value    = ''
   showEnemyPicker.value = false
 
-  const [min, max] = currentEnemy.value?.id === 'boss' ? [8, 12] : [4, 7]
+  const isBossFight = stage.value >= DIFFICULTY_SEQUENCE.length
+  const [min, max]  = isBossFight ? [8, 12] : [4, 7]
 
   try {
     const length = Math.floor(Math.random() * (max - min + 1)) + min
@@ -456,6 +527,10 @@ async function loadWord(showModal) {
     if (!res.ok) throw new Error()
     const data = await res.json()
     secretWord.value = data.word.toUpperCase()
+    if (currentBoss.value?.id === 'gelatinous-cube') {
+      const alpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+      dangerLetter.value = alpha[Math.floor(Math.random() * 26)]
+    }
     if (playerClass.value === 'seer') {
       const idx = Math.floor(Math.random() * secretWord.value.length)
       hintLetter.value = secretWord.value[idx]

@@ -6,10 +6,26 @@ export const CLASSES = [
 ]
 
 export const ENEMIES = [
-  { id: 'useless-goblin', name: 'Useless Goblin', regen: 1, health: 1, effect: 'No effect', difficulty: 1 },
-  { id: 'annoying-kid', name: 'Annoying Kid', regen: 1, health: 3, effect: 'He will make your first guess for you', difficulty: 2 },
-  { id: 'shadow-sorcerer', name: 'Shadow Sorcerer', regen: 1, health: 3, effect: 'The centermost column is obscured', difficulty: 2 },
-  { id: 'cave-spider', name: 'Cave Spider', regen: 1, health: 1, effect: 'No effect', difficulty: 1 },
-  { id: 'gelatinous-cube', name: 'Gelatinous Cube', regen: 1, health: 1, effect: 'No effect', difficulty: 1 },
-  { id: 'boss', name: 'Boss', regen: 1, health: 5, effect: 'You will guess a long word', difficulty: 3 },
+  { id: 'useless-goblin', name: 'Useless Goblin', regen: 1, health: 1, effect: 'No effect',                            difficulty: 1 },
+  { id: 'cave-spider',    name: 'Cave Spider',     regen: 1, health: 1, effect: 'No effect',                            difficulty: 1 },
+  { id: 'annoying-kid',   name: 'Annoying Kid',    regen: 1, health: 3, effect: 'He will make your first guess for you', difficulty: 2 },
+]
+
+export const BOSSES = [
+  {
+    id:           'shadow-sorcerer',
+    name:         'Shadow Sorcerer',
+    health:       3,
+    regen:        0,
+    effect:       'The centermost column is obscured',
+    announcement: 'Your quest is to defeat the Shadow Sorcerer, who has cast a shadow over the center letter of your words.',
+  },
+  {
+    id:           'gelatinous-cube',
+    name:         'Gelatinous Cube',
+    health:       3,
+    regen:        0,
+    effect:       'A chosen letter deals double damage each round',
+    announcement: 'Your quest is to defeat the Gelatinous Cube. Each round it marks a letter — any guess containing that letter deals 2 damage instead of 1.',
+  },
 ]

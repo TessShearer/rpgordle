@@ -88,6 +88,13 @@ body {
   border-color: var(--gs-700);
 }
 
+.btn-restart-fixed {
+  position: fixed;
+  bottom: 1.25rem;
+  right: 1.25rem;
+  z-index: 50;
+}
+
 /* Category dropdown */
 .gs-select {
   background-color: var(--gs-100);
@@ -215,6 +222,73 @@ body {
   display: none;
 }
 
+.game-panel--left {
+  display: none;
+}
+
+/* ── Mobile portraits strip ──────────────────────────────────────────────── */
+.mobile-portraits {
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-start;
+  width: 100%;
+  padding: 0.25rem 0 0.5rem;
+  gap: 1rem;
+}
+
+.portrait-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  text-align: center;
+  flex: 1;
+}
+
+.art-placeholder--portrait {
+  width: 80px;
+  height: 80px;
+  font-size: 0.55rem;
+}
+
+.portrait-stat {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--gs-600);
+  margin: 0;
+}
+
+.portrait-hint-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--gs-600);
+  margin: 0;
+}
+
+.portrait-hint-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--gs-900);
+  line-height: 1;
+  margin: 0;
+}
+
+.portrait-hint-value--word {
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.portrait-pips {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 100px;
+  margin: 0;
+}
+
 @media (min-width: 860px) {
   .game-wrapper {
     max-width: 860px;
@@ -244,6 +318,14 @@ body {
 
   .game-panel--right {
     display: flex;
+  }
+
+  .game-panel--left {
+    display: flex;
+  }
+
+  .mobile-portraits {
+    display: none;
   }
 
   /* Non-seer: art stacks in a column, centered */
@@ -378,6 +460,11 @@ body {
 .key--correct { background: #538d4e; color: #fff; }
 .key--present { background: #b59f3b; color: #fff; }
 .key--absent  { background: var(--gs-600); color: #fff; }
+.key--danger  {
+  background: #19d090;
+  color: #fff;
+  box-shadow: 0 0 10px 4px rgba(137, 240, 209, 0.85), 0 0 20px 6px rgba(13, 115, 119, 0.45);
+}
 
 .key:hover  { filter: brightness(0.88); }
 .key:active { filter: brightness(0.75); }
@@ -713,4 +800,122 @@ body {
   color: var(--gs-600);
   margin: 0;
   line-height: 1.4;
+}
+
+.danger-display { text-align: center; }
+
+.danger-letter {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #0d7377;
+  text-shadow: 0 0 10px rgba(13, 115, 119, 0.7), 0 0 22px rgba(13, 115, 119, 0.4);
+  line-height: 1;
+  margin: 0;
+}
+
+/* ── Info page extras ────────────────────────────────────────────────────── */
+.info-body {
+  font-size: 0.9rem;
+  color: var(--gs-700);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.info-stat {
+  font-size: 0.75rem;
+  color: var(--gs-400);
+  margin: 0.25rem 0 0;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ── Note sections ───────────────────────────────────────────────────────── */
+.note-section {
+  border: 2px solid var(--gs-200);
+  border-radius: 0.5rem;
+  padding: 1rem 1.25rem;
+  background: var(--gs-050);
+}
+
+.note-section-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--gs-600);
+  margin: 0 0 0.75rem;
+}
+
+.note-input-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.note-input {
+  flex: 1;
+  padding: 0.4rem 0.65rem;
+  border: 1px solid var(--gs-200);
+  border-radius: 0.4rem;
+  font-size: 0.9rem;
+  color: var(--gs-900);
+  background: #fff;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.note-input:focus { border-color: var(--gs-600); }
+
+.note-add-btn {
+  font-size: 0.85rem;
+  padding: 0.4rem 0.9rem;
+  white-space: nowrap;
+}
+
+.note-add-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.notes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.note-item {
+  background: #fff;
+  border: 1px solid var(--gs-200);
+  border-radius: 0.35rem;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.9rem;
+  color: var(--gs-800);
+  line-height: 1.4;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.note-text { flex: 1; }
+
+.note-delete-btn {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: var(--gs-400);
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 0 0.1rem;
+  line-height: 1;
+  transition: color 0.15s;
+}
+
+.note-delete-btn:hover { color: #b33a2e; }
+
+.notes-empty {
+  font-size: 0.8rem;
+  color: var(--gs-400);
+  margin: 0;
+  text-align: center;
+  padding: 0.4rem 0;
 }
