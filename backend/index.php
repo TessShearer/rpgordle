@@ -76,8 +76,9 @@ if ($uri === 'api/word/random' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     $pos     = $_GET['pos'] ?? '';
     if (!in_array($pos, $allowed_pos)) $pos = '';
 
-    $length  = rand(4, 8);
-    $pattern = str_repeat('?', $length);
+    $requested = intval($_GET['length'] ?? 0);
+    $length    = ($requested >= 3 && $requested <= 12) ? $requested : rand(4, 8);
+    $pattern   = str_repeat('?', $length);
 
     // md=d (definitions) p (parts of speech) f (frequency) s (syllables)
     // max=200: results are frequency-ordered so the bottom of a larger list would only be rare words

@@ -192,3 +192,54 @@ body {
 
 .key:hover  { filter: brightness(0.88); }
 .key:active { filter: brightness(0.75); }
+
+/* Journey progress dots */
+.journey-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.journey-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.dot--done    { background: #538d4e; }
+.dot--active  { background: var(--gs-800); }
+.dot--pending { background: var(--gs-200); border: 1px solid var(--gs-400); }
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal-card {
+  background: #fff;
+  border-radius: 0.75rem;
+  padding: 2.5rem 2rem;
+  text-align: center;
+  max-width: 320px;
+  width: 90%;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+}
+
+.modal-message {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--gs-900);
+  margin-bottom: 1.5rem;
+}
+
+.modal-enter-active,
+.modal-leave-active { transition: opacity 0.2s ease; }
+.modal-enter-from,
+.modal-leave-to     { opacity: 0; }

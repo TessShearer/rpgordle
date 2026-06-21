@@ -8,17 +8,22 @@
 
       <div v-else-if="gameState === 'error'" class="text-center py-5">
         <p class="text-danger mb-3">Could not load a word. Make sure the PHP server is running.</p>
-        <button class="btn btn-press px-4" @click="startGame">Try Again</button>
+        <button class="btn btn-press px-4" @click="startStage(stage)">Try Again</button>
       </div>
 
       <template v-else>
-        <!-- Status -->
+        <!-- Journey progress -->
         <div class="text-center mb-3">
-          <p v-if="gameState === 'won'" class="game-status won">You got it!</p>
-          <p v-else-if="gameState === 'lost'" class="game-status lost">
-            The word was <strong>{{ secretWord.toLowerCase() }}</strong>
-          </p>
-          <p v-else class="game-meta">
+          <p class="game-meta mb-2">Word {{ stage + 1 }} of {{ JOURNEY_LENGTH }}</p>
+          <div class="journey-dots mb-2">
+            <span
+              v-for="i in JOURNEY_LENGTH"
+              :key="i"
+              class="journey-dot"
+              :class="dotClass(i - 1)"
+            ></span>
+          </div>
+          <p class="game-meta">
             {{ wordLength }}-letter word &middot; {{ guessesLeft }} guess{{ guessesLeft !== 1 ? 'es' : '' }} left
           </p>
         </div>
@@ -51,11 +56,19 @@
             >{{ key }}</button>
           </div>
         </div>
-
-        <div class="text-center mt-4">
-          <button class="btn btn-reset px-4 py-2" @click="startGame">New Game</button>
-        </div>
       </template>
+
+      <!-- Modal -->
+      <Transition name="modal">
+        <div v-if="modal" class="modal-overlay">
+          <div class="modal-card">
+            <p class="modal-message">{{ MODAL_CONTENT[modal].message }}</p>
+            <button class="btn btn-press px-5 py-2" @click="handleModalAction">
+              {{ MODAL_CONTENT[modal].button }}
+            </button>
+          </div>
+        </div>
+      </Transition>
 
     </div>
   </main>
@@ -64,27 +77,42 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 
-const MAX_GUESSES = 6
+const MAX_GUESSES     = 6
+const JOURNEY_LENGTH  = 8
+const JOURNEY_START   = 3  // first word is 3 letters, last is 10
+
 const KEY_ROWS = [
   ['Q','W','E','R','T','Y','U','I','O','P'],
   ['A','S','D','F','G','H','J','K','L'],
   ['ENTER','Z','X','C','V','B','N','M','⌫'],
 ]
 
+const MODAL_CONTENT = {
+  won:      { message: 'Word discovered! Continue?',       button: 'Continue' },
+  lost:     { message: 'Oh no, you failed! Try again?',    button: 'Try Again' },
+  complete: { message: 'You completed your quest! New Game?', button: 'New Game' },
+}
+
+const stage        = ref(0)
 const secretWord   = ref('')
 const guesses      = ref([])
 const currentGuess = ref('')
 const gameState    = ref('loading')
 const inputError   = ref('')
+const modal        = ref(null)
 
 const wordLength   = computed(() => secretWord.value.length)
 const guessesLeft  = computed(() => MAX_GUESSES - guesses.value.length)
 const tileFontSize = computed(() => {
   const len = wordLength.value
-  return len <= 4 ? '2rem' : len <= 6 ? '1.75rem' : '1.4rem'
+  if (len <= 4) return '2rem'
+  if (len <= 6) return '1.6rem'
+  if (len <= 8) return '1.3rem'
+  return '1.1rem'
 })
 
-// Evaluate a guess: two-pass algorithm handles duplicate letters correctly
+// ── Evaluation ────────────────────────────────────────────────────────────────
+
 function evaluateGuess(guess) {
   const status = Array(guess.length).fill('absent')
   const pool   = secretWord.value.split('')
@@ -109,7 +137,6 @@ function evaluateGuess(guess) {
 
 const evaluatedRows = computed(() => guesses.value.map(evaluateGuess))
 
-// Best status per letter, used to colour the keyboard
 const letterStatuses = computed(() => {
   const priority = { correct: 3, present: 2, absent: 1 }
   const map = {}
@@ -122,6 +149,14 @@ const letterStatuses = computed(() => {
   }
   return map
 })
+
+// ── Tile & key helpers ────────────────────────────────────────────────────────
+
+function dotClass(i) {
+  if (i < stage.value)  return 'dot--done'
+  if (i === stage.value) return 'dot--active'
+  return 'dot--pending'
+}
 
 function tileChar(row, col) {
   if (row < guesses.value.length) return guesses.value[row][col] ?? ''
@@ -142,6 +177,8 @@ function keyClass(key) {
   return letterStatuses.value[key] ? `key--${letterStatuses.value[key]}` : ''
 }
 
+// ── Input ─────────────────────────────────────────────────────────────────────
+
 function handleKey(key) {
   if (gameState.value !== 'playing') return
   inputError.value = ''
@@ -156,7 +193,7 @@ function handleKey(key) {
 
 function onKeyDown(e) {
   if (e.key === 'Backspace') return handleKey('⌫')
-  if (e.key === 'Enter') return handleKey('ENTER')
+  if (e.key === 'Enter')     return handleKey('ENTER')
   if (/^[a-zA-Z]$/.test(e.key)) handleKey(e.key.toUpperCase())
 }
 
@@ -165,26 +202,46 @@ function submitGuess() {
     inputError.value = `Guess must be ${wordLength.value} letters`
     return
   }
+
   const submitted    = currentGuess.value
   guesses.value      = [...guesses.value, submitted]
   currentGuess.value = ''
 
   if (submitted === secretWord.value) {
     gameState.value = 'won'
+    const isLast = stage.value === JOURNEY_LENGTH - 1
+    setTimeout(() => { modal.value = isLast ? 'complete' : 'won' }, 600)
   } else if (guesses.value.length >= MAX_GUESSES) {
     gameState.value = 'lost'
+    setTimeout(() => { modal.value = 'lost' }, 600)
   }
 }
 
-async function startGame() {
+// ── Modal ─────────────────────────────────────────────────────────────────────
+
+function handleModalAction() {
+  if (modal.value === 'won') {
+    startStage(stage.value + 1)
+  } else {
+    // lost or complete → restart from the beginning
+    startStage(0)
+  }
+}
+
+// ── Game lifecycle ────────────────────────────────────────────────────────────
+
+async function startStage(stageNum) {
   gameState.value    = 'loading'
+  stage.value        = stageNum
   secretWord.value   = ''
   guesses.value      = []
   currentGuess.value = ''
   inputError.value   = ''
+  modal.value        = null
 
+  const targetLength = stageNum + JOURNEY_START
   try {
-    const res = await fetch('/api/word/random')
+    const res = await fetch(`/api/word/random?length=${targetLength}`)
     if (!res.ok) throw new Error()
     const data = await res.json()
     secretWord.value = data.word.toUpperCase()
@@ -195,7 +252,7 @@ async function startGame() {
 }
 
 onMounted(() => {
-  startGame()
+  startStage(0)
   window.addEventListener('keydown', onKeyDown)
 })
 
