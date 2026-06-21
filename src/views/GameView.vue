@@ -43,7 +43,7 @@
           <p class="game-meta">Loading word…</p>
         </div>
 
-        <div v-else-if="gameState === 'error'" class="text-center py-5">
+        <div v-else-if="gameState === 'error'" class="text-center py-5"> 
           <p class="text-danger mb-3">Could not load a word. Make sure the PHP server is running.</p>
           <button class="btn btn-press px-4" @click="startStage(stage)">Try Again</button>
         </div>
