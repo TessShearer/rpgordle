@@ -95,6 +95,13 @@ body {
   z-index: 50;
 }
 
+@media (max-width: 859px) {
+  .btn-restart-fixed {
+    top: auto;
+    bottom: 1.25rem;
+  }
+}
+
 /* Category dropdown */
 .gs-select {
   background-color: var(--gs-100);
