@@ -1,5 +1,5 @@
 <template>
-  <div class="enemy-intro">
+  <div class="enemy-intro" :class="{ 'skip-anim': skipAnim }" @animationend="allVisible = true">
     <h3>{{ headline }}</h3>
 
     <div class="enemy-intro-panel">
@@ -31,13 +31,23 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 
 const props = defineProps({
   enemy: { type: Object, required: true },
 })
 
 defineEmits(['begin'])
+
+const allVisible = ref(false)
+const skipAnim   = ref(false)
+
+function skip() {
+  skipAnim.value   = true
+  allVisible.value = true
+}
+
+defineExpose({ allVisible, skip })
 
 const enemyImage = computed(() => null)
 

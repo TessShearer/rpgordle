@@ -1,5 +1,5 @@
 <template>
-  <div class="boss-intro">
+  <div class="boss-intro" :class="{ 'skip-anim': skipAnim }">
     <div class="boss-intro-panels">
 
       <div class="intro-panel intro-panel--1">
@@ -15,7 +15,7 @@
         <p class="intro-caption">{{ boss.announcement }}</p>
       </div>
 
-      <div class="intro-panel intro-panel--3">
+      <div class="intro-panel intro-panel--3" @animationend="allVisible = true">
         <img v-if="classImage" :src="classImage" :alt="classLabel" class="intro-img" />
         <div v-else class="art-placeholder art-placeholder--intro">Art of {{ classLabel }}</div>
         <p class="intro-caption">Fight your way to the boss and defeat them to save the kingdom!</p>
@@ -29,7 +29,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import shadowPower from '@/assets/shadow-sorcerer-power.png'
 import cubePower   from '@/assets/gelatinuos-cube-power.png'
 import { CHARACTER_IMAGES } from '@/assets/characterImages.js'
@@ -45,6 +45,16 @@ const props = defineProps({
 })
 
 defineEmits(['begin'])
+
+const allVisible = ref(false)
+const skipAnim   = ref(false)
+
+function skip() {
+  skipAnim.value   = true
+  allVisible.value = true
+}
+
+defineExpose({ allVisible, skip })
 
 const powerImage = computed(() => POWER_IMAGES[props.boss.id] ?? null)
 const classImage = computed(() => CHARACTER_IMAGES[props.playerClass] ?? null)

@@ -883,8 +883,58 @@ body {
 }
 
 .enemy-intro-begin {
-  opacity: 0;
-  animation: fadeIn 1s ease forwards 2.5s;
+  opacity: 1;
+}
+
+.won-message-inline {
+  text-align: center;
+  padding: 0.5rem 0;
+}
+
+.won-progress-track {
+  margin-top: 0.6rem;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--gs-200);
+  overflow: hidden;
+}
+
+@keyframes progress-fill {
+  from { width: 0; }
+  to   { width: 100%; }
+}
+
+.won-progress-fill {
+  height: 100%;
+  width: 0;
+  background: var(--gs-800);
+  border-radius: 2px;
+  animation: progress-fill 1.5s ease forwards;
+}
+
+.won-message-text {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--gs-900);
+  margin: 0;
+}
+
+.won-message-sub {
+  font-size: 0.9rem;
+  color: #538d4e;
+  font-weight: 600;
+  margin: 0;
+}
+
+.boss-intro.skip-anim .intro-panel,
+.boss-intro.skip-anim .intro-begin {
+  opacity: 1;
+  animation: none;
+}
+
+.enemy-intro.skip-anim {
+  opacity: 1;
+  animation: none;
 }
 
 .modal-word {

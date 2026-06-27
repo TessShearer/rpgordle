@@ -52,6 +52,7 @@
       <!-- ── Boss Intro ────────────────────────────────────────────────── -->
       <BossIntro
         v-else-if="screen === 'boss-intro'"
+        ref="bossIntroRef"
         :boss="currentBoss"
         :player-class="playerClass"
         @begin="beginJourney"
@@ -60,8 +61,17 @@
       <!-- ── Enemy Intro ───────────────────────────────────────────────── -->
       <EnemyIntro
         v-else-if="screen === 'enemy-intro'"
+        ref="enemyIntroRef"
         :enemy="currentEnemy"
         @begin="beginEnemyEncounter"
+      />
+
+      <!-- ── Boss Fight Intro ──────────────────────────────────────────── -->
+      <BossFightIntro
+        v-else-if="screen === 'boss-fight-intro'"
+        ref="bossFightIntroRef"
+        :boss="currentBoss"
+        @begin="beginBossFight"
       />
 
       <!-- ── Game ───────────────────────────────────────────────────────── -->
@@ -202,6 +212,16 @@
               </template>
             </div>
 
+            <Transition name="modal">
+              <div v-if="wonMessage" class="won-message-inline">
+                <p class="won-message-text">Word guessed!</p>
+                <p v-if="lastRegen > 0" class="won-message-sub">You healed {{ lastRegen }} HP!</p>
+                <div class="won-progress-track">
+                  <div class="won-progress-fill"></div>
+                </div>
+              </div>
+            </Transition>
+
             <p v-if="inputError" class="text-danger text-center small mb-2">{{ inputError }}</p>
 
             <!-- Submit + Keyboard -->
@@ -265,10 +285,6 @@
               <div class="art-placeholder art-placeholder--modal-monster my-3">Art of {{ currentBoss.name }}</div>
               <p class="modal-message">{{ currentBoss.announcement }}</p>
             </template>
-            <template v-else-if="modal === 'boss-fight'">
-              <div class="art-placeholder art-placeholder--modal-monster my-3">Art of {{ currentBoss.name }}</div>
-              <p class="modal-message">{{ currentBoss.enhancedAnnouncement }}</p>
-            </template>
 <template v-else-if="modal === 'hit'">
               <div class="art-placeholder art-placeholder--modal-monster my-3">Art of {{ currentEnemy.name }} (damaged)</div>
               <p class="modal-message">{{ hitWord }} guessed, 1 damage!</p>
@@ -305,8 +321,7 @@
             </template>
             <template v-else>
               <p class="modal-message">{{ MODAL_CONTENT[modal].message }}</p>
-              <p v-if="modal === 'won' && lastRegen > 0" class="modal-submessage">You healed {{ lastRegen }} HP!</p>
-              <p v-if="modal === 'lost'" class="modal-word">{{ secretWord.toLowerCase() }}</p>
+<p v-if="modal === 'lost'" class="modal-word">{{ secretWord.toLowerCase() }}</p>
             </template>
             <button v-if="modal !== 'shop' && modal !== 'use-item'" class="btn btn-press px-5 py-2 mt-3" @click="handleModalAction">
               {{ MODAL_CONTENT[modal].button }}
@@ -322,8 +337,9 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { CLASSES, ENEMIES, MINIBOSSES, BOSSES, SHOP_ITEMS } from '@/data/gameData.js'
-import BossIntro   from '@/components/BossIntro.vue'
-import EnemyIntro  from '@/components/EnemyIntro.vue'
+import BossIntro      from '@/components/BossIntro.vue'
+import BossFightIntro from '@/components/BossFightIntro.vue'
+import EnemyIntro     from '@/components/EnemyIntro.vue'
 import { CHARACTER_IMAGES } from '@/assets/characterImages.js'
 
 const STAGE_SEQUENCE = ['enemy', 'miniboss', 'enemy']
@@ -338,11 +354,8 @@ const KEY_ROWS = [
 
 
 const MODAL_CONTENT = {
-  'boss-announcement': { button: 'Begin Quest'    },
-  'boss-fight':        { button: 'Face the Boss!' },
-  encounter:           { button: 'Begin!'          },
-  hit:                 { button: 'Continue'        },
-  won:                 { message: 'Enemy defeated! Continue?',           button: 'Continue'  },
+  'boss-announcement': { button: 'Begin Quest' },
+  hit:                 { button: 'Continue'    },
   lost:                { message: 'Oh no, you failed! Try again?',       button: 'Try Again' },
   complete:            { message: 'You completed your quest! New Game?', button: 'New Game'  },
 }
@@ -352,6 +365,10 @@ const screen          = ref('intro')
 const playerClass     = ref(null)
 const classesAnimated = ref(false)
 const selectedClass   = ref(null)
+const bossIntroRef      = ref(null)
+const bossFightIntroRef = ref(null)
+const enemyIntroRef     = ref(null)
+const wonMessage        = ref(false)
 
 // ── Game state ────────────────────────────────────────────────────────────────
 const stage        = ref(0)
@@ -476,6 +493,44 @@ function handleKey(key) {
 }
 
 function onKeyDown(e) {
+  if (screen.value === 'intro') {
+    if (e.key === 'Enter') showClassSelect()
+    return
+  }
+  if (screen.value === 'class-select') {
+    const idx = CLASSES.findIndex(c => c.id === selectedClass.value)
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+      e.preventDefault()
+      selectedClass.value = CLASSES[(idx + 1) % CLASSES.length].id
+    } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+      e.preventDefault()
+      selectedClass.value = CLASSES[idx < 1 ? CLASSES.length - 1 : idx - 1].id
+    } else if (e.key === 'Enter' && selectedClass.value) {
+      selectClass(selectedClass.value)
+    }
+    return
+  }
+  if (screen.value === 'boss-intro') {
+    if (e.key === 'Enter') {
+      if (bossIntroRef.value?.allVisible) beginJourney()
+      else bossIntroRef.value?.skip()
+    }
+    return
+  }
+  if (screen.value === 'boss-fight-intro') {
+    if (e.key === 'Enter') {
+      if (bossFightIntroRef.value?.allVisible) beginBossFight()
+      else bossFightIntroRef.value?.skip()
+    }
+    return
+  }
+  if (screen.value === 'enemy-intro') {
+    if (e.key === 'Enter') {
+      if (enemyIntroRef.value?.allVisible) beginEnemyEncounter()
+      else enemyIntroRef.value?.skip()
+    }
+    return
+  }
   if (e.key === 'Backspace') return handleKey('⌫')
   if (e.key === 'Enter')     return handleKey('ENTER')
   if (/^[a-zA-Z]$/.test(e.key)) handleKey(e.key.toUpperCase())
@@ -498,11 +553,23 @@ function submitGuess() {
       lastRegen.value = Math.min(regen, playerMaxHealth.value - playerHealth.value)
       playerHealth.value = Math.min(playerMaxHealth.value, playerHealth.value + regen)
       gameState.value = 'won'
-      const isLast = stage.value === JOURNEY_LENGTH - 1
+      const isLast     = stage.value === JOURNEY_LENGTH - 1
       const isMiniboss = MINIBOSSES.some(m => m.id === currentEnemy.value?.id)
-      setTimeout(() => {
-        modal.value = isLast ? 'complete' : isMiniboss ? 'shop' : 'won'
-      }, 600)
+      if (isLast) {
+        setTimeout(() => { modal.value = 'complete' }, 600)
+      } else if (isMiniboss) {
+        wonMessage.value = true
+        setTimeout(() => {
+          wonMessage.value = false
+          modal.value = 'shop'
+        }, 1800)
+      } else {
+        wonMessage.value = true
+        setTimeout(() => {
+          wonMessage.value = false
+          startStage(stage.value + 1)
+        }, 1800)
+      }
     } else {
       // Hit but not dead — show damage modal, then load a fresh word
       hitWord.value   = submitted.toLowerCase()
@@ -528,12 +595,8 @@ function submitGuess() {
 function handleModalAction() {
   if (modal.value === 'boss-announcement') {
     startStage(0)
-  } else if (modal.value === 'boss-fight') {
-    loadWord(false)
   } else if (modal.value === 'hit') {
     loadWord(false)
-  } else if (modal.value === 'won') {
-    startStage(stage.value + 1)
   } else {
     // lost or complete → back to intro
     screen.value          = 'intro'
@@ -600,6 +663,11 @@ function beginEnemyEncounter() {
   }
 }
 
+function beginBossFight() {
+  screen.value = 'playing'
+  loadWord(false)
+}
+
 // ── Game lifecycle ────────────────────────────────────────────────────────────
 async function startStage(stageNum) {
   stage.value = stageNum
@@ -607,7 +675,7 @@ async function startStage(stageNum) {
   if (isBossFight) {
     currentEnemy.value = currentBoss.value
     enemyHealth.value  = currentBoss.value.health
-    modal.value        = 'boss-fight'
+    screen.value       = 'boss-fight-intro'
   } else {
     const stageType    = STAGE_SEQUENCE[stageNum]
     const pool         = stageType === 'miniboss' ? MINIBOSSES : ENEMIES

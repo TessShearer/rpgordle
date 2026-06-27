@@ -46,7 +46,7 @@ export const BOSSES = [
     regen:                0,
     effect:               'The centermost column is obscured',
     announcement:         'Your quest is to defeat the Shadow Sorcerer, who has cast a shadow over the center letter of your words.',
-    enhancedAnnouncement: 'You face the Shadow Sorcerer directly! The darkness deepens — now TWO columns are shrouded from your sight.',
+    enhancedAnnouncement: 'You face the Shadow Sorcerer directly! Now TWO columns are shrouded from your sight.',
   },
   {
     id:                   'gelatinous-cube',
@@ -55,6 +55,6 @@ export const BOSSES = [
     regen:                0,
     effect:               'A chosen letter deals double damage each round',
     announcement:         'Your quest is to defeat the Gelatinous Cube. Each round it marks a letter — any guess containing that letter deals 2 damage instead of 1.',
-    enhancedAnnouncement: 'You face the Gelatinous Cube directly! It seethes with power — now THREE letters are marked for double damage each round.',
+    enhancedAnnouncement: 'You face the Gelatinous Cube directly! Now THREE letters are marked for double damage each round.',
   },
 ]
