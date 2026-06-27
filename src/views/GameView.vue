@@ -57,6 +57,13 @@
         @begin="beginJourney"
       />
 
+      <!-- ── Enemy Intro ───────────────────────────────────────────────── -->
+      <EnemyIntro
+        v-else-if="screen === 'enemy-intro'"
+        :enemy="currentEnemy"
+        @begin="beginEnemyEncounter"
+      />
+
       <!-- ── Game ───────────────────────────────────────────────────────── -->
       <template v-else>
 
@@ -262,12 +269,7 @@
               <div class="art-placeholder art-placeholder--modal-monster my-3">Art of {{ currentBoss.name }}</div>
               <p class="modal-message">{{ currentBoss.enhancedAnnouncement }}</p>
             </template>
-            <template v-else-if="modal === 'encounter'">
-              <p class="modal-message">{{ articleFor(currentEnemy.name) }} {{ currentEnemy.name }} blocks your path!</p>
-              <div class="art-placeholder art-placeholder--modal-monster my-3">Art of {{ currentEnemy.name }}</div>
-              <p class="modal-submessage">{{ currentEnemy.effect }}</p>
-            </template>
-            <template v-else-if="modal === 'hit'">
+<template v-else-if="modal === 'hit'">
               <div class="art-placeholder art-placeholder--modal-monster my-3">Art of {{ currentEnemy.name }} (damaged)</div>
               <p class="modal-message">{{ hitWord }} guessed, 1 damage!</p>
             </template>
@@ -320,7 +322,8 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { CLASSES, ENEMIES, MINIBOSSES, BOSSES, SHOP_ITEMS } from '@/data/gameData.js'
-import BossIntro from '@/components/BossIntro.vue'
+import BossIntro   from '@/components/BossIntro.vue'
+import EnemyIntro  from '@/components/EnemyIntro.vue'
 import { CHARACTER_IMAGES } from '@/assets/characterImages.js'
 
 const STAGE_SEQUENCE = ['enemy', 'miniboss', 'enemy']
@@ -527,13 +530,6 @@ function handleModalAction() {
     startStage(0)
   } else if (modal.value === 'boss-fight') {
     loadWord(false)
-  } else if (modal.value === 'encounter') {
-    modal.value = null
-    if (currentEnemy.value?.id === 'annoying-kid') {
-      applyAnnoyingKidGuess()
-    } else {
-      gameState.value = 'playing'
-    }
   } else if (modal.value === 'hit') {
     loadWord(false)
   } else if (modal.value === 'won') {
@@ -593,6 +589,15 @@ function selectClass(cls) {
 function beginJourney() {
   screen.value = 'playing'
   startStage(0)
+}
+
+function beginEnemyEncounter() {
+  screen.value = 'playing'
+  if (currentEnemy.value?.id === 'annoying-kid') {
+    applyAnnoyingKidGuess()
+  } else {
+    gameState.value = 'playing'
+  }
 }
 
 // ── Game lifecycle ────────────────────────────────────────────────────────────
@@ -657,7 +662,7 @@ async function loadWord(showModal) {
     }
     gameState.value = 'ready'
     if (showModal) {
-      modal.value = 'encounter'
+      screen.value = 'enemy-intro'
     } else if (currentEnemy.value?.id === 'annoying-kid') {
       applyAnnoyingKidGuess()
     } else {
