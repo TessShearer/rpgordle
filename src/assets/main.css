@@ -501,8 +501,8 @@ body {
 
 .tile--filled    { border-color: var(--gs-600); }
 .tile--obscured  { background: #111; border-color: #111; color: transparent; cursor: default; }
-.tile--correct { border-color: #538d4e; color: #7ab574; background: rgba(83,141,78,0.07); box-shadow: 0 0 8px 3px rgba(83,141,78,0.28); }
-.tile--present { border-color: #b59f3b; color: #cdb84a; background: rgba(181,159,59,0.07); box-shadow: 0 0 8px 3px rgba(181,159,59,0.28); }
+.tile--correct { border-color: #538d4e; color: #538d4e; background: rgba(83,141,78,0.25); box-shadow: 0 0 8px 3px rgba(83,141,78,0.28); }
+.tile--present { border-color: #b59f3b; color: #b59f3b; background: rgba(181,159,59,0.25); box-shadow: 0 0 8px 3px rgba(181,159,59,0.28); }
 .tile--absent  { border-color: var(--gs-400); color: #adadad; background: rgba(0,0,0,0.03); }
 
 /* Keyboard */
@@ -538,9 +538,9 @@ body {
 .key--present { background: #b59f3b; color: #fff; }
 .key--absent  { background: var(--gs-600); color: #fff; }
 .key--danger  {
-  background: #19d090;
+  background: #58edcd;
   color: #fff;
-  box-shadow: 0 0 10px 4px rgba(137, 240, 209, 0.85), 0 0 20px 6px rgba(13, 115, 119, 0.45);
+  box-shadow: 0 0 10px 4px rgba(164, 250, 224, 0.85), 0 0 20px 6px rgba(13, 115, 119, 0.45);
 }
 
 .key:hover  { filter: brightness(0.88); }
@@ -616,21 +616,46 @@ body {
 }
 
 .shop-item {
+  width: 100px;
+  height: 140px;
+  perspective: 600px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.shop-item-inner {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.45s ease;
+  border-radius: 0.5rem;
+}
+
+.shop-item:hover .shop-item-inner {
+  transform: rotateY(180deg);
+}
+
+.shop-item-front,
+.shop-item-back {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: 0.5rem;
+  border: 2px solid var(--gs-200);
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
   padding: 0.75rem;
-  border: 2px solid var(--gs-200);
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: border-color 0.15s, transform 0.15s;
-  width: 100px;
 }
 
-.shop-item:hover {
-  border-color: #0d7377;
-  transform: translateY(-3px);
+.shop-item-back {
+  transform: rotateY(180deg);
+  background: var(--gs-800);
+  border-color: var(--gs-700);
 }
 
 .art-placeholder--item {
@@ -645,6 +670,14 @@ body {
   text-align: center;
   color: var(--gs-900);
   margin: 0;
+}
+
+.shop-item-desc {
+  font-size: 0.78rem;
+  text-align: center;
+  color: var(--gs-100);
+  margin: 0;
+  line-height: 1.4;
 }
 
 .inventory-list {

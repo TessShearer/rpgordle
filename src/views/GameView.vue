@@ -281,8 +281,15 @@
                   class="shop-item"
                   @click="buyItem(item)"
                 >
-                  <div class="art-placeholder art-placeholder--item">{{ item.name }}</div>
-                  <p class="shop-item-name">{{ item.name }}</p>
+                  <div class="shop-item-inner">
+                    <div class="shop-item-front">
+                      <div class="art-placeholder art-placeholder--item">{{ item.name }}</div>
+                      <p class="shop-item-name">{{ item.name }}</p>
+                    </div>
+                    <div class="shop-item-back">
+                      <p class="shop-item-desc">{{ item.description }}</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </template>
