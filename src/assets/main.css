@@ -1148,19 +1148,19 @@ body {
 }
 
 .health-pip {
-  width: 13px;
-  height: 13px;
-  border-radius: 50%;
-  background: #c0392b;
-  transition: background 0.2s;
+  font-size: 13px;
+  line-height: 1;
+  color: #27ae60;
+  transition: color 0.2s;
+  user-select: none;
 }
 
-.health-pip--lost {
-  background: var(--gs-200);
-}
+.health-pip::before { content: '♥'; }
 
-.health-pip--player { width: 10px; height: 10px; background: #27ae60; }
-.health-pip--player.health-pip--lost { background: var(--gs-200); }
+.health-pip--lost { color: var(--gs-200); }
+
+.health-pip--player { font-size: 11px; color: #27ae60; }
+.health-pip--player.health-pip--lost { color: #df2020; }
 
 .player-health { text-align: center; }
 .player-health-pips {

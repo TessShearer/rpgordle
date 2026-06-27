@@ -12,7 +12,7 @@
           <span class="enemy-stat-label">HP</span>
           <span class="enemy-stat-value">{{ enemy.health }}</span>
         </div>
-        <div class="enemy-stat-row">
+        <div v-if="enemy.effect && enemy.effect !== 'No effect'" class="enemy-stat-row">
           <span class="enemy-stat-label">Ability</span>
           <span class="enemy-stat-value">{{ enemy.effect }}</span>
         </div>

@@ -214,7 +214,7 @@
 
             <Transition name="modal">
               <div v-if="wonMessage" class="won-message-inline">
-                <p class="won-message-text">Word guessed!</p>
+                <p class="won-message-text">Word guessed!<span v-if="wonDamage"> 1 damage!</span></p>
                 <p v-if="lastRegen > 0" class="won-message-sub">You healed {{ lastRegen }} HP!</p>
                 <div class="won-progress-track">
                   <div class="won-progress-fill"></div>
@@ -352,7 +352,7 @@ const KEY_ROWS = [
 const MODAL_CONTENT = {
   'boss-announcement': { button: 'Begin Quest' },
   lost:                { message: 'Oh no, you failed! Try again?',       button: 'Try Again' },
-  complete:            { message: 'You completed your quest! New Game?', button: 'New Game'  },
+  complete:            { message: 'You completed your quest and the realm has been saved! New Game?', button: 'New Game'  },
 }
 
 // ── Screen / class ────────────────────────────────────────────────────────────
@@ -364,6 +364,7 @@ const bossIntroRef      = ref(null)
 const bossFightIntroRef = ref(null)
 const enemyIntroRef     = ref(null)
 const wonMessage        = ref(false)
+const wonDamage         = ref(false)
 
 // ── Game state ────────────────────────────────────────────────────────────────
 const stage        = ref(0)
@@ -553,12 +554,14 @@ function submitGuess() {
       if (isLast) {
         setTimeout(() => { modal.value = 'complete' }, 600)
       } else if (isMiniboss) {
+        wonDamage.value  = false
         wonMessage.value = true
         setTimeout(() => {
           wonMessage.value = false
           modal.value = 'shop'
         }, 1800)
       } else {
+        wonDamage.value  = false
         wonMessage.value = true
         setTimeout(() => {
           wonMessage.value = false
@@ -566,8 +569,8 @@ function submitGuess() {
         }, 1800)
       }
     } else {
-      // Hit but not dead — show damage modal, then load a fresh word
       gameState.value  = 'won'
+      wonDamage.value  = true
       wonMessage.value = true
       setTimeout(() => {
         wonMessage.value = false
