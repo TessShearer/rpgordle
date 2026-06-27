@@ -13,7 +13,10 @@
       <div class="collapse navbar-collapse" id="navMenu">
         <ul class="navbar-nav ms-auto">
           <li class="nav-item">
-            <RouterLink class="nav-link" to="/">Game</RouterLink>
+            <RouterLink class="nav-link" to="/">Daily</RouterLink>
+          </li>
+          <li class="nav-item">
+            <RouterLink class="nav-link" to="/freeplay">Free Play</RouterLink>
           </li>
           <li class="nav-item">
             <RouterLink class="nav-link" to="/game-info">Game Info</RouterLink>
@@ -26,7 +29,7 @@
     </div>
   </nav>
 
-  <RouterView />
+  <RouterView :key="$route.name" />
 </template>
 
 <script setup>

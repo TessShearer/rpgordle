@@ -38,6 +38,9 @@ export const SHOP_ITEMS = [
   },
 ]
 
+export const STAGE_SEQUENCE = ['enemy', 'miniboss', 'enemy']
+export const JOURNEY_LENGTH = STAGE_SEQUENCE.length + 1
+
 export const BOSSES = [
   {
     id:                   'shadow-sorcerer',

@@ -2,8 +2,16 @@
   <main class="container py-2">
     <div class="game-wrapper">
 
+      <!-- ── Daily loading / error ─────────────────────────────────────── -->
+      <div v-if="dailyLoading" class="text-center py-5">
+        <p class="game-meta">Loading today's adventure…</p>
+      </div>
+      <div v-else-if="dailyError" class="text-center py-5">
+        <p class="text-danger mb-3">Could not load today's game. Please refresh.</p>
+      </div>
+
       <!-- ── Intro ──────────────────────────────────────────────────────── -->
-      <div v-if="screen === 'intro'" class="text-center">
+      <div v-else-if="screen === 'intro'" class="text-center">
         <div class="art-placeholder art-placeholder--hero mb-4">Art goes here</div>
         <button class="btn btn-press px-5 py-3 fs-5" @click="showClassSelect">
           Start Adventure
@@ -16,7 +24,7 @@
           <p class="game-meta text-center mb-4">Choose your class</p>
           <div class="class-options">
             <div
-              v-for="(cls, i) in CLASSES"
+              v-for="(cls, i) in selectableClasses"
               :key="cls.id"
               class="class-option"
               :class="{ animated: classesAnimated, 'class-option--selected': selectedClass === cls.id }"
@@ -48,6 +56,15 @@
           </div>
         </Transition>
       </div>
+
+      <!-- ── Boss Select (free play) ──────────────────────────────────── -->
+      <BossSelect
+        v-else-if="screen === 'boss-select'"
+        :bosses="BOSSES"
+        :selected-boss-id="selectedBoss"
+        @select="selectedBoss = $event"
+        @confirm="confirmBossSelect"
+      />
 
       <!-- ── Boss Intro ────────────────────────────────────────────────── -->
       <BossIntro
@@ -290,7 +307,7 @@
               <p class="modal-submessage">Choose one item to purchase.</p>
               <div class="shop-items">
                 <div
-                  v-for="item in SHOP_ITEMS"
+                  v-for="item in availableShopItems"
                   :key="item.id"
                   class="shop-item"
                   @click="buyItem(item)"
@@ -332,14 +349,17 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
-import { CLASSES, ENEMIES, MINIBOSSES, BOSSES, SHOP_ITEMS } from '@/data/gameData.js'
+import { CLASSES, ENEMIES, MINIBOSSES, BOSSES, SHOP_ITEMS, STAGE_SEQUENCE, JOURNEY_LENGTH } from '@/data/gameData.js'
 import BossIntro      from '@/components/BossIntro.vue'
 import BossFightIntro from '@/components/BossFightIntro.vue'
+import BossSelect     from '@/components/BossSelect.vue'
 import EnemyIntro     from '@/components/EnemyIntro.vue'
 import { CHARACTER_IMAGES } from '@/assets/characterImages.js'
+import { fetchOrCreateDaily } from '@/services/daily.js'
 
-const STAGE_SEQUENCE = ['enemy', 'miniboss', 'enemy']
-const JOURNEY_LENGTH = STAGE_SEQUENCE.length + 1  // 3 normal stages + 1 boss fight
+const props = defineProps({
+  mode: { type: String, default: 'daily' },
+})
 
 
 const KEY_ROWS = [
@@ -389,6 +409,27 @@ const inventoryItems  = computed(() => inventory.value.map(id => SHOP_ITEMS.find
 const pendingUseItem  = ref(null)
 const shieldedRows    = ref(new Set())
 const crystalHints    = ref([])
+
+// ── Daily / freeplay ──────────────────────────────────────────────────────────
+const dailyConfig   = ref(null)
+const dailyLoading  = ref(props.mode === 'daily')
+const dailyError    = ref(false)
+const selectedBoss  = ref(null)
+const bossWordIndex = ref(0)
+
+const selectableClasses = computed(() => {
+  if (props.mode === 'daily' && dailyConfig.value) {
+    return CLASSES.filter(c => dailyConfig.value.classIds.includes(c.id))
+  }
+  return CLASSES
+})
+
+const availableShopItems = computed(() => {
+  if (props.mode === 'daily' && dailyConfig.value) {
+    return SHOP_ITEMS.filter(s => dailyConfig.value.shopItemIds.includes(s.id))
+  }
+  return SHOP_ITEMS
+})
 
 const obscuredCols = computed(() => {
   if (currentBoss.value?.id !== 'shadow-sorcerer') return []
@@ -494,15 +535,29 @@ function onKeyDown(e) {
     return
   }
   if (screen.value === 'class-select') {
-    const idx = CLASSES.findIndex(c => c.id === selectedClass.value)
+    const list = selectableClasses.value
+    const idx  = list.findIndex(c => c.id === selectedClass.value)
     if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
       e.preventDefault()
-      selectedClass.value = CLASSES[(idx + 1) % CLASSES.length].id
+      selectedClass.value = list[(idx + 1) % list.length].id
     } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
       e.preventDefault()
-      selectedClass.value = CLASSES[idx < 1 ? CLASSES.length - 1 : idx - 1].id
+      selectedClass.value = list[idx < 1 ? list.length - 1 : idx - 1].id
     } else if (e.key === 'Enter' && selectedClass.value) {
       selectClass(selectedClass.value)
+    }
+    return
+  }
+  if (screen.value === 'boss-select') {
+    const idx = BOSSES.findIndex(b => b.id === selectedBoss.value)
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+      e.preventDefault()
+      selectedBoss.value = BOSSES[(idx + 1) % BOSSES.length].id
+    } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+      e.preventDefault()
+      selectedBoss.value = BOSSES[idx < 1 ? BOSSES.length - 1 : idx - 1].id
+    } else if (e.key === 'Enter' && selectedBoss.value) {
+      confirmBossSelect(selectedBoss.value)
     }
     return
   }
@@ -572,8 +627,10 @@ function submitGuess() {
       gameState.value  = 'won'
       wonDamage.value  = true
       wonMessage.value = true
+      const advancingBoss = stage.value >= STAGE_SEQUENCE.length
       setTimeout(() => {
         wonMessage.value = false
+        if (advancingBoss) bossWordIndex.value++
         loadWord(false)
       }, 1800)
     }
@@ -611,6 +668,8 @@ function handleModalAction() {
     inventory.value       = []
     shieldedRows.value    = new Set()
     crystalHints.value    = []
+    selectedBoss.value    = null
+    bossWordIndex.value   = 0
   }
 }
 
@@ -629,6 +688,8 @@ function restartJourney() {
   inventory.value       = []
   shieldedRows.value    = new Set()
   crystalHints.value    = []
+  selectedBoss.value    = null
+  bossWordIndex.value   = 0
 }
 
 function showClassSelect() {
@@ -643,9 +704,19 @@ function selectClass(cls) {
   playerClass.value     = cls
   playerHealth.value    = classData.health
   playerMaxHealth.value = classData.health
-  currentBoss.value     = BOSSES[Math.floor(Math.random() * BOSSES.length)]
-  screen.value          = 'boss-intro'
   gameState.value       = 'ready'
+  if (props.mode === 'daily' && dailyConfig.value) {
+    currentBoss.value = BOSSES.find(b => b.id === dailyConfig.value.bossId)
+    screen.value      = 'boss-intro'
+  } else {
+    selectedBoss.value = null
+    screen.value       = 'boss-select'
+  }
+}
+
+function confirmBossSelect(bossId) {
+  currentBoss.value = BOSSES.find(b => b.id === bossId)
+  beginJourney()
 }
 
 function beginJourney() {
@@ -672,15 +743,47 @@ async function startStage(stageNum) {
   stage.value = stageNum
   const isBossFight = stageNum >= STAGE_SEQUENCE.length
   if (isBossFight) {
-    currentEnemy.value = currentBoss.value
-    enemyHealth.value  = currentBoss.value.health
-    screen.value       = 'boss-fight-intro'
+    currentEnemy.value  = currentBoss.value
+    enemyHealth.value   = currentBoss.value.health
+    bossWordIndex.value = 0
+    screen.value        = 'boss-fight-intro'
   } else {
-    const stageType    = STAGE_SEQUENCE[stageNum]
-    const pool         = stageType === 'miniboss' ? MINIBOSSES : ENEMIES
-    currentEnemy.value = pool[Math.floor(Math.random() * pool.length)]
-    enemyHealth.value  = currentEnemy.value.health
+    const stageType = STAGE_SEQUENCE[stageNum]
+    const pool      = stageType === 'miniboss' ? MINIBOSSES : ENEMIES
+    if (props.mode === 'daily' && dailyConfig.value) {
+      const enemyId = dailyConfig.value.stageEnemies[stageNum]
+      currentEnemy.value = pool.find(e => e.id === enemyId) ?? pool[Math.floor(Math.random() * pool.length)]
+    } else {
+      currentEnemy.value = pool[Math.floor(Math.random() * pool.length)]
+    }
+    enemyHealth.value = currentEnemy.value.health
     await loadWord(true)
+  }
+}
+
+function applyDangerLetters(isBossFight) {
+  if (currentBoss.value?.id !== 'gelatinous-cube') return
+  const alpha  = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+  const count  = isBossFight ? 3 : 1
+  const picked = new Set()
+  while (picked.size < count) picked.add(alpha[Math.floor(Math.random() * 26)])
+  dangerLetters.value = [...picked]
+}
+
+function applySeerHint() {
+  if (playerClass.value !== 'seer') return
+  const idx = Math.floor(Math.random() * secretWord.value.length)
+  hintLetter.value = secretWord.value[idx]
+}
+
+function finishWordLoad(showModal) {
+  gameState.value = 'ready'
+  if (showModal) {
+    screen.value = 'enemy-intro'
+  } else if (currentEnemy.value?.id === 'annoying-kid') {
+    applyAnnoyingKidGuess()
+  } else {
+    gameState.value = 'playing'
   }
 }
 
@@ -697,44 +800,36 @@ async function loadWord(showModal) {
   shieldedRows.value    = new Set()
   crystalHints.value    = []
 
-
   const isBossFight = stage.value >= STAGE_SEQUENCE.length
-  const [min, max]  = isBossFight ? [8, 12] : [4, 7]
 
+  if (props.mode === 'daily' && dailyConfig.value) {
+    const wordKey        = isBossFight ? `boss-${bossWordIndex.value}` : `stage-${stage.value}`
+    secretWord.value     = dailyConfig.value.words[wordKey]
+    applyDangerLetters(isBossFight)
+    applySeerHint()
+    if (playerClass.value === 'scholar') hintWordType.value = 'word'
+    finishWordLoad(showModal)
+    return
+  }
+
+  const [min, max] = isBossFight ? [8, 12] : [4, 7]
   try {
     const length = Math.floor(Math.random() * (max - min + 1)) + min
-    const res = await fetch(`/api/word/random?length=${length}`)
+    const res    = await fetch(`/api/word/random?length=${length}`)
     if (!res.ok) throw new Error()
-    const data = await res.json()
+    const data   = await res.json()
     secretWord.value = data.word.toUpperCase()
-    if (currentBoss.value?.id === 'gelatinous-cube') {
-      const alpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-      const isBossFight = stage.value >= STAGE_SEQUENCE.length
-      const count = isBossFight ? 3 : 1
-      const picked = new Set()
-      while (picked.size < count) picked.add(alpha[Math.floor(Math.random() * 26)])
-      dangerLetters.value = [...picked]
-    }
-    if (playerClass.value === 'seer') {
-      const idx = Math.floor(Math.random() * secretWord.value.length)
-      hintLetter.value = secretWord.value[idx]
-    }
+    applyDangerLetters(isBossFight)
+    applySeerHint()
     if (playerClass.value === 'scholar') {
       const posMap = { n: 'noun', v: 'verb', adj: 'adjective', adv: 'adverb' }
-      const tags = data.tags || []
-      const types = Object.entries(posMap)
+      const tags   = data.tags || []
+      const types  = Object.entries(posMap)
         .filter(([tag]) => tags.includes(tag))
         .map(([, label]) => label)
       hintWordType.value = types.length ? types.join(', ') : 'word'
     }
-    gameState.value = 'ready'
-    if (showModal) {
-      screen.value = 'enemy-intro'
-    } else if (currentEnemy.value?.id === 'annoying-kid') {
-      applyAnnoyingKidGuess()
-    } else {
-      gameState.value = 'playing'
-    }
+    finishWordLoad(showModal)
   } catch {
     gameState.value = 'error'
   }
@@ -813,6 +908,17 @@ async function applyAnnoyingKidGuess() {
   }
 }
 
-onMounted(() => window.addEventListener('keydown', onKeyDown))
+onMounted(async () => {
+  window.addEventListener('keydown', onKeyDown)
+  if (props.mode === 'daily') {
+    try {
+      dailyConfig.value = await fetchOrCreateDaily()
+    } catch {
+      dailyError.value = true
+    } finally {
+      dailyLoading.value = false
+    }
+  }
+})
 onUnmounted(() => window.removeEventListener('keydown', onKeyDown))
 </script>

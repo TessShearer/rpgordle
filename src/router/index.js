@@ -3,8 +3,15 @@ import { createRouter, createWebHistory } from 'vue-router'
 const routes = [
   {
     path: '/',
-    name: 'game',
+    name: 'daily',
     component: () => import('@/views/GameView.vue'),
+    props: { mode: 'daily' },
+  },
+  {
+    path: '/freeplay',
+    name: 'freeplay',
+    component: () => import('@/views/GameView.vue'),
+    props: { mode: 'freeplay' },
   },
   {
     path: '/word-info',
