@@ -36,6 +36,14 @@
         </div>
       </div>
 
+      <!-- ── Boss Intro ────────────────────────────────────────────────── -->
+      <BossIntro
+        v-else-if="screen === 'boss-intro'"
+        :boss="currentBoss"
+        :player-class="playerClass"
+        @begin="beginJourney"
+      />
+
       <!-- ── Game ───────────────────────────────────────────────────────── -->
       <template v-else>
 
@@ -290,6 +298,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { CLASSES, ENEMIES, MINIBOSSES, BOSSES, SHOP_ITEMS } from '@/data/gameData.js'
+import BossIntro from '@/components/BossIntro.vue'
 
 const STAGE_SEQUENCE = ['enemy', 'miniboss', 'enemy']
 const JOURNEY_LENGTH = STAGE_SEQUENCE.length + 1  // 3 normal stages + 1 boss fight
@@ -550,9 +559,13 @@ function selectClass(cls) {
   playerHealth.value    = classData.health
   playerMaxHealth.value = classData.health
   currentBoss.value     = BOSSES[Math.floor(Math.random() * BOSSES.length)]
-  screen.value          = 'playing'
+  screen.value          = 'boss-intro'
   gameState.value       = 'ready'
-  modal.value           = 'boss-announcement'
+}
+
+function beginJourney() {
+  screen.value = 'playing'
+  startStage(0)
 }
 
 // ── Game lifecycle ────────────────────────────────────────────────────────────

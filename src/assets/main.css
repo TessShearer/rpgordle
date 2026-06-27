@@ -617,6 +617,61 @@ body {
   margin: 0;
 }
 
+/* Boss Intro */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.boss-intro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2.5rem 1rem;
+}
+
+.boss-intro-panels {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+  margin-bottom: 2.5rem;
+  width: 100%;
+}
+
+.intro-panel {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  opacity: 0;
+  animation: fadeIn 3s ease forwards;
+}
+
+.intro-panel--1 { animation-delay: 0.4s; }
+.intro-panel--2 { animation-delay: 2.4s; }
+.intro-panel--3 { animation-delay: 4.4s; }
+
+.art-placeholder--intro {
+  width: 100%;
+  aspect-ratio: 1;
+  font-size: 0.65rem;
+}
+
+.intro-caption {
+  margin-top: 0.75rem;
+  font-size: 1rem;
+  color: var(--gs-800);
+  line-height: 1.45;
+}
+
+.intro-begin {
+  opacity: 0;
+  animation: fadeIn 1s ease forwards;
+  animation-delay: 7.5s;
+}
+
 .modal-word {
   font-size: 1.6rem;
   font-weight: 700;
