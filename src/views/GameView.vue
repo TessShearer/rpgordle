@@ -11,29 +11,42 @@
       </div>
 
       <!-- ── Class Select ───────────────────────────────────────────────── -->
-      <div v-else-if="screen === 'class-select'">
-        <p class="game-meta text-center mb-4">Choose your class</p>
-        <div class="class-options">
-          <div
-            v-for="(cls, i) in CLASSES"
-            :key="cls.id"
-            class="class-option"
-            :class="{ animated: classesAnimated }"
-            :style="{ transitionDelay: `${i * 0.15}s` }"
-            @click="selectClass(cls.id)"
-          >
-            <div class="art-placeholder art-placeholder--class">
-              Art for {{ cls.name }} goes here
-            </div>
+      <div v-else-if="screen === 'class-select'" class="class-select-layout">
+        <div class="class-select-main">
+          <p class="game-meta text-center mb-4">Choose your class</p>
+          <div class="class-options">
             <div
-              class="class-text"
-              :style="{ transitionDelay: `${0.5 + i * 0.15}s` }"
+              v-for="(cls, i) in CLASSES"
+              :key="cls.id"
+              class="class-option"
+              :class="{ animated: classesAnimated, 'class-option--selected': selectedClass === cls.id }"
+              :style="{ transitionDelay: `${i * 0.15}s` }"
+              @click="selectedClass = cls.id"
             >
-              <p class="class-name">{{ cls.name }}</p>
-              <p class="class-desc">{{ cls.description }}</p>
+              <div class="art-with-shadow">
+                <img v-if="CHARACTER_IMAGES[cls.id]" :src="CHARACTER_IMAGES[cls.id]" :alt="cls.name" class="class-img" />
+                <div v-else class="art-placeholder art-placeholder--class">
+                  Art for {{ cls.name }} goes here
+                </div>
+                <div class="class-option-shadow"></div>
+              </div>
+              <div
+                class="class-text"
+                :style="{ transitionDelay: `${0.5 + i * 0.15}s` }"
+              >
+                <p class="class-name">{{ cls.name }}</p>
+                <p class="class-desc">{{ cls.description }}</p>
+              </div>
             </div>
           </div>
         </div>
+        <Transition name="slide-in">
+          <div v-if="selectedClass" class="class-select-aside">
+            <button class="btn btn-press px-4 py-3 fs-5" @click="selectClass(selectedClass)">
+              Continue
+            </button>
+          </div>
+        </Transition>
       </div>
 
       <!-- ── Boss Intro ────────────────────────────────────────────────── -->
@@ -61,7 +74,8 @@
           <!-- Mobile-only portraits strip (hidden on desktop) -->
           <div class="mobile-portraits">
             <div class="portrait-slot">
-              <div class="art-placeholder art-placeholder--portrait">{{ featureArtText }}</div>
+              <img v-if="featureArtImage" :src="featureArtImage" :alt="featureArtText" class="portrait-img" />
+              <div v-else class="art-placeholder art-placeholder--portrait">{{ featureArtText }}</div>
               <template v-if="playerClass === 'seer' && hintLetter">
                 <p class="portrait-hint-label">This word has a...</p>
                 <p class="portrait-hint-value">{{ hintLetter }}</p>
@@ -114,7 +128,8 @@
           <!-- Left panel: class character art (desktop only) -->
           <aside class="game-panel game-panel--left">
             <div class="class-feature" :class="{ 'class-feature--reveal': playerClass === 'seer' || playerClass === 'scholar' }">
-              <div class="art-placeholder art-placeholder--feature">{{ featureArtText }}</div>
+              <img v-if="featureArtImage" :src="featureArtImage" :alt="featureArtText" class="feature-img" />
+              <div v-else class="art-placeholder art-placeholder--feature">{{ featureArtText }}</div>
               <div v-if="playerClass === 'seer'" class="feature-hint">
                 <p class="feature-label">this word has a...</p>
                 <p class="feature-letter">{{ hintLetter }}</p>
@@ -199,7 +214,7 @@
             </div>
 
             <button class="btn btn-reset btn-restart-fixed" @click="restartJourney">
-              Start journey again
+              Start over
             </button>
 
             <!-- Testing box -->
@@ -299,6 +314,7 @@
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { CLASSES, ENEMIES, MINIBOSSES, BOSSES, SHOP_ITEMS } from '@/data/gameData.js'
 import BossIntro from '@/components/BossIntro.vue'
+import { CHARACTER_IMAGES } from '@/assets/characterImages.js'
 
 const STAGE_SEQUENCE = ['enemy', 'miniboss', 'enemy']
 const JOURNEY_LENGTH = STAGE_SEQUENCE.length + 1  // 3 normal stages + 1 boss fight
@@ -325,6 +341,7 @@ const MODAL_CONTENT = {
 const screen          = ref('intro')
 const playerClass     = ref(null)
 const classesAnimated = ref(false)
+const selectedClass   = ref(null)
 
 // ── Game state ────────────────────────────────────────────────────────────────
 const stage        = ref(0)
@@ -369,6 +386,8 @@ const featureArtText = computed(() => {
   if (playerClass.value === 'knight')  return 'Art of knight'
   return 'Art of Peasant'
 })
+
+const featureArtImage = computed(() => CHARACTER_IMAGES[playerClass.value] ?? null)
 
 // ── Evaluation ────────────────────────────────────────────────────────────────
 function evaluateGuess(guess) {
@@ -549,6 +568,7 @@ function restartJourney() {
 
 function showClassSelect() {
   classesAnimated.value = false
+  selectedClass.value   = null
   screen.value = 'class-select'
   nextTick(() => { classesAnimated.value = true })
 }

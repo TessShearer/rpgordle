@@ -10,12 +10,14 @@
       </div>
 
       <div class="intro-panel intro-panel--2">
-        <div class="art-placeholder art-placeholder--intro">Illustration of {{ boss.name }}'s power</div>
+        <img v-if="powerImage" :src="powerImage" :alt="`${boss.name}'s power`" class="intro-img" />
+        <div v-else class="art-placeholder art-placeholder--intro">Illustration of {{ boss.name }}'s power</div>
         <p class="intro-caption">{{ boss.announcement }}</p>
       </div>
 
       <div class="intro-panel intro-panel--3">
-        <div class="art-placeholder art-placeholder--intro">Art of {{ classLabel }}</div>
+        <img v-if="classImage" :src="classImage" :alt="classLabel" class="intro-img" />
+        <div v-else class="art-placeholder art-placeholder--intro">Art of {{ classLabel }}</div>
         <p class="intro-caption">Fight your way to the boss and defeat them to save the kingdom!</p>
       </div>
 
@@ -28,6 +30,14 @@
 
 <script setup>
 import { computed } from 'vue'
+import shadowPower from '@/assets/shadow-sorcerer-power.png'
+import cubePower   from '@/assets/gelatinuos-cube-power.png'
+import { CHARACTER_IMAGES } from '@/assets/characterImages.js'
+
+const POWER_IMAGES = {
+  'shadow-sorcerer': shadowPower,
+  'gelatinous-cube': cubePower,
+}
 
 const props = defineProps({
   boss:        { type: Object,  required: true },
@@ -35,6 +45,9 @@ const props = defineProps({
 })
 
 defineEmits(['begin'])
+
+const powerImage = computed(() => POWER_IMAGES[props.boss.id] ?? null)
+const classImage = computed(() => CHARACTER_IMAGES[props.playerClass] ?? null)
 
 const classLabel = computed(() => {
   const labels = { peasant: 'Peasant', seer: 'Seer', knight: 'Knight', scholar: 'Scholar' }
