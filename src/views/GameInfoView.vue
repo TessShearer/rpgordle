@@ -5,7 +5,7 @@
     <section class="info-section mb-5">
       <h2 class="info-heading mb-3">Game</h2>
       <p class="info-body mb-4">
-        The game is 1 enemy, a miniboss, then a shop. After the shop you get an item in your inventory and fight another regular enemy then a boss.
+        The game is 1 enemy, a miniboss, then a shop. After the shop you get an item in your inventory that you can use at any time. Then you fight another regular enemy then a boss.
 
         The boss effects the entire game from the very beginning with its ability, but gets stronger on the boss level.
 
