@@ -285,11 +285,7 @@
               <div class="art-placeholder art-placeholder--modal-monster my-3">Art of {{ currentBoss.name }}</div>
               <p class="modal-message">{{ currentBoss.announcement }}</p>
             </template>
-<template v-else-if="modal === 'hit'">
-              <div class="art-placeholder art-placeholder--modal-monster my-3">Art of {{ currentEnemy.name }} (damaged)</div>
-              <p class="modal-message">{{ hitWord }} guessed, 1 damage!</p>
-            </template>
-            <template v-else-if="modal === 'shop'">
+<template v-else-if="modal === 'shop'">
               <p class="modal-message">You found a shop!</p>
               <p class="modal-submessage">Choose one item to purchase.</p>
               <div class="shop-items">
@@ -355,7 +351,6 @@ const KEY_ROWS = [
 
 const MODAL_CONTENT = {
   'boss-announcement': { button: 'Begin Quest' },
-  hit:                 { button: 'Continue'    },
   lost:                { message: 'Oh no, you failed! Try again?',       button: 'Try Again' },
   complete:            { message: 'You completed your quest! New Game?', button: 'New Game'  },
 }
@@ -572,9 +567,12 @@ function submitGuess() {
       }
     } else {
       // Hit but not dead — show damage modal, then load a fresh word
-      hitWord.value   = submitted.toLowerCase()
-      gameState.value = 'won'
-      setTimeout(() => { modal.value = 'hit' }, 600)
+      gameState.value  = 'won'
+      wonMessage.value = true
+      setTimeout(() => {
+        wonMessage.value = false
+        loadWord(false)
+      }, 1800)
     }
   } else {
     const guessRow     = guesses.value.length - 1
@@ -595,8 +593,6 @@ function submitGuess() {
 function handleModalAction() {
   if (modal.value === 'boss-announcement') {
     startStage(0)
-  } else if (modal.value === 'hit') {
-    loadWord(false)
   } else {
     // lost or complete → back to intro
     screen.value          = 'intro'
