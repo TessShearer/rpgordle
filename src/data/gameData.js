@@ -1,8 +1,13 @@
 export const CLASSES = [
-  { id: 'peasant', name: 'Peasant', health: 10, description: 'Play as Peasant for no bonuses' },
-  { id: 'seer',    name: 'Seer',    health:  5, description: 'Play as Seer to reveal a letter in each word' },
-  { id: 'knight',  name: 'Knight',  health: 15, description: 'Play as Knight for extra chances after failure' },
-  { id: 'scholar', name: 'Scholar', health:  7, description: 'Reveals information about the word' },
+  { id: 'peasant',       name: 'Peasant',       health: 10, description: 'No bonuses. A humble beginning.' },
+  { id: 'seer',          name: 'Seer',           health:  5, description: 'Reveals a letter from each word.' },
+  { id: 'knight',        name: 'Knight',         health: 15, description: 'Extra chances to survive failure.' },
+  { id: 'scholar',       name: 'Scholar',        health:  7, description: 'Reveals the part of speech.' },
+  { id: 'merchant',      name: 'Merchant',       health:  7, description: 'Open a shop before your quest.' },
+  { id: 'assassin',      name: 'Assassin',       health:  9, description: 'Earn a Sneak Attack when 4+ letters are yellow.' },
+  { id: 'cleric',        name: 'Cleric',         health:  8, description: 'Heal to full after every fight.' },
+  { id: 'village-idiot', name: 'Village Idiot',  health: 10, description: 'Any string of letters is a valid guess.' },
+  { id: 'thief',         name: 'The Thief',      health:  9, description: 'Take 2 items from the shop instead of 1.' },
 ]
 
 export const ENEMIES = [
@@ -32,11 +37,29 @@ export const SHOP_ITEMS = [
   {
     id:          'crystal-ball',
     name:        'Crystal Ball',
-    description: 'Reveals a letter in the current word.',
+    description: 'Reveals 2 letters in the current word.',
     effect:      'crystal-ball',
     cost:        3,
   },
+  {
+    id:          'crossbow',
+    name:        'Crossbow',
+    description: 'Reveals and autofills the first letter of the word.',
+    effect:      'crossbow',
+    cost:        2,
+  },
 ]
+
+export const SPECIAL_ITEMS = [
+  {
+    id:          'sneak-attack',
+    name:        'Sneak Attack',
+    description: 'Auto-solves this word for free. Use it or lose it.',
+    effect:      'sneak-attack',
+  },
+]
+
+export const ALL_ITEMS = [...SHOP_ITEMS, ...SPECIAL_ITEMS]
 
 export const STAGE_SEQUENCE = ['enemy', 'miniboss', 'enemy']
 export const JOURNEY_LENGTH = STAGE_SEQUENCE.length + 1

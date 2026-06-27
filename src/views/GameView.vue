@@ -304,7 +304,7 @@
             </template>
 <template v-else-if="modal === 'shop'">
               <p class="modal-message">You found a shop!</p>
-              <p class="modal-submessage">Choose one item to purchase.</p>
+              <p class="modal-submessage">{{ shopPrompt }}</p>
               <div class="shop-items">
                 <div
                   v-for="item in availableShopItems"
@@ -349,7 +349,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
-import { CLASSES, ENEMIES, MINIBOSSES, BOSSES, SHOP_ITEMS, STAGE_SEQUENCE, JOURNEY_LENGTH } from '@/data/gameData.js'
+import { CLASSES, ENEMIES, MINIBOSSES, BOSSES, SHOP_ITEMS, ALL_ITEMS, STAGE_SEQUENCE, JOURNEY_LENGTH } from '@/data/gameData.js'
 import BossIntro      from '@/components/BossIntro.vue'
 import BossFightIntro from '@/components/BossFightIntro.vue'
 import BossSelect     from '@/components/BossSelect.vue'
@@ -405,10 +405,17 @@ const hitWord         = ref('')
 const lastRegen       = ref(0)
 const dangerLetters   = ref([])
 const inventory       = ref([])
-const inventoryItems  = computed(() => inventory.value.map(id => SHOP_ITEMS.find(i => i.id === id)))
+const inventoryItems  = computed(() => inventory.value.map(id => ALL_ITEMS.find(i => i.id === id)).filter(Boolean))
 const pendingUseItem  = ref(null)
 const shieldedRows    = ref(new Set())
 const crystalHints    = ref([])
+
+// ── Class abilities ───────────────────────────────────────────────────────────
+const sneakAttackAvailable = ref(false)
+const shopPicksRemaining   = ref(1)
+const shopTotalPicks       = ref(1)
+const merchantShop         = ref(false)
+const validating           = ref(false)
 
 // ── Daily / freeplay ──────────────────────────────────────────────────────────
 const dailyConfig   = ref(null)
@@ -445,10 +452,14 @@ const boardRows = computed(() =>
 )
 
 const featureArtText = computed(() => {
-  if (playerClass.value === 'seer')    return 'Art of seer thinking'
-  if (playerClass.value === 'scholar') return 'Art of scholar'
-  if (playerClass.value === 'knight')  return 'Art of knight'
-  return 'Art of Peasant'
+  const cls = CLASSES.find(c => c.id === playerClass.value)
+  return cls ? `Art of ${cls.name}` : 'Art of Peasant'
+})
+
+const shopPrompt = computed(() => {
+  if (shopPicksRemaining.value > 1) return `Choose ${shopPicksRemaining.value} items.`
+  if (shopTotalPicks.value > 1) return 'Choose 1 more item.'
+  return 'Choose one item to purchase.'
 })
 
 const featureArtImage = computed(() => CHARACTER_IMAGES[playerClass.value] ?? null)
@@ -518,7 +529,7 @@ function keyClass(key) {
 
 // ── Input ─────────────────────────────────────────────────────────────────────
 function handleKey(key) {
-  if (gameState.value !== 'playing' || modal.value) return
+  if (gameState.value !== 'playing' || modal.value || validating.value) return
   inputError.value = ''
   if (key === '⌫') {
     currentGuess.value = currentGuess.value.slice(0, -1)
@@ -582,35 +593,65 @@ function onKeyDown(e) {
     }
     return
   }
+  if (/^[1-9]$/.test(e.key) && gameState.value === 'playing' && !modal.value && !validating.value) {
+    const item = inventoryItems.value[parseInt(e.key) - 1]
+    if (item) { confirmUseItem(item); return }
+  }
   if (e.key === 'Backspace') return handleKey('⌫')
   if (e.key === 'Enter')     return handleKey('ENTER')
   if (/^[a-zA-Z]$/.test(e.key)) handleKey(e.key.toUpperCase())
 }
 
-function submitGuess() {
+async function submitGuess(skipValidation = false) {
   if (currentGuess.value.length < wordLength.value) {
     inputError.value = `Guess must be ${wordLength.value} letters`
     return
   }
 
-  const submitted    = currentGuess.value
+  const submitted = currentGuess.value
+
+  // Validate word (Village Idiot and internal calls skip this)
+  if (playerClass.value !== 'village-idiot' && !skipValidation) {
+    validating.value = true
+    try {
+      const res  = await fetch(`/api/word/validate?word=${submitted.toLowerCase()}`)
+      const data = await res.json()
+      if (!data.valid) {
+        inputError.value = 'Not a recognized word'
+        return
+      }
+    } catch {
+      // network error → allow the guess
+    } finally {
+      validating.value = false
+    }
+  }
+
   guesses.value      = [...guesses.value, submitted]
   currentGuess.value = ''
 
   if (submitted === secretWord.value) {
     enemyHealth.value -= 1
     if (enemyHealth.value <= 0) {
-      const regen = currentEnemy.value.regen
-      lastRegen.value = Math.min(regen, playerMaxHealth.value - playerHealth.value)
-      playerHealth.value = Math.min(playerMaxHealth.value, playerHealth.value + regen)
+      // Cleric: heal to full on enemy defeat
+      if (playerClass.value === 'cleric') {
+        lastRegen.value    = playerMaxHealth.value - playerHealth.value
+        playerHealth.value = playerMaxHealth.value
+      } else {
+        const regen = currentEnemy.value.regen
+        lastRegen.value    = Math.min(regen, playerMaxHealth.value - playerHealth.value)
+        playerHealth.value = Math.min(playerMaxHealth.value, playerHealth.value + regen)
+      }
       gameState.value = 'won'
       const isLast     = stage.value === JOURNEY_LENGTH - 1
       const isMiniboss = MINIBOSSES.some(m => m.id === currentEnemy.value?.id)
       if (isLast) {
         setTimeout(() => { modal.value = 'complete' }, 600)
       } else if (isMiniboss) {
-        wonDamage.value  = false
-        wonMessage.value = true
+        wonDamage.value          = false
+        wonMessage.value         = true
+        shopPicksRemaining.value = playerClass.value === 'thief' ? 2 : 1
+        shopTotalPicks.value     = shopPicksRemaining.value
         setTimeout(() => {
           wonMessage.value = false
           modal.value = 'shop'
@@ -645,6 +686,14 @@ function submitGuess() {
     if (playerHealth.value <= 0) {
       gameState.value = 'lost'
       setTimeout(() => { modal.value = 'lost' }, 600)
+    } else if (playerClass.value === 'assassin' && sneakAttackAvailable.value) {
+      // Trigger sneak attack if 4+ letters are yellow (present)
+      const guessEval   = evaluateGuess(submitted)
+      const yellowCount = guessEval.filter(c => c.status === 'present').length
+      if (yellowCount >= 4) {
+        sneakAttackAvailable.value = false
+        inventory.value = [...inventory.value, 'sneak-attack']
+      }
     }
   }
 }
@@ -655,41 +704,49 @@ function handleModalAction() {
     startStage(0)
   } else {
     // lost or complete → back to intro
-    screen.value          = 'intro'
-    playerClass.value     = null
-    modal.value           = null
-    gameState.value       = 'loading'
-    playerHealth.value    = 0
-    playerMaxHealth.value = 0
-    currentBoss.value     = null
-    currentEnemy.value    = null
-    enemyHealth.value     = 0
-    dangerLetters.value   = []
-    inventory.value       = []
-    shieldedRows.value    = new Set()
-    crystalHints.value    = []
-    selectedBoss.value    = null
-    bossWordIndex.value   = 0
+    screen.value               = 'intro'
+    playerClass.value          = null
+    modal.value                = null
+    gameState.value            = 'loading'
+    playerHealth.value         = 0
+    playerMaxHealth.value      = 0
+    currentBoss.value          = null
+    currentEnemy.value         = null
+    enemyHealth.value          = 0
+    dangerLetters.value        = []
+    inventory.value            = []
+    shieldedRows.value         = new Set()
+    crystalHints.value         = []
+    selectedBoss.value         = null
+    bossWordIndex.value        = 0
+    sneakAttackAvailable.value = false
+    shopPicksRemaining.value   = 1
+    shopTotalPicks.value       = 1
+    merchantShop.value         = false
+    validating.value           = false
   }
 }
 
 // ── Navigation ────────────────────────────────────────────────────────────────
 function restartJourney() {
-  screen.value          = 'intro'
-  playerClass.value     = null
-  modal.value           = null
-  gameState.value       = 'loading'
-  playerHealth.value    = 0
-  playerMaxHealth.value = 0
-  currentBoss.value     = null
-  currentEnemy.value    = null
-  enemyHealth.value     = 0
-  dangerLetters.value   = []
-  inventory.value       = []
-  shieldedRows.value    = new Set()
-  crystalHints.value    = []
-  selectedBoss.value    = null
-  bossWordIndex.value   = 0
+  screen.value               = 'intro'
+  playerClass.value          = null
+  modal.value                = null
+  gameState.value            = 'loading'
+  playerHealth.value         = 0
+  playerMaxHealth.value      = 0
+  currentBoss.value          = null
+  currentEnemy.value         = null
+  enemyHealth.value          = 0
+  dangerLetters.value        = []
+  inventory.value            = []
+  shieldedRows.value         = new Set()
+  crystalHints.value         = []
+  selectedBoss.value         = null
+  bossWordIndex.value        = 0
+  sneakAttackAvailable.value = false
+  shopPicksRemaining.value   = 1
+  validating.value           = false
 }
 
 function showClassSelect() {
@@ -721,7 +778,14 @@ function confirmBossSelect(bossId) {
 
 function beginJourney() {
   screen.value = 'playing'
-  startStage(0)
+  if (playerClass.value === 'merchant') {
+    merchantShop.value       = true
+    shopPicksRemaining.value = 3
+    shopTotalPicks.value     = 3
+    modal.value              = 'shop'
+  } else {
+    startStage(0)
+  }
 }
 
 function beginEnemyEncounter() {
@@ -741,6 +805,7 @@ function beginBossFight() {
 // ── Game lifecycle ────────────────────────────────────────────────────────────
 async function startStage(stageNum) {
   stage.value = stageNum
+  sneakAttackAvailable.value = (playerClass.value === 'assassin')
   const isBossFight = stageNum >= STAGE_SEQUENCE.length
   if (isBossFight) {
     currentEnemy.value  = currentBoss.value
@@ -799,6 +864,8 @@ async function loadWord(showModal) {
   dangerLetters.value   = []
   shieldedRows.value    = new Set()
   crystalHints.value    = []
+  // Unused sneak attack disappears when a new word begins
+  inventory.value = inventory.value.filter(id => id !== 'sneak-attack')
 
   const isBossFight = stage.value >= STAGE_SEQUENCE.length
 
@@ -838,11 +905,25 @@ async function loadWord(showModal) {
 
 function buyItem(item) {
   inventory.value.push(item.id)
-  modal.value = null
-  startStage(stage.value + 1)
+  shopPicksRemaining.value -= 1
+  if (shopPicksRemaining.value <= 0) {
+    modal.value = null
+    if (merchantShop.value) {
+      merchantShop.value = false
+      startStage(0)
+    } else {
+      startStage(stage.value + 1)
+    }
+  }
 }
 
 function confirmUseItem(item) {
+  if (item.effect === 'sneak-attack') {
+    if (gameState.value !== 'playing') return
+    pendingUseItem.value = item
+    useItem()
+    return
+  }
   pendingUseItem.value = item
   modal.value = 'use-item'
 }
@@ -861,6 +942,16 @@ function useItem() {
     shieldedRows.value = new Set([...shieldedRows.value, guesses.value.length])
   } else if (item.effect === 'crystal-ball') {
     revealCrystalHint()
+  } else if (item.effect === 'crossbow') {
+    const first = secretWord.value[0]
+    if (first) currentGuess.value = first + currentGuess.value.slice(1)
+  } else if (item.effect === 'sneak-attack') {
+    currentGuess.value = secretWord.value
+    const idx = inventory.value.indexOf(item.id)
+    if (idx !== -1) inventory.value.splice(idx, 1)
+    pendingUseItem.value = null
+    submitGuess(true)
+    return
   }
   const idx = inventory.value.indexOf(item.id)
   if (idx !== -1) inventory.value.splice(idx, 1)
@@ -871,10 +962,12 @@ function useItem() {
 function revealCrystalHint() {
   const known = new Set(Object.keys(letterStatuses.value))
   if (hintLetter.value) known.add(hintLetter.value)
+  crystalHints.value.forEach(l => known.add(l))
   const wordLetters = [...new Set(secretWord.value.split(''))]
   const unknown = wordLetters.filter(l => !known.has(l))
   const pool = unknown.length ? unknown : wordLetters
-  crystalHints.value = [...crystalHints.value, pool[Math.floor(Math.random() * pool.length)]]
+  const shuffled = [...pool].sort(() => Math.random() - 0.5)
+  crystalHints.value = [...crystalHints.value, ...shuffled.slice(0, 2)]
 }
 
 function articleFor(name) {
