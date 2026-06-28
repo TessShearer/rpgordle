@@ -1,29 +1,35 @@
 <template>
   <div class="boss-intro">
 
-    <div class="boss-intro-slides">
-      <div class="boss-intro-track" :style="{ transform: `translateX(-${currentSlide * 100}%)` }">
+    <div class="carousel-row">
+      <button class="carousel-arrow" :disabled="currentSlide === 0" @click="prev">&#8249;</button>
 
-        <div class="intro-slide" @click="next">
-          <div class="art-placeholder art-placeholder--intro">Art of {{ boss.name }}</div>
-          <p class="intro-caption">
-            The kingdom has been attacked by <strong>{{ boss.name }}</strong>!
-          </p>
+      <div class="boss-intro-slides">
+        <div class="boss-intro-track" :style="{ transform: `translateX(-${currentSlide * 100}%)` }">
+
+          <div class="intro-slide">
+            <div class="art-placeholder art-placeholder--intro">Art of {{ boss.name }}</div>
+            <p class="intro-caption">
+              The kingdom has been attacked by <strong>{{ boss.name }}</strong>!
+            </p>
+          </div>
+
+          <div class="intro-slide">
+            <img v-if="powerImage" :src="powerImage" :alt="`${boss.name}'s power`" class="intro-img" />
+            <div v-else class="art-placeholder art-placeholder--intro">Illustration of {{ boss.name }}'s power</div>
+            <p class="intro-caption">{{ boss.announcement }}</p>
+          </div>
+
+          <div class="intro-slide">
+            <img v-if="classImage" :src="classImage" :alt="classLabel" class="intro-img" />
+            <div v-else class="art-placeholder art-placeholder--intro">Art of {{ classLabel }}</div>
+            <p class="intro-caption">Fight your way to the boss and defeat them to save the kingdom!</p>
+          </div>
+
         </div>
-
-        <div class="intro-slide" @click="next">
-          <img v-if="powerImage" :src="powerImage" :alt="`${boss.name}'s power`" class="intro-img" />
-          <div v-else class="art-placeholder art-placeholder--intro">Illustration of {{ boss.name }}'s power</div>
-          <p class="intro-caption">{{ boss.announcement }}</p>
-        </div>
-
-        <div class="intro-slide">
-          <img v-if="classImage" :src="classImage" :alt="classLabel" class="intro-img" />
-          <div v-else class="art-placeholder art-placeholder--intro">Art of {{ classLabel }}</div>
-          <p class="intro-caption">Fight your way to the boss and defeat them to save the kingdom!</p>
-        </div>
-
       </div>
+
+      <button class="carousel-arrow" :disabled="currentSlide === SLIDE_COUNT - 1" @click="next">&#8250;</button>
     </div>
 
     <div class="carousel-dots">
@@ -76,6 +82,10 @@ defineEmits(['begin'])
 const SLIDE_COUNT  = 3
 const currentSlide = ref(0)
 const allVisible   = computed(() => currentSlide.value >= SLIDE_COUNT - 1)
+
+function prev() {
+  if (currentSlide.value > 0) currentSlide.value--
+}
 
 function next() {
   if (currentSlide.value < SLIDE_COUNT - 1) currentSlide.value++

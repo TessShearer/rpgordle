@@ -114,7 +114,7 @@
               </div>
             </div>
             <div v-if="currentEnemy" class="portrait-slot">
-              <div class="art-placeholder art-placeholder--portrait">Art of {{ currentEnemy.name }}</div>
+              <div class="art-placeholder art-placeholder--portrait" :class="{ 'h-shake': bossShaking }">Art of {{ currentEnemy.name }}</div>
               <p class="portrait-stat">{{ currentEnemy.name }}</p>
               <div class="enemy-health portrait-pips">
                 <span v-for="n in currentEnemy.health" :key="n" class="health-pip"
@@ -177,7 +177,7 @@
             </div>
 
             <!-- Board -->
-            <div class="board mb-2" :style="{ '--cols': wordLength }">
+            <div class="board mb-2" :style="{ '--cols': wordLength }" :class="{ 'h-shake': boardShaking }" @animationend="boardShaking = false">
               <template v-for="row in boardRows" :key="row">
                 <div v-for="col in wordLength" :key="col" class="tile" :class="tileClass(row - 1, col - 1)">
                   {{ tileChar(row - 1, col - 1) }}
@@ -223,7 +223,7 @@
           <!-- Right panel: current enemy -->
           <aside class="game-panel game-panel--right">
             <div v-if="currentEnemy" class="enemy-section">
-              <div class="art-placeholder art-placeholder--monster">Art of {{ currentEnemy.name }}</div>
+              <div class="art-placeholder art-placeholder--monster" :class="{ 'h-shake': bossShaking }" @animationend="bossShaking = false">Art of {{ currentEnemy.name }}</div>
               <p class="enemy-name">{{ currentEnemy.name }}</p>
               <div class="enemy-health">
                 <span v-for="n in currentEnemy.health" :key="n" class="health-pip"
@@ -366,6 +366,8 @@ const crystalHints = ref([])
 
 // ── Class abilities ───────────────────────────────────────────────────────────
 const sneakAttackAvailable = ref(false)
+const boardShaking = ref(false)
+const bossShaking  = ref(false)
 const shopPicksRemaining = ref(1)
 const shopTotalPicks = ref(1)
 const selectedShopItemId = ref(null)
@@ -584,7 +586,7 @@ async function submitGuess(skipValidation = false) {
       const res = await fetch(`/api/word/validate?word=${submitted.toLowerCase()}`)
       const data = await res.json()
       if (!data.valid) {
-        inputError.value = 'Invalid word'
+        boardShaking.value = true
         currentGuess.value = ''
         return
       }
@@ -600,6 +602,7 @@ async function submitGuess(skipValidation = false) {
 
   if (submitted === secretWord.value) {
     enemyHealth.value -= 1
+    if (enemyHealth.value > 0) bossShaking.value = true
     if (enemyHealth.value <= 0) {
       // Cleric: heal to full on enemy defeat
       if (playerClass.value === 'cleric') {
