@@ -1,13 +1,14 @@
 export const CLASSES = [
-  { id: 'peasant',       name: 'Peasant',       health: 10, description: 'No bonuses. A humble beginning.' },
+  { id: 'peasant',       name: 'Peasant',       health: 10, description: 'A peasant with no abilities.' },
   { id: 'seer',          name: 'Seer',           health:  5, description: 'Reveals a letter from each word.' },
-  { id: 'knight',        name: 'Knight',         health: 15, description: 'Extra chances to survive failure.' },
-  { id: 'scholar',       name: 'Scholar',        health:  7, description: 'Reveals the part of speech.' },
-  { id: 'merchant',      name: 'Merchant',       health:  7, description: 'Open a shop before your quest.' },
-  { id: 'assassin',      name: 'Assassin',       health:  9, description: 'Earn a Sneak Attack when 4+ letters are yellow.' },
+  { id: 'knight',        name: 'Knight',         health: 15, description: 'Knights have extra health' },
+  { id: 'scholar',       name: 'Scholar',        health:  7, description: 'Can tell you information about the word.' },
+  { id: 'merchant',      name: 'Merchant',       health:  7, description: 'Start the game with some merchandise' },
+  { id: 'assassin',      name: 'Assassin',       health:  9, description: 'Can sneak attack with enough yellow letters.' },
   { id: 'cleric',        name: 'Cleric',         health:  8, description: 'Heal to full after every fight.' },
-  { id: 'village-idiot', name: 'Village Idiot',  health: 10, description: 'Any string of letters is a valid guess.' },
+  { id: 'village-idiot', name: 'Village Idiot',  health: 10, description: 'Any string of letters is a valid guess, not just real words.' },
   { id: 'thief',         name: 'The Thief',      health:  9, description: 'Take 2 items from the shop instead of 1.' },
+  // { id: 'changeling',         name: 'The Changeling',      health:  11, description: 'Gain the ability of a random character, and gain another later on.' },
 ]
 
 export const ENEMIES = [

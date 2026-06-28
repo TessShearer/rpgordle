@@ -21,27 +21,20 @@
       <!-- ── Class Select ───────────────────────────────────────────────── -->
       <div v-else-if="screen === 'class-select'" class="class-select-layout">
         <div class="class-select-main">
-          <p class="game-meta text-center mb-4">Choose your class</p>
+          <p class="game-meta text-center my-4">Choose your character</p>
           <div class="class-options">
-            <div
-              v-for="(cls, i) in selectableClasses"
-              :key="cls.id"
-              class="class-option"
-              :class="{ animated: classesAnimated, 'class-option--selected': selectedClass === cls.id }"
-              :style="{ transitionDelay: `${i * 0.15}s` }"
-              @click="selectedClass = cls.id"
-            >
+            <div v-for="(cls, i) in selectableClasses" :key="cls.id" class="class-option"
+              :class="{ 'class-option--selected': selectedClass === cls.id }"
+              :style="{ animationDelay: `${i * 0.1}s` }" @click="selectedClass = cls.id">
               <div class="art-with-shadow">
-                <img v-if="CHARACTER_IMAGES[cls.id]" :src="CHARACTER_IMAGES[cls.id]" :alt="cls.name" class="class-img" />
+                <img v-if="CHARACTER_IMAGES[cls.id]" :src="CHARACTER_IMAGES[cls.id]" :alt="cls.name"
+                  class="class-img" />
                 <div v-else class="art-placeholder art-placeholder--class">
                   Art for {{ cls.name }} goes here
                 </div>
                 <div class="class-option-shadow"></div>
               </div>
-              <div
-                class="class-text"
-                :style="{ transitionDelay: `${0.5 + i * 0.15}s` }"
-              >
+              <div class="class-text">
                 <p class="class-name">{{ cls.name }}</p>
                 <p class="class-desc">{{ cls.description }}</p>
               </div>
@@ -58,38 +51,20 @@
       </div>
 
       <!-- ── Boss Select (free play) ──────────────────────────────────── -->
-      <BossSelect
-        v-else-if="screen === 'boss-select'"
-        :bosses="BOSSES"
-        :selected-boss-id="selectedBoss"
-        @select="selectedBoss = $event"
-        @confirm="confirmBossSelect"
-      />
+      <BossSelect v-else-if="screen === 'boss-select'" :bosses="BOSSES" :selected-boss-id="selectedBoss"
+        @select="selectedBoss = $event" @confirm="confirmBossSelect" />
 
       <!-- ── Boss Intro ────────────────────────────────────────────────── -->
-      <BossIntro
-        v-else-if="screen === 'boss-intro'"
-        ref="bossIntroRef"
-        :boss="currentBoss"
-        :player-class="playerClass"
-        @begin="beginJourney"
-      />
+      <BossIntro v-else-if="screen === 'boss-intro'" ref="bossIntroRef" :boss="currentBoss" :player-class="playerClass"
+        @begin="beginJourney" />
 
       <!-- ── Enemy Intro ───────────────────────────────────────────────── -->
-      <EnemyIntro
-        v-else-if="screen === 'enemy-intro'"
-        ref="enemyIntroRef"
-        :enemy="currentEnemy"
-        @begin="beginEnemyEncounter"
-      />
+      <EnemyIntro v-else-if="screen === 'enemy-intro'" ref="enemyIntroRef" :enemy="currentEnemy"
+        @begin="beginEnemyEncounter" />
 
       <!-- ── Boss Fight Intro ──────────────────────────────────────────── -->
-      <BossFightIntro
-        v-else-if="screen === 'boss-fight-intro'"
-        ref="bossFightIntroRef"
-        :boss="currentBoss"
-        @begin="beginBossFight"
-      />
+      <BossFightIntro v-else-if="screen === 'boss-fight-intro'" ref="bossFightIntroRef" :boss="currentBoss"
+        @begin="beginBossFight" />
 
       <!-- ── Game ───────────────────────────────────────────────────────── -->
       <template v-else>
@@ -98,7 +73,7 @@
           <p class="game-meta">Loading word…</p>
         </div>
 
-        <div v-else-if="gameState === 'error'" class="text-center py-5"> 
+        <div v-else-if="gameState === 'error'" class="text-center py-5">
           <p class="text-danger mb-3">Could not load a word. Make sure the PHP server is running.</p>
           <button class="btn btn-press px-4" @click="startStage(stage)">Try Again</button>
         </div>
@@ -120,12 +95,8 @@
               </template>
               <p class="portrait-stat">HP: {{ playerHealth }}/{{ playerMaxHealth }}</p>
               <div class="player-health-pips portrait-pips">
-                <span
-                  v-for="n in playerMaxHealth"
-                  :key="n"
-                  class="health-pip health-pip--player"
-                  :class="{ 'health-pip--lost': n > playerHealth }"
-                ></span>
+                <span v-for="n in playerMaxHealth" :key="n" class="health-pip health-pip--player"
+                  :class="{ 'health-pip--lost': n > playerHealth }"></span>
               </div>
               <template v-if="crystalHints.length">
                 <p class="portrait-hint-label">crystal ball</p>
@@ -134,7 +105,8 @@
               <div v-if="inventoryItems.length" class="inventory mt-1">
                 <p class="portrait-hint-label">Inventory</p>
                 <div class="inventory-list">
-                  <div v-for="(item, i) in inventoryItems" :key="i" class="inventory-item" :title="item.description" @click="confirmUseItem(item)">
+                  <div v-for="(item, i) in inventoryItems" :key="i" class="inventory-item" :title="item.description"
+                    @click="confirmUseItem(item)">
                     <div class="art-placeholder art-placeholder--inv">{{ item.name }}</div>
                     <p class="inventory-item-name">{{ item.name }}</p>
                   </div>
@@ -145,12 +117,8 @@
               <div class="art-placeholder art-placeholder--portrait">Art of {{ currentEnemy.name }}</div>
               <p class="portrait-stat">{{ currentEnemy.name }}</p>
               <div class="enemy-health portrait-pips">
-                <span
-                  v-for="n in currentEnemy.health"
-                  :key="n"
-                  class="health-pip"
-                  :class="{ 'health-pip--lost': n > enemyHealth }"
-                ></span>
+                <span v-for="n in currentEnemy.health" :key="n" class="health-pip"
+                  :class="{ 'health-pip--lost': n > enemyHealth }"></span>
               </div>
               <template v-if="dangerLetters.length">
                 <p class="portrait-hint-label">Danger {{ dangerLetters.length > 1 ? 'letters' : 'letter' }}</p>
@@ -161,7 +129,8 @@
 
           <!-- Left panel: class character art (desktop only) -->
           <aside class="game-panel game-panel--left">
-            <div class="class-feature" :class="{ 'class-feature--reveal': playerClass === 'seer' || playerClass === 'scholar' }">
+            <div class="class-feature"
+              :class="{ 'class-feature--reveal': playerClass === 'seer' || playerClass === 'scholar' }">
               <img v-if="featureArtImage" :src="featureArtImage" :alt="featureArtText" class="feature-img" />
               <div v-else class="art-placeholder art-placeholder--feature">{{ featureArtText }}</div>
               <div v-if="playerClass === 'seer'" class="feature-hint">
@@ -179,18 +148,15 @@
               <div class="player-health mt-2">
                 <p class="feature-label">HP: {{ playerHealth }} / {{ playerMaxHealth }}</p>
                 <div class="player-health-pips">
-                  <span
-                    v-for="n in playerMaxHealth"
-                    :key="n"
-                    class="health-pip health-pip--player"
-                    :class="{ 'health-pip--lost': n > playerHealth }"
-                  ></span>
+                  <span v-for="n in playerMaxHealth" :key="n" class="health-pip health-pip--player"
+                    :class="{ 'health-pip--lost': n > playerHealth }"></span>
                 </div>
               </div>
               <div v-if="inventoryItems.length" class="inventory mt-2">
                 <p class="feature-label">Inventory</p>
                 <div class="inventory-list">
-                  <div v-for="(item, i) in inventoryItems" :key="i" class="inventory-item" :title="item.description" @click="confirmUseItem(item)">
+                  <div v-for="(item, i) in inventoryItems" :key="i" class="inventory-item" :title="item.description"
+                    @click="confirmUseItem(item)">
                     <div class="art-placeholder art-placeholder--inv">{{ item.name }}</div>
                     <p class="inventory-item-name">{{ item.name }}</p>
                   </div>
@@ -205,12 +171,7 @@
             <div class="text-center mb-2">
               <p class="game-meta mb-2">Enemy {{ stage + 1 }} of {{ JOURNEY_LENGTH }}</p>
               <div class="journey-dots mb-2">
-                <span
-                  v-for="i in JOURNEY_LENGTH"
-                  :key="i"
-                  class="journey-dot"
-                  :class="dotClass(i - 1)"
-                ></span>
+                <span v-for="i in JOURNEY_LENGTH" :key="i" class="journey-dot" :class="dotClass(i - 1)"></span>
               </div>
               <p class="game-meta">{{ wordLength }}-letter word</p>
             </div>
@@ -218,12 +179,7 @@
             <!-- Board -->
             <div class="board mb-2" :style="{ '--cols': wordLength }">
               <template v-for="row in boardRows" :key="row">
-                <div
-                  v-for="col in wordLength"
-                  :key="col"
-                  class="tile"
-                  :class="tileClass(row - 1, col - 1)"
-                >
+                <div v-for="col in wordLength" :key="col" class="tile" :class="tileClass(row - 1, col - 1)">
                   {{ tileChar(row - 1, col - 1) }}
                 </div>
               </template>
@@ -247,13 +203,8 @@
             </div>
             <div v-if="gameState === 'playing'" class="keyboard">
               <div v-for="(row, r) in KEY_ROWS" :key="r" class="key-row">
-                <button
-                  v-for="key in row"
-                  :key="key"
-                  class="key"
-                  :class="keyClass(key)"
-                  @click="handleKey(key)"
-                >{{ key }}</button>
+                <button v-for="key in row" :key="key" class="key" :class="keyClass(key)" @click="handleKey(key)">{{ key
+                  }}</button>
               </div>
             </div>
 
@@ -275,12 +226,8 @@
               <div class="art-placeholder art-placeholder--monster">Art of {{ currentEnemy.name }}</div>
               <p class="enemy-name">{{ currentEnemy.name }}</p>
               <div class="enemy-health">
-                <span
-                  v-for="n in currentEnemy.health"
-                  :key="n"
-                  class="health-pip"
-                  :class="{ 'health-pip--lost': n > enemyHealth }"
-                ></span>
+                <span v-for="n in currentEnemy.health" :key="n" class="health-pip"
+                  :class="{ 'health-pip--lost': n > enemyHealth }"></span>
               </div>
               <p class="monster-text">{{ currentEnemy.effect }}</p>
               <div v-if="dangerLetters.length" class="danger-display mt-1">
@@ -302,16 +249,11 @@
               <div class="art-placeholder art-placeholder--modal-monster my-3">Art of {{ currentBoss.name }}</div>
               <p class="modal-message">{{ currentBoss.announcement }}</p>
             </template>
-<template v-else-if="modal === 'shop'">
+            <template v-else-if="modal === 'shop'">
               <p class="modal-message">You found a shop!</p>
               <p class="modal-submessage">{{ shopPrompt }}</p>
               <div class="shop-items">
-                <div
-                  v-for="item in availableShopItems"
-                  :key="item.id"
-                  class="shop-item"
-                  @click="buyItem(item)"
-                >
+                <div v-for="item in availableShopItems" :key="item.id" class="shop-item" @click="buyItem(item)">
                   <div class="shop-item-inner">
                     <div class="shop-item-front">
                       <div class="art-placeholder art-placeholder--item">{{ item.name }}</div>
@@ -334,9 +276,10 @@
             </template>
             <template v-else>
               <p class="modal-message">{{ MODAL_CONTENT[modal].message }}</p>
-<p v-if="modal === 'lost'" class="modal-word">{{ secretWord.toLowerCase() }}</p>
+              <p v-if="modal === 'lost'" class="modal-word">{{ secretWord.toLowerCase() }}</p>
             </template>
-            <button v-if="modal !== 'shop' && modal !== 'use-item'" class="btn btn-press px-5 py-2 mt-3" @click="handleModalAction">
+            <button v-if="modal !== 'shop' && modal !== 'use-item'" class="btn btn-press px-5 py-2 mt-3"
+              @click="handleModalAction">
               {{ MODAL_CONTENT[modal].button }}
             </button>
           </div>
@@ -348,12 +291,12 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { CLASSES, ENEMIES, MINIBOSSES, BOSSES, SHOP_ITEMS, ALL_ITEMS, STAGE_SEQUENCE, JOURNEY_LENGTH } from '@/data/gameData.js'
-import BossIntro      from '@/components/BossIntro.vue'
+import BossIntro from '@/components/BossIntro.vue'
 import BossFightIntro from '@/components/BossFightIntro.vue'
-import BossSelect     from '@/components/BossSelect.vue'
-import EnemyIntro     from '@/components/EnemyIntro.vue'
+import BossSelect from '@/components/BossSelect.vue'
+import EnemyIntro from '@/components/EnemyIntro.vue'
 import { CHARACTER_IMAGES } from '@/assets/characterImages.js'
 import { fetchOrCreateDaily } from '@/services/daily.js'
 
@@ -363,65 +306,65 @@ const props = defineProps({
 
 
 const KEY_ROWS = [
-  ['Q','W','E','R','T','Y','U','I','O','P'],
-  ['A','S','D','F','G','H','J','K','L'],
-  ['ENTER','Z','X','C','V','B','N','M','⌫'],
+  ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
+  ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
+  ['ENTER', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', '⌫'],
 ]
 
 
 const MODAL_CONTENT = {
   'boss-announcement': { button: 'Begin Quest' },
-  lost:                { message: 'Oh no, you failed! Try again?',       button: 'Try Again' },
-  complete:            { message: 'You completed your quest and the realm has been saved! New Game?', button: 'New Game'  },
+  lost: { message: 'Oh no, you failed! Try again?', button: 'Try Again' },
+  complete: { message: 'You completed your quest and the realm has been saved! New Game?', button: 'New Game' },
 }
 
+
 // ── Screen / class ────────────────────────────────────────────────────────────
-const screen          = ref('intro')
-const playerClass     = ref(null)
-const classesAnimated = ref(false)
-const selectedClass   = ref(null)
-const bossIntroRef      = ref(null)
+const screen = ref('intro')
+const playerClass = ref(null)
+const selectedClass = ref(null)
+const bossIntroRef = ref(null)
 const bossFightIntroRef = ref(null)
-const enemyIntroRef     = ref(null)
-const wonMessage        = ref(false)
-const wonDamage         = ref(false)
+const enemyIntroRef = ref(null)
+const wonMessage = ref(false)
+const wonDamage = ref(false)
 
 // ── Game state ────────────────────────────────────────────────────────────────
-const stage        = ref(0)
-const secretWord   = ref('')
-const guesses      = ref([])
+const stage = ref(0)
+const secretWord = ref('')
+const guesses = ref([])
 const currentGuess = ref('')
-const gameState    = ref('loading')
-const inputError   = ref('')
-const modal        = ref(null)
-const hintLetter   = ref('')
+const gameState = ref('loading')
+const inputError = ref('')
+const modal = ref(null)
+const hintLetter = ref('')
 const hintWordType = ref('')
-const playerHealth    = ref(0)
+const playerHealth = ref(0)
 const playerMaxHealth = ref(0)
-const currentBoss     = ref(null)
-const currentEnemy    = ref(null)
-const enemyHealth     = ref(0)
-const hitWord         = ref('')
-const lastRegen       = ref(0)
-const dangerLetters   = ref([])
-const inventory       = ref([])
-const inventoryItems  = computed(() => inventory.value.map(id => ALL_ITEMS.find(i => i.id === id)).filter(Boolean))
-const pendingUseItem  = ref(null)
-const shieldedRows    = ref(new Set())
-const crystalHints    = ref([])
+const currentBoss = ref(null)
+const currentEnemy = ref(null)
+const enemyHealth = ref(0)
+const hitWord = ref('')
+const lastRegen = ref(0)
+const dangerLetters = ref([])
+const inventory = ref([])
+const inventoryItems = computed(() => inventory.value.map(id => ALL_ITEMS.find(i => i.id === id)).filter(Boolean))
+const pendingUseItem = ref(null)
+const shieldedRows = ref(new Set())
+const crystalHints = ref([])
 
 // ── Class abilities ───────────────────────────────────────────────────────────
 const sneakAttackAvailable = ref(false)
-const shopPicksRemaining   = ref(1)
-const shopTotalPicks       = ref(1)
-const merchantShop         = ref(false)
-const validating           = ref(false)
+const shopPicksRemaining = ref(1)
+const shopTotalPicks = ref(1)
+const merchantShop = ref(false)
+const validating = ref(false)
 
 // ── Daily / freeplay ──────────────────────────────────────────────────────────
-const dailyConfig   = ref(null)
-const dailyLoading  = ref(props.mode === 'daily')
-const dailyError    = ref(false)
-const selectedBoss  = ref(null)
+const dailyConfig = ref(null)
+const dailyLoading = ref(props.mode === 'daily')
+const dailyError = ref(false)
+const selectedBoss = ref(null)
 const bossWordIndex = ref(0)
 
 const selectableClasses = computed(() => {
@@ -446,7 +389,7 @@ const obscuredCols = computed(() => {
 })
 
 // ── Derived ───────────────────────────────────────────────────────────────────
-const wordLength        = computed(() => secretWord.value.length)
+const wordLength = computed(() => secretWord.value.length)
 const boardRows = computed(() =>
   guesses.value.length + (gameState.value === 'playing' ? 1 : 0)
 )
@@ -467,7 +410,7 @@ const featureArtImage = computed(() => CHARACTER_IMAGES[playerClass.value] ?? nu
 // ── Evaluation ────────────────────────────────────────────────────────────────
 function evaluateGuess(guess) {
   const status = Array(guess.length).fill('absent')
-  const pool   = secretWord.value.split('')
+  const pool = secretWord.value.split('')
 
   for (let i = 0; i < guess.length; i++) {
     if (guess[i] === pool[i]) { status[i] = 'correct'; pool[i] = null }
@@ -481,7 +424,7 @@ function evaluateGuess(guess) {
   return guess.split('').map((letter, i) => ({ letter, status: status[i] }))
 }
 
-const evaluatedRows  = computed(() => guesses.value.map(evaluateGuess))
+const evaluatedRows = computed(() => guesses.value.map(evaluateGuess))
 const letterStatuses = computed(() => {
   const priority = { correct: 3, present: 2, absent: 1 }
   const map = {}
@@ -493,7 +436,7 @@ const letterStatuses = computed(() => {
 
 // ── Tile / key helpers ────────────────────────────────────────────────────────
 function dotClass(i) {
-  if (i < stage.value)   return 'dot--done'
+  if (i < stage.value) return 'dot--done'
   if (i === stage.value) return 'dot--active'
   return 'dot--pending'
 }
@@ -507,7 +450,7 @@ function isObscured(row, col) {
 
 function tileChar(row, col) {
   if (isObscured(row, col)) return ''
-  if (row < guesses.value.length)   return guesses.value[row][col] ?? ''
+  if (row < guesses.value.length) return guesses.value[row][col] ?? ''
   if (row === guesses.value.length) return currentGuess.value[col] ?? ''
   return ''
 }
@@ -547,7 +490,7 @@ function onKeyDown(e) {
   }
   if (screen.value === 'class-select') {
     const list = selectableClasses.value
-    const idx  = list.findIndex(c => c.id === selectedClass.value)
+    const idx = list.findIndex(c => c.id === selectedClass.value)
     if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
       e.preventDefault()
       selectedClass.value = list[(idx + 1) % list.length].id
@@ -598,7 +541,7 @@ function onKeyDown(e) {
     if (item) { confirmUseItem(item); return }
   }
   if (e.key === 'Backspace') return handleKey('⌫')
-  if (e.key === 'Enter')     return handleKey('ENTER')
+  if (e.key === 'Enter') return handleKey('ENTER')
   if (/^[a-zA-Z]$/.test(e.key)) handleKey(e.key.toUpperCase())
 }
 
@@ -614,7 +557,7 @@ async function submitGuess(skipValidation = false) {
   if (playerClass.value !== 'village-idiot' && !skipValidation) {
     validating.value = true
     try {
-      const res  = await fetch(`/api/word/validate?word=${submitted.toLowerCase()}`)
+      const res = await fetch(`/api/word/validate?word=${submitted.toLowerCase()}`)
       const data = await res.json()
       if (!data.valid) {
         inputError.value = 'Not a recognized word'
@@ -627,7 +570,7 @@ async function submitGuess(skipValidation = false) {
     }
   }
 
-  guesses.value      = [...guesses.value, submitted]
+  guesses.value = [...guesses.value, submitted]
   currentGuess.value = ''
 
   if (submitted === secretWord.value) {
@@ -635,29 +578,29 @@ async function submitGuess(skipValidation = false) {
     if (enemyHealth.value <= 0) {
       // Cleric: heal to full on enemy defeat
       if (playerClass.value === 'cleric') {
-        lastRegen.value    = playerMaxHealth.value - playerHealth.value
+        lastRegen.value = playerMaxHealth.value - playerHealth.value
         playerHealth.value = playerMaxHealth.value
       } else {
         const regen = currentEnemy.value.regen
-        lastRegen.value    = Math.min(regen, playerMaxHealth.value - playerHealth.value)
+        lastRegen.value = Math.min(regen, playerMaxHealth.value - playerHealth.value)
         playerHealth.value = Math.min(playerMaxHealth.value, playerHealth.value + regen)
       }
       gameState.value = 'won'
-      const isLast     = stage.value === JOURNEY_LENGTH - 1
+      const isLast = stage.value === JOURNEY_LENGTH - 1
       const isMiniboss = MINIBOSSES.some(m => m.id === currentEnemy.value?.id)
       if (isLast) {
         setTimeout(() => { modal.value = 'complete' }, 600)
       } else if (isMiniboss) {
-        wonDamage.value          = false
-        wonMessage.value         = true
+        wonDamage.value = false
+        wonMessage.value = true
         shopPicksRemaining.value = playerClass.value === 'thief' ? 2 : 1
-        shopTotalPicks.value     = shopPicksRemaining.value
+        shopTotalPicks.value = shopPicksRemaining.value
         setTimeout(() => {
           wonMessage.value = false
           modal.value = 'shop'
         }, 1800)
       } else {
-        wonDamage.value  = false
+        wonDamage.value = false
         wonMessage.value = true
         setTimeout(() => {
           wonMessage.value = false
@@ -665,8 +608,8 @@ async function submitGuess(skipValidation = false) {
         }, 1800)
       }
     } else {
-      gameState.value  = 'won'
-      wonDamage.value  = true
+      gameState.value = 'won'
+      wonDamage.value = true
       wonMessage.value = true
       const advancingBoss = stage.value >= STAGE_SEQUENCE.length
       setTimeout(() => {
@@ -676,19 +619,19 @@ async function submitGuess(skipValidation = false) {
       }, 1800)
     }
   } else {
-    const guessRow     = guesses.value.length - 1
-    const isShielded   = shieldedRows.value.has(guessRow)
+    const guessRow = guesses.value.length - 1
+    const isShielded = shieldedRows.value.has(guessRow)
     const doubleDamage = !isShielded
-                         && currentBoss.value?.id === 'gelatinous-cube'
-                         && dangerLetters.value.length > 0
-                         && dangerLetters.value.some(l => submitted.includes(l))
+      && currentBoss.value?.id === 'gelatinous-cube'
+      && dangerLetters.value.length > 0
+      && dangerLetters.value.some(l => submitted.includes(l))
     playerHealth.value -= doubleDamage ? 2 : 1
     if (playerHealth.value <= 0) {
       gameState.value = 'lost'
       setTimeout(() => { modal.value = 'lost' }, 600)
     } else if (playerClass.value === 'assassin' && sneakAttackAvailable.value) {
       // Trigger sneak attack if 4+ letters are yellow (present)
-      const guessEval   = evaluateGuess(submitted)
+      const guessEval = evaluateGuess(submitted)
       const yellowCount = guessEval.filter(c => c.status === 'present').length
       if (yellowCount >= 4) {
         sneakAttackAvailable.value = false
@@ -704,70 +647,68 @@ function handleModalAction() {
     startStage(0)
   } else {
     // lost or complete → back to intro
-    screen.value               = 'intro'
-    playerClass.value          = null
-    modal.value                = null
-    gameState.value            = 'loading'
-    playerHealth.value         = 0
-    playerMaxHealth.value      = 0
-    currentBoss.value          = null
-    currentEnemy.value         = null
-    enemyHealth.value          = 0
-    dangerLetters.value        = []
-    inventory.value            = []
-    shieldedRows.value         = new Set()
-    crystalHints.value         = []
-    selectedBoss.value         = null
-    bossWordIndex.value        = 0
+    screen.value = 'intro'
+    playerClass.value = null
+    modal.value = null
+    gameState.value = 'loading'
+    playerHealth.value = 0
+    playerMaxHealth.value = 0
+    currentBoss.value = null
+    currentEnemy.value = null
+    enemyHealth.value = 0
+    dangerLetters.value = []
+    inventory.value = []
+    shieldedRows.value = new Set()
+    crystalHints.value = []
+    selectedBoss.value = null
+    bossWordIndex.value = 0
     sneakAttackAvailable.value = false
-    shopPicksRemaining.value   = 1
-    shopTotalPicks.value       = 1
-    merchantShop.value         = false
-    validating.value           = false
+    shopPicksRemaining.value = 1
+    shopTotalPicks.value = 1
+    merchantShop.value = false
+    validating.value = false
   }
 }
 
 // ── Navigation ────────────────────────────────────────────────────────────────
 function restartJourney() {
-  screen.value               = 'intro'
-  playerClass.value          = null
-  modal.value                = null
-  gameState.value            = 'loading'
-  playerHealth.value         = 0
-  playerMaxHealth.value      = 0
-  currentBoss.value          = null
-  currentEnemy.value         = null
-  enemyHealth.value          = 0
-  dangerLetters.value        = []
-  inventory.value            = []
-  shieldedRows.value         = new Set()
-  crystalHints.value         = []
-  selectedBoss.value         = null
-  bossWordIndex.value        = 0
+  screen.value = 'intro'
+  playerClass.value = null
+  modal.value = null
+  gameState.value = 'loading'
+  playerHealth.value = 0
+  playerMaxHealth.value = 0
+  currentBoss.value = null
+  currentEnemy.value = null
+  enemyHealth.value = 0
+  dangerLetters.value = []
+  inventory.value = []
+  shieldedRows.value = new Set()
+  crystalHints.value = []
+  selectedBoss.value = null
+  bossWordIndex.value = 0
   sneakAttackAvailable.value = false
-  shopPicksRemaining.value   = 1
-  validating.value           = false
+  shopPicksRemaining.value = 1
+  validating.value = false
 }
 
 function showClassSelect() {
-  classesAnimated.value = false
-  selectedClass.value   = null
+  selectedClass.value = null
   screen.value = 'class-select'
-  nextTick(() => { classesAnimated.value = true })
 }
 
 function selectClass(cls) {
-  const classData       = CLASSES.find(c => c.id === cls)
-  playerClass.value     = cls
-  playerHealth.value    = classData.health
+  const classData = CLASSES.find(c => c.id === cls)
+  playerClass.value = cls
+  playerHealth.value = classData.health
   playerMaxHealth.value = classData.health
-  gameState.value       = 'ready'
+  gameState.value = 'ready'
   if (props.mode === 'daily' && dailyConfig.value) {
     currentBoss.value = BOSSES.find(b => b.id === dailyConfig.value.bossId)
-    screen.value      = 'boss-intro'
+    screen.value = 'boss-intro'
   } else {
     selectedBoss.value = null
-    screen.value       = 'boss-select'
+    screen.value = 'boss-select'
   }
 }
 
@@ -779,10 +720,11 @@ function confirmBossSelect(bossId) {
 function beginJourney() {
   screen.value = 'playing'
   if (playerClass.value === 'merchant') {
-    merchantShop.value       = true
+    // inventory.value.push(item.id)
+    merchantShop.value = true
     shopPicksRemaining.value = 3
-    shopTotalPicks.value     = 3
-    modal.value              = 'shop'
+    shopTotalPicks.value = 3
+    modal.value = 'shop'
   } else {
     startStage(0)
   }
@@ -808,13 +750,13 @@ async function startStage(stageNum) {
   sneakAttackAvailable.value = (playerClass.value === 'assassin')
   const isBossFight = stageNum >= STAGE_SEQUENCE.length
   if (isBossFight) {
-    currentEnemy.value  = currentBoss.value
-    enemyHealth.value   = currentBoss.value.health
+    currentEnemy.value = currentBoss.value
+    enemyHealth.value = currentBoss.value.health
     bossWordIndex.value = 0
-    screen.value        = 'boss-fight-intro'
+    screen.value = 'boss-fight-intro'
   } else {
     const stageType = STAGE_SEQUENCE[stageNum]
-    const pool      = stageType === 'miniboss' ? MINIBOSSES : ENEMIES
+    const pool = stageType === 'miniboss' ? MINIBOSSES : ENEMIES
     if (props.mode === 'daily' && dailyConfig.value) {
       const enemyId = dailyConfig.value.stageEnemies[stageNum]
       currentEnemy.value = pool.find(e => e.id === enemyId) ?? pool[Math.floor(Math.random() * pool.length)]
@@ -828,8 +770,8 @@ async function startStage(stageNum) {
 
 function applyDangerLetters(isBossFight) {
   if (currentBoss.value?.id !== 'gelatinous-cube') return
-  const alpha  = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-  const count  = isBossFight ? 3 : 1
+  const alpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+  const count = isBossFight ? 3 : 1
   const picked = new Set()
   while (picked.size < count) picked.add(alpha[Math.floor(Math.random() * 26)])
   dangerLetters.value = [...picked]
@@ -853,25 +795,25 @@ function finishWordLoad(showModal) {
 }
 
 async function loadWord(showModal) {
-  gameState.value    = 'loading'
-  secretWord.value   = ''
-  guesses.value      = []
+  gameState.value = 'loading'
+  secretWord.value = ''
+  guesses.value = []
   currentGuess.value = ''
-  inputError.value   = ''
-  modal.value        = null
-  hintLetter.value      = ''
-  hintWordType.value    = ''
-  dangerLetters.value   = []
-  shieldedRows.value    = new Set()
-  crystalHints.value    = []
+  inputError.value = ''
+  modal.value = null
+  hintLetter.value = ''
+  hintWordType.value = ''
+  dangerLetters.value = []
+  shieldedRows.value = new Set()
+  crystalHints.value = []
   // Unused sneak attack disappears when a new word begins
   inventory.value = inventory.value.filter(id => id !== 'sneak-attack')
 
   const isBossFight = stage.value >= STAGE_SEQUENCE.length
 
   if (props.mode === 'daily' && dailyConfig.value) {
-    const wordKey        = isBossFight ? `boss-${bossWordIndex.value}` : `stage-${stage.value}`
-    secretWord.value     = dailyConfig.value.words[wordKey]
+    const wordKey = isBossFight ? `boss-${bossWordIndex.value}` : `stage-${stage.value}`
+    secretWord.value = dailyConfig.value.words[wordKey]
     applyDangerLetters(isBossFight)
     applySeerHint()
     if (playerClass.value === 'scholar') hintWordType.value = 'word'
@@ -882,16 +824,16 @@ async function loadWord(showModal) {
   const [min, max] = isBossFight ? [8, 12] : [4, 7]
   try {
     const length = Math.floor(Math.random() * (max - min + 1)) + min
-    const res    = await fetch(`/api/word/random?length=${length}`)
+    const res = await fetch(`/api/word/random?length=${length}`)
     if (!res.ok) throw new Error()
-    const data   = await res.json()
+    const data = await res.json()
     secretWord.value = data.word.toUpperCase()
     applyDangerLetters(isBossFight)
     applySeerHint()
     if (playerClass.value === 'scholar') {
       const posMap = { n: 'noun', v: 'verb', adj: 'adjective', adv: 'adverb' }
-      const tags   = data.tags || []
-      const types  = Object.entries(posMap)
+      const tags = data.tags || []
+      const types = Object.entries(posMap)
         .filter(([tag]) => tags.includes(tag))
         .map(([, label]) => label)
       hintWordType.value = types.length ? types.join(', ') : 'word'
@@ -908,12 +850,7 @@ function buyItem(item) {
   shopPicksRemaining.value -= 1
   if (shopPicksRemaining.value <= 0) {
     modal.value = null
-    if (merchantShop.value) {
-      merchantShop.value = false
-      startStage(0)
-    } else {
-      startStage(stage.value + 1)
-    }
+    startStage(stage.value + 1)
   }
 }
 
@@ -977,7 +914,7 @@ function articleFor(name) {
 async function applyAnnoyingKidGuess() {
   let word
   try {
-    const res  = await fetch(`/api/word/random?length=${wordLength.value}`)
+    const res = await fetch(`/api/word/random?length=${wordLength.value}`)
     const data = res.ok ? await res.json() : null
     word = data?.word?.toUpperCase()
   } catch { /* fall through */ }
@@ -989,8 +926,8 @@ async function applyAnnoyingKidGuess() {
   guesses.value = [word]
 
   const doubleDamage = currentBoss.value?.id === 'gelatinous-cube'
-                       && dangerLetters.value.length > 0
-                       && dangerLetters.value.some(l => word.includes(l))
+    && dangerLetters.value.length > 0
+    && dangerLetters.value.some(l => word.includes(l))
   playerHealth.value -= doubleDamage ? 2 : 1
 
   if (playerHealth.value <= 0) {
