@@ -253,7 +253,13 @@
               <p class="modal-message">You found a shop!</p>
               <p class="modal-submessage">{{ shopPrompt }}</p>
               <div class="shop-items">
-                <div v-for="item in availableShopItems" :key="item.id" class="shop-item" @click="buyItem(item)">
+                <div
+                  v-for="item in currentShopItems"
+                  :key="item.id"
+                  class="shop-item"
+                  :class="{ 'shop-item--flipped': selectedShopItemId === item.id }"
+                  @click="selectedShopItemId = item.id"
+                >
                   <div class="shop-item-inner">
                     <div class="shop-item-front">
                       <div class="art-placeholder art-placeholder--item">{{ item.name }}</div>
@@ -265,6 +271,11 @@
                   </div>
                 </div>
               </div>
+              <Transition name="slide-in">
+                <button v-if="selectedShopItemId" class="btn btn-press px-5 py-2 mt-3" @click="buySelectedItem">
+                  Buy
+                </button>
+              </Transition>
             </template>
             <template v-else-if="modal === 'use-item'">
               <p class="modal-message">Use {{ pendingUseItem.name }}?</p>
@@ -357,6 +368,8 @@ const crystalHints = ref([])
 const sneakAttackAvailable = ref(false)
 const shopPicksRemaining = ref(1)
 const shopTotalPicks = ref(1)
+const selectedShopItemId = ref(null)
+const freeplayShopItems = ref([])
 const validating = ref(false)
 
 // ── Daily / freeplay ──────────────────────────────────────────────────────────
@@ -379,6 +392,18 @@ const availableShopItems = computed(() => {
   }
   return SHOP_ITEMS
 })
+
+const currentShopItems = computed(() =>
+  props.mode === 'daily' ? availableShopItems.value : freeplayShopItems.value
+)
+
+function openShop() {
+  if (props.mode !== 'daily') {
+    const shuffled = [...SHOP_ITEMS].sort(() => Math.random() - 0.5)
+    freeplayShopItems.value = shuffled.slice(0, 3)
+  }
+  modal.value = 'shop'
+}
 
 const obscuredCols = computed(() => {
   if (currentBoss.value?.id !== 'shadow-sorcerer') return []
@@ -559,7 +584,8 @@ async function submitGuess(skipValidation = false) {
       const res = await fetch(`/api/word/validate?word=${submitted.toLowerCase()}`)
       const data = await res.json()
       if (!data.valid) {
-        inputError.value = 'Not a recognized word'
+        inputError.value = 'Invalid word'
+        currentGuess.value = ''
         return
       }
     } catch {
@@ -596,7 +622,7 @@ async function submitGuess(skipValidation = false) {
         shopTotalPicks.value = shopPicksRemaining.value
         setTimeout(() => {
           wonMessage.value = false
-          modal.value = 'shop'
+          openShop()
         }, 1800)
       } else {
         wonDamage.value = false
@@ -664,6 +690,7 @@ function handleModalAction() {
     sneakAttackAvailable.value = false
     shopPicksRemaining.value = 1
     shopTotalPicks.value = 1
+    freeplayShopItems.value = []
     validating.value = false
   }
 }
@@ -687,6 +714,7 @@ function restartJourney() {
   bossWordIndex.value = 0
   sneakAttackAvailable.value = false
   shopPicksRemaining.value = 1
+  freeplayShopItems.value = []
   validating.value = false
 }
 
@@ -839,6 +867,13 @@ async function loadWord(showModal) {
   }
 }
 
+
+function buySelectedItem() {
+  const item = currentShopItems.value.find(i => i.id === selectedShopItemId.value)
+  if (!item) return
+  selectedShopItemId.value = null
+  buyItem(item)
+}
 
 function buyItem(item) {
   inventory.value.push(item.id)
