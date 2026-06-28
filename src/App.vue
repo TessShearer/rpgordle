@@ -8,10 +8,10 @@
           <li class="nav-item">
             <RouterLink class="nav-link" to="/freeplay">Custom Play</RouterLink>
           </li>
-          <!-- <li class="nav-item">
+          <li class="nav-item">
             <RouterLink class="nav-link" to="/game-info">Game Info</RouterLink>
           </li>
-          <li class="nav-item">
+          <!-- <li class="nav-item">
             <RouterLink class="nav-link" to="/word-info">Word Info</RouterLink>
           </li> -->
         </ul>
