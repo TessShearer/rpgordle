@@ -357,7 +357,6 @@ const crystalHints = ref([])
 const sneakAttackAvailable = ref(false)
 const shopPicksRemaining = ref(1)
 const shopTotalPicks = ref(1)
-const merchantShop = ref(false)
 const validating = ref(false)
 
 // ── Daily / freeplay ──────────────────────────────────────────────────────────
@@ -665,7 +664,6 @@ function handleModalAction() {
     sneakAttackAvailable.value = false
     shopPicksRemaining.value = 1
     shopTotalPicks.value = 1
-    merchantShop.value = false
     validating.value = false
   }
 }
@@ -720,14 +718,11 @@ function confirmBossSelect(bossId) {
 function beginJourney() {
   screen.value = 'playing'
   if (playerClass.value === 'merchant') {
-    // inventory.value.push(item.id)
-    merchantShop.value = true
-    shopPicksRemaining.value = 3
-    shopTotalPicks.value = 3
-    modal.value = 'shop'
-  } else {
-    startStage(0)
+    const pool = availableShopItems.value
+    const item = pool[Math.floor(Math.random() * pool.length)]
+    inventory.value.push(item.id)
   }
+  startStage(0)
 }
 
 function beginEnemyEncounter() {

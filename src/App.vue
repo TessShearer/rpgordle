@@ -6,7 +6,7 @@
             <RouterLink class="nav-link" to="/">Daily</RouterLink>
           </li>
           <li class="nav-item">
-            <RouterLink class="nav-link" to="/freeplay">Free Play</RouterLink>
+            <RouterLink class="nav-link" to="/freeplay">Custom</RouterLink>
           </li>
           <!-- <li class="nav-item">
             <RouterLink class="nav-link" to="/game-info">Game Info</RouterLink>
