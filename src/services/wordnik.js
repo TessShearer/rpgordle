@@ -9,7 +9,7 @@ const GAME_EXCLUDED_POS = 'given-name,family-name,proper-noun,proper-noun-plural
  */
 export async function fetchGameWord({ minLength = 3, maxLength = 5 } = {}) {
   let lastError
-  for (let attempt = 0; attempt < 8; attempt++) {
+  for (let attempt = 0; attempt < 5; attempt++) {
     try {
       const result = await fetchRandomWord({
         minLength,
