@@ -8,14 +8,22 @@ const GAME_EXCLUDED_POS = 'given-name,family-name,proper-noun,proper-noun-plural
  * Optional: override minLength / maxLength (e.g. for Annoying Kid same-length guess).
  */
 export async function fetchGameWord({ minLength = 3, maxLength = 5 } = {}) {
-  const result = await fetchRandomWord({
-    minLength,
-    maxLength,
-    minCorpusCount: 5000,
-    hasDictionaryDef: 'true',
-    excludePartOfSpeech: GAME_EXCLUDED_POS,
-  })
-  return result.word
+  let lastError
+  for (let attempt = 0; attempt < 4; attempt++) {
+    try {
+      const result = await fetchRandomWord({
+        minLength,
+        maxLength,
+        minCorpusCount: 5000,
+        hasDictionaryDef: 'true',
+        excludePartOfSpeech: GAME_EXCLUDED_POS,
+      })
+      return result.word
+    } catch (e) {
+      lastError = e
+    }
+  }
+  throw lastError
 }
 
 export async function fetchRandomWord(params = {}) {
