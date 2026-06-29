@@ -1,6 +1,6 @@
 const BASE = '/api/wordnik'
 
-const GAME_EXCLUDED_POS = 'given-name,family-name,proper-noun,proper-noun-plural,proper-noun-posessive, interjection, idiom, abbreviation, affix'
+const GAME_EXCLUDED_POS = 'given-name,family-name,proper-noun,proper-noun-plural,proper-noun-posessive,interjection,idiom,abbreviation,affix'
 
 /**
  * Fetch a single game word from Wordnik with the standard game constraints.
@@ -9,7 +9,7 @@ const GAME_EXCLUDED_POS = 'given-name,family-name,proper-noun,proper-noun-plural
  */
 export async function fetchGameWord({ minLength = 3, maxLength = 5 } = {}) {
   let lastError
-  for (let attempt = 0; attempt < 8; attempt++) {
+  for (let attempt = 0; attempt < 4; attempt++) {
     try {
       const result = await fetchRandomWord({
         minLength,
@@ -21,6 +21,7 @@ export async function fetchGameWord({ minLength = 3, maxLength = 5 } = {}) {
       return result.word
     } catch (e) {
       lastError = e
+      if (attempt < 7) await new Promise(r => setTimeout(r, 400 * (attempt + 1)))
     }
   }
   throw lastError
