@@ -1,6 +1,6 @@
 const BASE = '/api/wordnik'
 
-const GAME_EXCLUDED_POS = 'given-name,family-name,proper-noun,proper-noun-plural,proper-noun-posessive, interjection, idiom, abbreviation, affix'
+const GAME_EXCLUDED_POS = 'given-name,family-name,proper-noun,proper-noun-plural,proper-noun-posessive,interjection,idiom,abbreviation,affix'
 
 /**
  * Fetch a single game word from Wordnik with the standard game constraints.
