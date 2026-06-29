@@ -310,6 +310,7 @@ import BossSelect from '@/components/BossSelect.vue'
 import EnemyIntro from '@/components/EnemyIntro.vue'
 import { CHARACTER_IMAGES } from '@/assets/characterImages.js'
 import { fetchOrCreateDaily } from '@/services/daily.js'
+import { fetchGameWord, fetchDefinitions } from '@/services/wordnik.js'
 
 const props = defineProps({
   mode: { type: String, default: 'daily' },
@@ -847,22 +848,18 @@ async function loadWord(showModal) {
     return
   }
 
-  const [min, max] = isBossFight ? [8, 12] : [4, 7]
   try {
-    const length = Math.floor(Math.random() * (max - min + 1)) + min
-    const res = await fetch(`/api/word/random?length=${length}`)
-    if (!res.ok) throw new Error()
-    const data = await res.json()
-    secretWord.value = data.word.toUpperCase()
+    const wordLower = await fetchGameWord()
+    secretWord.value = wordLower.toUpperCase()
     applyDangerLetters(isBossFight)
     applySeerHint()
     if (playerClass.value === 'scholar') {
-      const posMap = { n: 'noun', v: 'verb', adj: 'adjective', adv: 'adverb' }
-      const tags = data.tags || []
-      const types = Object.entries(posMap)
-        .filter(([tag]) => tags.includes(tag))
-        .map(([, label]) => label)
-      hintWordType.value = types.length ? types.join(', ') : 'word'
+      try {
+        const defs = await fetchDefinitions(wordLower, { limit: 1 })
+        hintWordType.value = defs?.[0]?.partOfSpeech || 'word'
+      } catch {
+        hintWordType.value = 'word'
+      }
     }
     finishWordLoad(showModal)
   } catch {
@@ -947,9 +944,7 @@ function articleFor(name) {
 async function applyAnnoyingKidGuess() {
   let word
   try {
-    const res = await fetch(`/api/word/random?length=${wordLength.value}`)
-    const data = res.ok ? await res.json() : null
-    word = data?.word?.toUpperCase()
+    word = (await fetchGameWord({ minLength: wordLength.value, maxLength: wordLength.value })).toUpperCase()
   } catch { /* fall through */ }
   if (!word || word === secretWord.value) {
     const alpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'

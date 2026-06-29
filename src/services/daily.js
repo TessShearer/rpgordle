@@ -3,6 +3,7 @@ import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
 import {
   CLASSES, ENEMIES, MINIBOSSES, BOSSES, SHOP_ITEMS, STAGE_SEQUENCE,
 } from '@/data/gameData.js'
+import { fetchGameWord } from '@/services/wordnik.js'
 
 export function getTodayKey() {
   const d    = new Date()
@@ -24,12 +25,9 @@ function pickRandom(arr, count) {
   return count ? shuffled.slice(0, count) : shuffled[0]
 }
 
-async function fetchWord(minLen, maxLen) {
-  const length = Math.floor(Math.random() * (maxLen - minLen + 1)) + minLen
-  const res  = await fetch(`/api/word/random?length=${length}`)
-  if (!res.ok) throw new Error('word fetch failed')
-  const data = await res.json()
-  return data.word.toUpperCase()
+async function fetchWord() {
+  const word = await fetchGameWord()
+  return word.toUpperCase()
 }
 
 async function getRecentDailies(dateKey) {
@@ -61,10 +59,10 @@ async function generateDaily(dateKey) {
 
   const words = {}
   for (let i = 0; i < STAGE_SEQUENCE.length; i++) {
-    words[`stage-${i}`] = await fetchWord(4, 7)
+    words[`stage-${i}`] = await fetchWord()
   }
   for (let i = 0; i < boss.health; i++) {
-    words[`boss-${i}`] = await fetchWord(8, 12)
+    words[`boss-${i}`] = await fetchWord()
   }
 
   const config = {

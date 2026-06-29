@@ -1,5 +1,23 @@
 const BASE = '/api/wordnik'
 
+const GAME_EXCLUDED_POS = 'given-name,family-name,proper-noun,proper-noun-plural,proper-noun-posessive'
+
+/**
+ * Fetch a single game word from Wordnik with the standard game constraints.
+ * Returns the word in lowercase.
+ * Optional: override minLength / maxLength (e.g. for Annoying Kid same-length guess).
+ */
+export async function fetchGameWord({ minLength = 3, maxLength = 5 } = {}) {
+  const result = await fetchRandomWord({
+    minLength,
+    maxLength,
+    minCorpusCount: 5000,
+    hasDictionaryDef: 'true',
+    excludePartOfSpeech: GAME_EXCLUDED_POS,
+  })
+  return result.word
+}
+
 export async function fetchRandomWord(params = {}) {
   const q = new URLSearchParams(params)
   const res = await fetch(`${BASE}/random?${q}`)
