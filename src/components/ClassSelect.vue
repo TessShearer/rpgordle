@@ -3,14 +3,9 @@
     <div class="class-select-main">
       <p class="game-meta text-center my-4">Choose your character</p>
       <div class="class-options">
-        <div
-          v-for="(cls, i) in classes"
-          :key="cls.id"
-          class="class-option"
-          :class="{ 'class-option--selected': selectedClassId === cls.id }"
-          :style="{ animationDelay: `${i * 0.1}s` }"
-          @click="$emit('select', cls.id)"
-        >
+        <div v-for="(cls, i) in classes" :key="cls.id" class="class-option"
+          :class="{ 'class-option--selected': selectedClassId === cls.id }" :style="{ animationDelay: `${i * 0.1}s` }"
+          @click="$emit('select', cls.id)">
           <div class="art-with-shadow">
             <img v-if="CHARACTER_IMAGES[cls.id]" :src="CHARACTER_IMAGES[cls.id]" :alt="cls.name" class="class-img" />
             <div v-else class="art-placeholder art-placeholder--class">Art for {{ cls.name }} goes here</div>
@@ -18,6 +13,7 @@
           </div>
           <div class="class-text">
             <p class="class-name">{{ cls.name }}</p>
+            <p class="class-health">{{ cls.health }} Health</p>
             <p class="class-desc">{{ cls.description }}</p>
           </div>
         </div>
@@ -37,7 +33,7 @@
 import { CHARACTER_IMAGES } from '@/assets/characterImages.js'
 
 defineProps({
-  classes:         { type: Array,  required: true },
+  classes: { type: Array, required: true },
   selectedClassId: { type: String, default: null },
 })
 defineEmits(['select', 'confirm'])

@@ -19,13 +19,8 @@
       </div>
 
       <!-- ── Class Select ───────────────────────────────────────────────── -->
-      <ClassSelect
-        v-else-if="screen === 'class-select'"
-        :classes="selectableClasses"
-        :selected-class-id="selectedClass"
-        @select="selectedClass = $event"
-        @confirm="selectClass($event)"
-      />
+      <ClassSelect v-else-if="screen === 'class-select'" :classes="selectableClasses" :selected-class-id="selectedClass"
+        @select="selectedClass = $event" @confirm="selectClass($event)" />
 
       <!-- ── Boss Select (free play) ──────────────────────────────────── -->
       <BossSelect v-else-if="screen === 'boss-select'" :bosses="BOSSES" :selected-boss-id="selectedBoss"
@@ -60,38 +55,36 @@
           <!-- Mobile-only portraits strip (hidden on desktop) -->
           <div class="mobile-portraits">
             <div class="portrait-slot">
-              <img v-if="featureArtImage" :src="featureArtImage" :alt="featureArtText" class="portrait-img" />
-              <div v-else class="art-placeholder art-placeholder--portrait">{{ featureArtText }}</div>
-              <template v-if="playerClass === 'seer' && hintLetter">
-                <p class="portrait-hint-label">This word has a...</p>
-                <p class="portrait-hint-value">{{ hintLetter }}</p>
-              </template>
-              <template v-else-if="playerClass === 'scholar' && hintWordType">
-                <p class="portrait-hint-label">is a...</p>
-                <p class="portrait-hint-value portrait-hint-value--word">{{ hintWordType }}</p>
-              </template>
-              <p class="portrait-stat">HP: {{ playerHealth }}/{{ playerMaxHealth }}</p>
-              <div class="player-health-pips portrait-pips">
-                <span v-for="n in playerMaxHealth" :key="n" class="health-pip health-pip--player"
-                  :class="{ 'health-pip--lost': n > playerHealth }"></span>
+              <div class="portrait-img-col">
+                <img v-if="featureArtImage" :src="featureArtImage" :alt="featureArtText" class="portrait-img" />
+                <div v-else class="art-placeholder art-placeholder--portrait">{{ featureArtText }}</div>
+                <p class="portrait-stat">HP: {{ playerHealth }}/{{ playerMaxHealth }}</p>
+                <div class="player-health-pips portrait-pips">
+                  <span v-for="n in playerMaxHealth" :key="n" class="health-pip health-pip--player"
+                    :class="{ 'health-pip--lost': n > playerHealth }"></span>
+                </div>
               </div>
-              <template v-if="crystalHints.length">
-                <p class="portrait-hint-label">crystal ball</p>
-                <p class="portrait-hint-value">{{ crystalHints.join(', ') }}</p>
-              </template>
-              <div v-if="inventoryItems.length" class="inventory mt-1">
-                <p class="portrait-hint-label">Inventory</p>
-                <div class="inventory-list">
-                  <div v-for="(item, i) in inventoryItems" :key="i" class="inventory-item" :title="item.description"
-                    @click="confirmUseItem(item)">
-                    <div class="art-placeholder art-placeholder--inv">{{ item.name }}</div>
-                    <p class="inventory-item-name">{{ item.name }}</p>
+              <div class="portrait-info-col">
+                <template v-if="crystalHints.length">
+                  <p class="portrait-hint-label">crystal ball</p>
+                  <p class="portrait-hint-value">{{ crystalHints.join(', ') }}</p>
+                </template>
+                <div v-if="inventoryItems.length" class="inventory">
+                  <p class="portrait-hint-label">Inventory</p>
+                  <div class="inventory-list">
+                    <div v-for="(item, i) in inventoryItems" :key="i" class="inventory-item" :title="item.description"
+                      @click="confirmUseItem(item)">
+                      <div class="art-placeholder art-placeholder--inv">{{ item.name }}</div>
+                      <p class="inventory-item-name">{{ item.name }}</p>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
             <div v-if="currentEnemy" class="portrait-slot">
-              <div class="art-placeholder art-placeholder--portrait" :class="{ 'h-shake': bossShaking }">Art of {{ currentEnemy.name }}</div>
+              <div class="art-placeholder art-placeholder--portrait" :class="{ 'h-shake': bossShaking }">Art of {{
+        currentEnemy.name
+      }}</div>
               <p class="portrait-stat">{{ currentEnemy.name }}</p>
               <div class="enemy-health portrait-pips">
                 <span v-for="n in currentEnemy.health" :key="n" class="health-pip"
@@ -102,42 +95,31 @@
 
           <!-- Left panel: class character art (desktop only) -->
           <aside class="game-panel game-panel--left">
-            <div class="class-feature"
-              :class="{ 'class-feature--reveal': playerClass === 'seer' || playerClass === 'scholar' }">
-              <img v-if="featureArtImage" :src="featureArtImage" :alt="featureArtText" class="feature-img" />
-              <div v-else class="art-placeholder art-placeholder--feature">{{ featureArtText }}</div>
-              <div v-if="playerClass === 'seer'" class="feature-hint">
-                <p class="feature-label">this word has a...</p>
-                <p class="feature-letter">{{ hintLetter }}</p>
-              </div>
-              <div v-if="playerClass === 'scholar'" class="feature-hint">
-                <p class="feature-label">this word is a...</p>
-                <p class="feature-word">{{ hintWordType }}</p>
-              </div>
-              <div v-if="crystalHints.length" class="feature-hint">
-                <p class="feature-label">crystal ball reveals...</p>
-                <p class="feature-letter">{{ crystalHints.join(', ') }}</p>
-              </div>
-              <div class="player-health mt-2">
+            <div class="class-feature">
+              <div class="class-feature-img-col">
+                <img v-if="featureArtImage" :src="featureArtImage" :alt="featureArtText" class="feature-img" />
+                <div v-else class="art-placeholder art-placeholder--feature">{{ featureArtText }}</div>
                 <p class="feature-label">HP: {{ playerHealth }} / {{ playerMaxHealth }}</p>
                 <div class="player-health-pips">
                   <span v-for="n in playerMaxHealth" :key="n" class="health-pip health-pip--player"
                     :class="{ 'health-pip--lost': n > playerHealth }"></span>
                 </div>
               </div>
-              <div v-if="inventoryItems.length" class="inventory mt-2">
-                <p class="feature-label">Inventory</p>
-                <div class="inventory-list">
-                  <div v-for="(item, i) in inventoryItems" :key="i" class="inventory-item" :title="item.description"
-                    @click="confirmUseItem(item)">
-                    <div class="art-placeholder art-placeholder--inv">{{ item.name }}</div>
-                    <p class="inventory-item-name">{{ item.name }}</p>
+              <div class="class-feature-info-col">
+                <div v-if="inventoryItems.length" class="inventory">
+                  <p class="feature-label">Inventory</p>
+                  <div class="inventory-list">
+                    <div v-for="(item, i) in inventoryItems" :key="i" class="inventory-item" :title="item.description"
+                      @click="confirmUseItem(item)">
+                      <div class="art-placeholder art-placeholder--inv">{{ item.name }}</div>
+                      <p class="inventory-item-name">{{ item.name }}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div v-if="currentBoss" class="feature-hint mt-2">
-                <p class="feature-label">{{ currentBoss.name }}</p>
-                <p class="feature-word">{{ currentBoss.effect }}</p>
+                <div v-if="crystalHints.length" class="feature-hint">
+                  <p class="feature-label">crystal ball reveals...</p>
+                  <p class="feature-letter">{{ crystalHints.join(', ') }}</p>
+                </div>
               </div>
             </div>
           </aside>
@@ -150,11 +132,18 @@
               <div class="journey-dots mb-2">
                 <span v-for="i in JOURNEY_LENGTH" :key="i" class="journey-dot" :class="dotClass(i - 1)"></span>
               </div>
-              <p class="game-meta">{{ wordLength }}-letter word</p>
+              <p class="game-meta">{{ wordLength }}-letter {{ hasAbility('scholar') ? hintWordType : 'word' }}</p>
+              <p v-if="hasAbility('seer') && hintLetter" class="game-meta seer-hint">
+                Seer reveals this word has a{{ /^[aeiou]/i.test(hintLetter) ? 'n' : '' }} {{ hintLetter }}
+              </p>
+              <p v-if="hasAbility('scholar') && hintWordType" class="game-meta seer-hint">
+                Scholar lectures on {{ hintWordType }}s
+              </p>
             </div>
 
             <!-- Board -->
-            <div class="board mb-2" :style="{ '--cols': wordLength }" :class="{ 'h-shake': boardShaking }" @animationend="boardShaking = false">
+            <div class="board mb-2" :style="{ '--cols': wordLength }" :class="{ 'h-shake': boardShaking }"
+              @animationend="boardShaking = false">
               <template v-for="row in boardRows" :key="row">
                 <div v-for="col in wordLength" :key="col" class="tile" :class="tileClass(row - 1, col - 1)">
                   {{ tileChar(row - 1, col - 1) }}
@@ -189,6 +178,12 @@
               Start over
             </button>
 
+            <div class="mt-3">
+              <p class="enemy-name text-center">{{ currentBoss.name }} attacked the kingdom!</p>
+              <p class="monster-text text-center">{{ currentBoss.effect }}
+              </p>
+            </div>
+
             <!-- Testing box -->
             <div class="testing-box mt-3">
               <span class="testing-label">for testing</span>
@@ -200,7 +195,8 @@
           <!-- Right panel: current enemy -->
           <aside class="game-panel game-panel--right">
             <div v-if="currentEnemy" class="enemy-section">
-              <div class="art-placeholder art-placeholder--monster" :class="{ 'h-shake': bossShaking }" @animationend="bossShaking = false">Art of {{ currentEnemy.name }}</div>
+              <div class="art-placeholder art-placeholder--monster" :class="{ 'h-shake': bossShaking }"
+                @animationend="bossShaking = false">Art of {{ currentEnemy.name }}</div>
               <p class="enemy-name">{{ currentEnemy.name }}</p>
               <div class="enemy-health">
                 <span v-for="n in currentEnemy.health" :key="n" class="health-pip"
@@ -226,13 +222,9 @@
               <p class="modal-message">You found a shop!</p>
               <p class="modal-submessage">{{ shopPrompt }}</p>
               <div class="shop-items">
-                <div
-                  v-for="item in currentShopItems"
-                  :key="item.id"
-                  class="shop-item"
+                <div v-for="item in currentShopItems" :key="item.id" class="shop-item"
                   :class="{ 'shop-item--flipped': selectedShopItemId === item.id }"
-                  @click="selectedShopItemId = item.id"
-                >
+                  @click="selectedShopItemId = item.id">
                   <div class="shop-item-inner">
                     <div class="shop-item-front">
                       <div class="art-placeholder art-placeholder--item">{{ item.name }}</div>
@@ -308,6 +300,7 @@ const MODAL_CONTENT = {
 // ── Screen / class ────────────────────────────────────────────────────────────
 const screen = ref('intro')
 const playerClass = ref(null)
+const changelingAbilities = ref([])
 const selectedClass = ref(null)
 const bossIntroRef = ref(null)
 const bossFightIntroRef = ref(null)
@@ -338,11 +331,13 @@ const inventoryItems = computed(() => inventory.value.map(id => ALL_ITEMS.find(i
 const pendingUseItem = ref(null)
 const shieldedRows = ref(new Set())
 const crystalHints = ref([])
+const frozenSlots = ref({})
+const allGuessedWords = ref([])
 
 // ── Class abilities ───────────────────────────────────────────────────────────
 const sneakAttackAvailable = ref(false)
 const boardShaking = ref(false)
-const bossShaking  = ref(false)
+const bossShaking = ref(false)
 const shopPicksRemaining = ref(1)
 const shopTotalPicks = ref(1)
 const selectedShopItemId = ref(null)
@@ -451,6 +446,41 @@ const visibleLetterStatuses = computed(() => {
   return map
 })
 
+// Layers seer hint on top of visibleLetterStatuses: the revealed letter starts
+// yellow and stays yellow until an actual guess promotes it to green.
+const keyboardStatuses = computed(() => {
+  if (!hasAbility('seer') || !hintLetter.value) return visibleLetterStatuses.value
+  const letter = hintLetter.value
+  if (visibleLetterStatuses.value[letter] === 'correct') return visibleLetterStatuses.value
+  return { ...visibleLetterStatuses.value, [letter]: 'present' }
+})
+
+// Snowman: non-frozen position count for input length gating
+const nonFrozenCount = computed(() => {
+  const frozenCount = Object.keys(frozenSlots.value).filter(k => Number(k) < wordLength.value).length
+  return wordLength.value - frozenCount
+})
+
+// Snowman: merges frozen letters with user-typed chars into a positional array
+const effectiveGuessArr = computed(() => {
+  const frozen = frozenSlots.value
+  const result = []
+  let userIdx = 0
+  for (let i = 0; i < wordLength.value; i++) {
+    if (frozen[i] !== undefined) {
+      result.push(frozen[i])
+    } else {
+      result.push(currentGuess.value[userIdx] ?? '')
+      userIdx++
+    }
+  }
+  return result
+})
+
+const changelingAbilityLabels = computed(() =>
+  changelingAbilities.value.map(id => CLASSES.find(c => c.id === id)?.name ?? id)
+)
+
 // ── Tile / key helpers ────────────────────────────────────────────────────────
 function dotClass(i) {
   if (i < stage.value) return 'dot--done'
@@ -468,22 +498,24 @@ function isObscured(row, col) {
 function tileChar(row, col) {
   if (isObscured(row, col)) return ''
   if (row < guesses.value.length) return guesses.value[row][col] ?? ''
-  if (row === guesses.value.length) return currentGuess.value[col] ?? ''
+  if (row === guesses.value.length) return effectiveGuessArr.value[col] ?? ''
   return ''
 }
 
 function tileClass(row, col) {
   if (isObscured(row, col)) return 'tile--obscured'
   if (row < guesses.value.length) return `tile--${evaluatedRows.value[row][col].status}`
-  if (row === guesses.value.length && gameState.value === 'playing')
-    return currentGuess.value[col] ? 'tile--filled' : 'tile--empty'
+  if (row === guesses.value.length && gameState.value === 'playing') {
+    if (frozenSlots.value[col] !== undefined) return 'tile--frozen'
+    return effectiveGuessArr.value[col] ? 'tile--filled' : 'tile--empty'
+  }
   return 'tile--empty'
 }
 
 function keyClass(key) {
   if (key === 'ENTER' || key === '⌫') return 'key--action'
   const isDanger = dangerLetters.value.length > 0 && dangerLetters.value.includes(key)
-  const status = visibleLetterStatuses.value[key]
+  const status = keyboardStatuses.value[key]
   const classes = []
   if (status) classes.push(`key--${status}`)
   if (isDanger) classes.push('key--danger')
@@ -498,7 +530,7 @@ function handleKey(key) {
     currentGuess.value = currentGuess.value.slice(0, -1)
   } else if (key === 'ENTER') {
     submitGuess()
-  } else if (currentGuess.value.length < wordLength.value) {
+  } else if (currentGuess.value.length < nonFrozenCount.value) {
     currentGuess.value += key
   }
 }
@@ -574,7 +606,7 @@ async function submitGuess(skipValidation = false) {
   const submitted = currentGuess.value
 
   // Validate word (Village Idiot and internal calls skip this)
-  if (playerClass.value !== 'village-idiot' && !skipValidation) {
+  if (!hasAbility('village-idiot') && !skipValidation) {
     validating.value = true
     try {
       const res = await fetch(`/api/word/validate?word=${submitted.toLowerCase()}`)
@@ -599,7 +631,7 @@ async function submitGuess(skipValidation = false) {
     if (enemyHealth.value > 0) bossShaking.value = true
     if (enemyHealth.value <= 0) {
       // Cleric: heal to full on enemy defeat
-      if (playerClass.value === 'cleric') {
+      if (hasAbility('cleric')) {
         lastRegen.value = playerMaxHealth.value - playerHealth.value
         playerHealth.value = playerMaxHealth.value
       } else {
@@ -615,7 +647,7 @@ async function submitGuess(skipValidation = false) {
       } else if (isMiniboss) {
         wonDamage.value = false
         wonMessage.value = true
-        shopPicksRemaining.value = playerClass.value === 'thief' ? 2 : 1
+        shopPicksRemaining.value = hasAbility('thief') ? 2 : 1
         shopTotalPicks.value = shopPicksRemaining.value
         setTimeout(() => {
           wonMessage.value = false
@@ -651,7 +683,7 @@ async function submitGuess(skipValidation = false) {
     if (playerHealth.value <= 0) {
       gameState.value = 'lost'
       setTimeout(() => { modal.value = 'lost' }, 600)
-    } else if (playerClass.value === 'assassin' && sneakAttackAvailable.value) {
+    } else if (hasAbility('assassin') && sneakAttackAvailable.value) {
       // Trigger sneak attack if 4+ letters are yellow (present)
       const guessEval = evaluateGuess(submitted)
       const yellowCount = guessEval.filter(c => c.status === 'present').length
@@ -671,6 +703,7 @@ function handleModalAction() {
     // lost or complete → back to intro
     screen.value = 'intro'
     playerClass.value = null
+    changelingAbilities.value = []
     modal.value = null
     gameState.value = 'loading'
     playerHealth.value = 0
@@ -696,6 +729,7 @@ function handleModalAction() {
 function restartJourney() {
   screen.value = 'intro'
   playerClass.value = null
+  changelingAbilities.value = []
   modal.value = null
   gameState.value = 'loading'
   playerHealth.value = 0
@@ -740,12 +774,31 @@ function confirmBossSelect(bossId) {
   beginJourney()
 }
 
+// Abilities the changeling can inherit (excludes stat-only and starting-bonus classes)
+const CHANGELING_POOL = ['seer', 'scholar', 'assassin', 'cleric', 'village-idiot', 'thief']
+
+function hasAbility(id) {
+  return playerClass.value === id ||
+    (playerClass.value === 'changeling' && changelingAbilities.value.includes(id))
+}
+
+function grantChangelingAbility() {
+  const available = CHANGELING_POOL.filter(id => !changelingAbilities.value.includes(id))
+  if (!available.length) return
+  const picked = available[Math.floor(Math.random() * available.length)]
+  changelingAbilities.value = [...changelingAbilities.value, picked]
+}
+
 function beginJourney() {
   screen.value = 'playing'
-  if (playerClass.value === 'merchant') {
+  if (playerClass.value === 'treasurer') {
     const pool = availableShopItems.value
-    const item = pool[Math.floor(Math.random() * pool.length)]
-    inventory.value.push(item.id)
+    const shuffled = [...pool].sort(() => Math.random() - 0.5)
+    shuffled.slice(0, 2).forEach(item => inventory.value.push(item.id))
+  }
+  if (playerClass.value === 'changeling') {
+    changelingAbilities.value = []
+    grantChangelingAbility()
   }
   startStage(0)
 }
@@ -767,7 +820,7 @@ function beginBossFight() {
 // ── Game lifecycle ────────────────────────────────────────────────────────────
 async function startStage(stageNum) {
   stage.value = stageNum
-  sneakAttackAvailable.value = (playerClass.value === 'assassin')
+  sneakAttackAvailable.value = hasAbility('assassin')
   const isBossFight = stageNum >= STAGE_SEQUENCE.length
   if (isBossFight) {
     currentEnemy.value = currentBoss.value
@@ -798,7 +851,7 @@ function applyDangerLetters(isBossFight) {
 }
 
 function applySeerHint() {
-  if (playerClass.value !== 'seer') return
+  if (!hasAbility('seer')) return
   const idx = Math.floor(Math.random() * secretWord.value.length)
   hintLetter.value = secretWord.value[idx]
 }
@@ -836,7 +889,7 @@ async function loadWord(showModal) {
     secretWord.value = dailyConfig.value.words[wordKey]
     applyDangerLetters(isBossFight)
     applySeerHint()
-    if (playerClass.value === 'scholar') hintWordType.value = 'word'
+    if (hasAbility('scholar')) hintWordType.value = 'word'
     finishWordLoad(showModal)
     return
   }
@@ -847,7 +900,7 @@ async function loadWord(showModal) {
     secretWord.value = wordLower.toUpperCase()
     applyDangerLetters(isBossFight)
     applySeerHint()
-    if (playerClass.value === 'scholar') {
+    if (hasAbility('scholar')) {
       try {
         const data = await fetchWordData(wordLower)
         hintWordType.value = data?.partOfSpeech || 'word'
@@ -873,6 +926,9 @@ function buyItem(item) {
   inventory.value.push(item.id)
   shopPicksRemaining.value -= 1
   if (shopPicksRemaining.value <= 0) {
+    if (playerClass.value === 'changeling' && changelingAbilities.value.length < 2) {
+      grantChangelingAbility()
+    }
     modal.value = null
     startStage(stage.value + 1)
   }

@@ -3,23 +3,23 @@ export const CLASSES = [
   { id: 'seer', name: 'Seer', health: 5, description: 'Reveals a letter from each word.' },
   { id: 'knight', name: 'Knight', health: 15, description: 'Knights have extra health' },
   { id: 'scholar', name: 'Scholar', health: 7, description: 'Can tell you information about the word.' },
-  { id: 'merchant', name: 'Merchant', health: 7, description: 'Start the game with some merchandise' },
+  { id: 'treasurer', name: 'Treasurer', health: 7, description: 'Start the game with 2 inventory items' },
   { id: 'assassin', name: 'Assassin', health: 9, description: 'Can sneak attack with enough yellow letters.' },
   { id: 'cleric', name: 'Cleric', health: 8, description: 'Heal to full after every fight.' },
   { id: 'village-idiot', name: 'Village Idiot', health: 10, description: 'Any string of letters is a valid guess, not just real words.' },
   { id: 'thief', name: 'The Thief', health: 9, description: 'Take 2 items from the shop instead of 1.' },
-  // { id: 'changeling',         name: 'The Changeling',      health:  11, description: 'Gain the ability of a random character, and gain another later on.' },
+  { id: 'changeling', name: 'The Changeling', health: 11, description: 'Gain the ability of a random character, and gain another later on.' },
 ]
 
 export const ENEMIES = [
-  { id: 'useless-goblin', name: 'Goblin', regen: 1, health: 1, effect: 'No effect' },
-  { id: 'cave-spider', name: 'Cave Spider', regen: 1, health: 1, effect: 'No effect' },
-  { id: 'imp', name: 'Imp', regen: 1, health: 1, effect: 'No effect' },
-  { id: 'zombie', name: 'Zombie', regen: 1, health: 1, effect: 'No effect' },
-  { id: 'orc', name: 'Orc', regen: 1, health: 1, effect: 'No effect' },
-  { id: 'skeleton', name: 'Skeleton', regen: 1, health: 1, effect: 'No effect' },
-  { id: 'dire-wolf', name: 'Dire Wolf', regen: 1, health: 1, effect: 'No effect' },
-  { id: 'bandit', name: 'Bandit', regen: 1, health: 1, effect: 'No effect' },
+  { id: 'useless-goblin', name: 'Goblin', regen: 1, health: 1, effect: '' },
+  { id: 'cave-spider', name: 'Cave Spider', regen: 1, health: 1, effect: '' },
+  { id: 'imp', name: 'Imp', regen: 1, health: 1, effect: '' },
+  { id: 'zombie', name: 'Zombie', regen: 1, health: 1, effect: '' },
+  { id: 'orc', name: 'Orc', regen: 1, health: 1, effect: '' },
+  { id: 'skeleton', name: 'Skeleton', regen: 1, health: 1, effect: '' },
+  { id: 'dire-wolf', name: 'Dire Wolf', regen: 1, health: 1, effect: '' },
+  { id: 'bandit', name: 'Bandit', regen: 1, health: 1, effect: '' },
 
 ]
 
@@ -56,6 +56,13 @@ export const SHOP_ITEMS = [
     effect: 'crossbow',
     cost: 2,
   },
+  {
+    id: 'vorpalSword',
+    name: 'Vorpal Sword',
+    description: 'When used, your next hit deals an extra damage.',
+    effect: 'vorpal-sword',
+    cost: 2,
+  },
 ]
 
 export const SPECIAL_ITEMS = [
@@ -81,7 +88,7 @@ export const BOSSES = [
     wordLength: 5,
     effect: 'The centermost column is obscured',
     announcement: 'Your quest is to defeat the Shadow Sorcerer, who has cast a shadow over the center letter of your words.',
-    enhancedAnnouncement: 'You face the Shadow Sorcerer directly! Now TWO columns are shrouded from your sight.',
+    enhancedAnnouncement: 'You found the boss! Now TWO columns are shrouded from your sight.',
   },
   {
     id: 'gelatinous-cube',
@@ -91,6 +98,26 @@ export const BOSSES = [
     wordLength: 5,
     effect: 'A chosen letter deals double damage each round',
     announcement: 'Your quest is to defeat the Gelatinous Cube. Each round it marks a letter — any guess containing that letter deals 2 damage instead of 1.',
-    enhancedAnnouncement: 'You face the Gelatinous Cube directly! Now THREE letters are marked for double damage each round.',
+    enhancedAnnouncement: 'You found the boss! Now THREE letters are marked for double damage each round.',
+  },
+  {
+    id: 'abominable-snowman',
+    name: 'Abominable Snowman',
+    health: 3,
+    regen: 0,
+    wordLength: 5,
+    effect: 'Freezes correct guesses in place',
+    announcement: 'Your quest is to defeat the Aboninable Snowman. It will freeze a correctly guessed letter in place for all future guesses.',
+    enhancedAnnouncement: 'You found the boss! Now yellow letters must be used!',
+  },
+    {
+    id: 'necromancer',
+    name: 'Necromancer',
+    health: 3,
+    regen: 0,
+    wordLength: 5,
+    effect: 'Take extra damage for repeated used words',
+    announcement: 'Your quest is to defeat the Necromancer. Using the same word twice will deal an extra damage',
+    enhancedAnnouncement: 'You found the boss! Using greyed out letters will now deal extra damage as well!',
   },
 ]

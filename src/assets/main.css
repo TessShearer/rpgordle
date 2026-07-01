@@ -278,6 +278,12 @@ body {
   margin-bottom: 0.1rem;
 }
 
+.class-health {
+  font-size: 0.65rem;
+  color: var(--gs-900);
+  margin-bottom: 0.1rem;
+}
+
 .class-desc {
   font-size: 0.72rem;
   color: var(--gs-600);
@@ -331,11 +337,26 @@ body {
 
 .portrait-slot {
   display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 0.4rem;
+  flex: 1;
+}
+
+.portrait-img-col {
+  flex-shrink: 0;
+  display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.2rem;
-  text-align: center;
+}
+
+.portrait-info-col {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
 }
 
 .art-placeholder--portrait {
@@ -421,25 +442,9 @@ body {
     display: none;
   }
 
-  /* Non-seer: art stacks in a column, centered */
   .game-panel--left .class-feature {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    width: 100%;
     max-width: none;
     margin: 0;
-  }
-
-  /* Seer: keep art + hint side-by-side if it fits */
-  .game-panel--left .class-feature--reveal {
-    flex-direction: row;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 0.5rem;
-    flex-wrap: wrap;
   }
 
   .game-panel--left .art-placeholder--feature,
@@ -448,10 +453,6 @@ body {
     height: 60px;
     flex-shrink: 0;
     font-size: 0.6rem;
-  }
-
-  .game-panel--left .feature-hint {
-    text-align: left;
   }
 
   .game-panel--left .feature-letter {
@@ -480,6 +481,11 @@ body {
   letter-spacing: 0.08em;
   color: var(--gs-600);
   margin: 0;
+}
+
+.seer-hint {
+  color: #b59f3b;
+  font-style: italic;
 }
 
 .game-status {
@@ -712,7 +718,7 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;
-  justify-content: center;
+  justify-content: flex-start;
 }
 
 .inventory-item {
@@ -1037,15 +1043,29 @@ body {
 
 /* Class feature art strip */
 .class-feature {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 0.5rem;
+  width: 100%;
   max-width: 360px;
   margin: 0 auto;
 }
 
-.class-feature--reveal {
+.class-feature-img-col {
+  flex-shrink: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  width: 100%;
+  gap: 0.25rem;
+}
+
+.class-feature-info-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
 }
 
 .art-placeholder--feature {
@@ -1058,7 +1078,7 @@ body {
 .feature-hint {
   display: flex;
   flex-direction: column;
-  text-align: right;
+  text-align: left;
 }
 
 .feature-label {
