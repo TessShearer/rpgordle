@@ -971,7 +971,8 @@ onMounted(async () => {
   if (props.mode === 'daily') {
     try {
       dailyConfig.value = await fetchOrCreateDaily()
-    } catch {
+    } catch (e) {
+      console.error('[daily] failed to load:', e)
       dailyError.value = true
     } finally {
       dailyLoading.value = false

@@ -58,10 +58,16 @@ export async function fetchGameWord({ minLength = 3, maxLength = 5 } = {}) {
     )
   }
 
-  const data = snap.docs[0].data()
-  return {
-    word:         data.word,
-    partOfSpeech: data.partOfSpeech ?? null,
-    definition:   data.definition   ?? null,
-  }
+  return snap.docs[0].data().word
+}
+
+/**
+ * Fetch the full metadata for a known word: { word, length, partOfSpeech, definition, enabled }
+ * Use this when you need definition/partOfSpeech — e.g. post-game reveal.
+ */
+export async function fetchWordData(word) {
+  const snap = await getDocs(
+    query(collection(db, COL), where('word', '==', word.toLowerCase()), limit(1))
+  )
+  return snap.empty ? null : snap.docs[0].data()
 }
