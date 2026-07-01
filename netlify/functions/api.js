@@ -11,59 +11,6 @@ exports.handler = async (event) => {
   const path   = event.path
   const params = event.queryStringParameters || {}
 
-  // Temporary debug — visit /api/debug to see what the function receives
-  if (path === '/api/debug') {
-    return ok({ path: event.path, rawPath: event.rawPath, params, httpMethod: event.httpMethod })
-  }
-
-  // ── Wordnik proxy (key stays server-side) ────────────────────────────────
-  if (path === '/api/wordnik/random') {
-    const q = new URLSearchParams({ ...params, api_key: process.env.WORDNIK_API_KEY })
-    try {
-      const upstream = await fetch(`https://api.wordnik.com/v4/words.json/randomWord?${q}`)
-      return { statusCode: upstream.status, headers: JSON_HEADERS, body: await upstream.text() }
-    } catch (err) {
-      return error(502, 'Failed to reach Wordnik', err.message)
-    }
-  }
-
-  if (path === '/api/wordnik/definitions') {
-    const word = (params.word || '').trim()
-    if (!word) return error(400, 'word parameter required')
-    const { word: _w, ...rest } = params
-    const q = new URLSearchParams({ ...rest, api_key: process.env.WORDNIK_API_KEY })
-    try {
-      const upstream = await fetch(`https://api.wordnik.com/v4/word.json/${encodeURIComponent(word)}/definitions?${q}`)
-      return { statusCode: upstream.status, headers: JSON_HEADERS, body: await upstream.text() }
-    } catch (err) {
-      return error(502, 'Failed to reach Wordnik', err.message)
-    }
-  }
-
-  if (path === '/api/wordnik/syllables') {
-    const word = (params.word || '').trim()
-    if (!word) return error(400, 'word parameter required')
-    const q = new URLSearchParams({ api_key: process.env.WORDNIK_API_KEY })
-    try {
-      const upstream = await fetch(`https://api.wordnik.com/v4/word.json/${encodeURIComponent(word)}/syllables?${q}`)
-      return { statusCode: upstream.status, headers: JSON_HEADERS, body: await upstream.text() }
-    } catch (err) {
-      return error(502, 'Failed to reach Wordnik', err.message)
-    }
-  }
-
-  if (path === '/api/wordnik/frequency') {
-    const word = (params.word || '').trim()
-    if (!word) return error(400, 'word parameter required')
-    const q = new URLSearchParams({ api_key: process.env.WORDNIK_API_KEY })
-    try {
-      const upstream = await fetch(`https://api.wordnik.com/v4/word.json/${encodeURIComponent(word)}/frequency?${q}`)
-      return { statusCode: upstream.status, headers: JSON_HEADERS, body: await upstream.text() }
-    } catch (err) {
-      return error(502, 'Failed to reach Wordnik', err.message)
-    }
-  }
-
   // GET /api/health
   if (path === '/api/health') {
     return ok({ status: 'ok' })

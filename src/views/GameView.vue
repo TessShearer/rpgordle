@@ -19,36 +19,13 @@
       </div>
 
       <!-- ── Class Select ───────────────────────────────────────────────── -->
-      <div v-else-if="screen === 'class-select'" class="class-select-layout">
-        <div class="class-select-main">
-          <p class="game-meta text-center my-4">Choose your character</p>
-          <div class="class-options">
-            <div v-for="(cls, i) in selectableClasses" :key="cls.id" class="class-option"
-              :class="{ 'class-option--selected': selectedClass === cls.id }"
-              :style="{ animationDelay: `${i * 0.1}s` }" @click="selectedClass = cls.id">
-              <div class="art-with-shadow">
-                <img v-if="CHARACTER_IMAGES[cls.id]" :src="CHARACTER_IMAGES[cls.id]" :alt="cls.name"
-                  class="class-img" />
-                <div v-else class="art-placeholder art-placeholder--class">
-                  Art for {{ cls.name }} goes here
-                </div>
-                <div class="class-option-shadow"></div>
-              </div>
-              <div class="class-text">
-                <p class="class-name">{{ cls.name }}</p>
-                <p class="class-desc">{{ cls.description }}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-        <Transition name="slide-in">
-          <div v-if="selectedClass" class="class-select-aside">
-            <button class="btn btn-press px-4 py-3 fs-5" @click="selectClass(selectedClass)">
-              Continue
-            </button>
-          </div>
-        </Transition>
-      </div>
+      <ClassSelect
+        v-else-if="screen === 'class-select'"
+        :classes="selectableClasses"
+        :selected-class-id="selectedClass"
+        @select="selectedClass = $event"
+        @confirm="selectClass($event)"
+      />
 
       <!-- ── Boss Select (free play) ──────────────────────────────────── -->
       <BossSelect v-else-if="screen === 'boss-select'" :bosses="BOSSES" :selected-boss-id="selectedBoss"
@@ -120,10 +97,6 @@
                 <span v-for="n in currentEnemy.health" :key="n" class="health-pip"
                   :class="{ 'health-pip--lost': n > enemyHealth }"></span>
               </div>
-              <template v-if="dangerLetters.length">
-                <p class="portrait-hint-label">Danger {{ dangerLetters.length > 1 ? 'letters' : 'letter' }}</p>
-                <p v-for="l in dangerLetters" :key="l" class="danger-letter">{{ l }}</p>
-              </template>
             </div>
           </div>
 
@@ -161,6 +134,10 @@
                     <p class="inventory-item-name">{{ item.name }}</p>
                   </div>
                 </div>
+              </div>
+              <div v-if="currentBoss" class="feature-hint mt-2">
+                <p class="feature-label">{{ currentBoss.name }}</p>
+                <p class="feature-word">{{ currentBoss.effect }}</p>
               </div>
             </div>
           </aside>
@@ -230,10 +207,6 @@
                   :class="{ 'health-pip--lost': n > enemyHealth }"></span>
               </div>
               <p class="monster-text">{{ currentEnemy.effect }}</p>
-              <div v-if="dangerLetters.length" class="danger-display mt-1">
-                <p class="monster-text">Danger {{ dangerLetters.length > 1 ? 'letters' : 'letter' }}</p>
-                <p v-for="l in dangerLetters" :key="l" class="danger-letter">{{ l }}</p>
-              </div>
             </div>
           </aside>
 
@@ -306,11 +279,12 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { CLASSES, ENEMIES, MINIBOSSES, BOSSES, SHOP_ITEMS, ALL_ITEMS, STAGE_SEQUENCE, JOURNEY_LENGTH } from '@/data/gameData.js'
 import BossIntro from '@/components/BossIntro.vue'
 import BossFightIntro from '@/components/BossFightIntro.vue'
+import ClassSelect from '@/components/ClassSelect.vue'
 import BossSelect from '@/components/BossSelect.vue'
 import EnemyIntro from '@/components/EnemyIntro.vue'
 import { CHARACTER_IMAGES } from '@/assets/characterImages.js'
 import { fetchOrCreateDaily } from '@/services/daily.js'
-import { fetchGameWord, fetchDefinitions } from '@/services/wordnik.js'
+import { fetchGameWord, fetchWordData } from '@/services/words.js'
 
 const props = defineProps({
   mode: { type: String, default: 'daily' },
@@ -461,6 +435,22 @@ const letterStatuses = computed(() => {
   return map
 })
 
+// Like letterStatuses but skips obscured columns — used for keyboard hints so
+// the shadow sorcerer's hidden columns don't accidentally reveal letter info.
+const visibleLetterStatuses = computed(() => {
+  if (!obscuredCols.value.length) return letterStatuses.value
+  const priority = { correct: 3, present: 2, absent: 1 }
+  const map = {}
+  for (const row of evaluatedRows.value) {
+    for (let c = 0; c < row.length; c++) {
+      if (obscuredCols.value.includes(c)) continue
+      const { letter, status } = row[c]
+      if (!map[letter] || priority[status] > priority[map[letter]]) map[letter] = status
+    }
+  }
+  return map
+})
+
 // ── Tile / key helpers ────────────────────────────────────────────────────────
 function dotClass(i) {
   if (i < stage.value) return 'dot--done'
@@ -492,9 +482,12 @@ function tileClass(row, col) {
 
 function keyClass(key) {
   if (key === 'ENTER' || key === '⌫') return 'key--action'
-  if (currentBoss.value?.id === 'shadow-sorcerer') return ''
-  if (dangerLetters.value.length > 0 && dangerLetters.value.includes(key)) return 'key--danger'
-  return letterStatuses.value[key] ? `key--${letterStatuses.value[key]}` : ''
+  const isDanger = dangerLetters.value.length > 0 && dangerLetters.value.includes(key)
+  const status = visibleLetterStatuses.value[key]
+  const classes = []
+  if (status) classes.push(`key--${status}`)
+  if (isDanger) classes.push('key--danger')
+  return classes.join(' ')
 }
 
 // ── Input ─────────────────────────────────────────────────────────────────────
@@ -849,14 +842,15 @@ async function loadWord(showModal) {
   }
 
   try {
-    const wordLower = await fetchGameWord()
+    const wordLen = isBossFight ? currentBoss.value.wordLength : 5
+    const wordLower = await fetchGameWord({ minLength: wordLen, maxLength: wordLen })
     secretWord.value = wordLower.toUpperCase()
     applyDangerLetters(isBossFight)
     applySeerHint()
     if (playerClass.value === 'scholar') {
       try {
-        const defs = await fetchDefinitions(wordLower, { limit: 1 })
-        hintWordType.value = defs?.[0]?.partOfSpeech || 'word'
+        const data = await fetchWordData(wordLower)
+        hintWordType.value = data?.partOfSpeech || 'word'
       } catch {
         hintWordType.value = 'word'
       }

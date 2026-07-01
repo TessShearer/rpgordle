@@ -3,7 +3,7 @@ import { doc, getDoc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firest
 import {
   CLASSES, ENEMIES, MINIBOSSES, BOSSES, SHOP_ITEMS, STAGE_SEQUENCE,
 } from '@/data/gameData.js'
-import { fetchGameWord } from '@/services/wordnik.js'
+import { fetchGameWord } from '@/services/words.js'
 
 export function getTodayKey() {
   const d    = new Date()
@@ -25,8 +25,8 @@ function pickRandom(arr, count) {
   return count ? shuffled.slice(0, count) : shuffled[0]
 }
 
-async function fetchWord() {
-  const word = await fetchGameWord()
+async function fetchWord(length = 5) {
+  const word = await fetchGameWord({ minLength: length, maxLength: length })
   return word.toUpperCase()
 }
 
@@ -62,7 +62,7 @@ async function generateDaily(dateKey) {
     words[`stage-${i}`] = await fetchWord()
   }
   for (let i = 0; i < boss.health; i++) {
-    words[`boss-${i}`] = await fetchWord()
+    words[`boss-${i}`] = await fetchWord(boss.wordLength)
   }
 
   const config = {

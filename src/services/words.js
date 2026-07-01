@@ -30,7 +30,7 @@ const COL = 'words'
  * randomSeed range query so every call gets a different word without fetching
  * the whole collection.
  */
-export async function fetchGameWord({ minLength = 3, maxLength = 5 } = {}) {
+export async function fetchGameWord({ minLength = 5, maxLength = 5 } = {}) {
   const seed = Math.random()
   const targetLength = minLength + Math.floor(Math.random() * (maxLength - minLength + 1))
   const col  = collection(db, COL)

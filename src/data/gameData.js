@@ -1,19 +1,26 @@
 export const CLASSES = [
-  { id: 'peasant',       name: 'Peasant',       health: 10, description: 'A peasant with no abilities.' },
-  { id: 'seer',          name: 'Seer',           health:  5, description: 'Reveals a letter from each word.' },
-  { id: 'knight',        name: 'Knight',         health: 15, description: 'Knights have extra health' },
-  { id: 'scholar',       name: 'Scholar',        health:  7, description: 'Can tell you information about the word.' },
-  { id: 'merchant',      name: 'Merchant',       health:  7, description: 'Start the game with some merchandise' },
-  { id: 'assassin',      name: 'Assassin',       health:  9, description: 'Can sneak attack with enough yellow letters.' },
-  { id: 'cleric',        name: 'Cleric',         health:  8, description: 'Heal to full after every fight.' },
-  { id: 'village-idiot', name: 'Village Idiot',  health: 10, description: 'Any string of letters is a valid guess, not just real words.' },
-  { id: 'thief',         name: 'The Thief',      health:  9, description: 'Take 2 items from the shop instead of 1.' },
+  { id: 'peasant', name: 'Peasant', health: 10, description: 'A peasant with no abilities.' },
+  { id: 'seer', name: 'Seer', health: 5, description: 'Reveals a letter from each word.' },
+  { id: 'knight', name: 'Knight', health: 15, description: 'Knights have extra health' },
+  { id: 'scholar', name: 'Scholar', health: 7, description: 'Can tell you information about the word.' },
+  { id: 'merchant', name: 'Merchant', health: 7, description: 'Start the game with some merchandise' },
+  { id: 'assassin', name: 'Assassin', health: 9, description: 'Can sneak attack with enough yellow letters.' },
+  { id: 'cleric', name: 'Cleric', health: 8, description: 'Heal to full after every fight.' },
+  { id: 'village-idiot', name: 'Village Idiot', health: 10, description: 'Any string of letters is a valid guess, not just real words.' },
+  { id: 'thief', name: 'The Thief', health: 9, description: 'Take 2 items from the shop instead of 1.' },
   // { id: 'changeling',         name: 'The Changeling',      health:  11, description: 'Gain the ability of a random character, and gain another later on.' },
 ]
 
 export const ENEMIES = [
-  { id: 'useless-goblin', name: 'Goblin',     regen: 1, health: 1, effect: 'No effect' },
-  { id: 'cave-spider',    name: 'Cave Spider', regen: 1, health: 1, effect: 'No effect' },
+  { id: 'useless-goblin', name: 'Goblin', regen: 1, health: 1, effect: 'No effect' },
+  { id: 'cave-spider', name: 'Cave Spider', regen: 1, health: 1, effect: 'No effect' },
+  { id: 'imp', name: 'Imp', regen: 1, health: 1, effect: 'No effect' },
+  { id: 'zombie', name: 'Zombie', regen: 1, health: 1, effect: 'No effect' },
+  { id: 'orc', name: 'Orc', regen: 1, health: 1, effect: 'No effect' },
+  { id: 'skeleton', name: 'Skeleton', regen: 1, health: 1, effect: 'No effect' },
+  { id: 'dire-wolf', name: 'Dire Wolf', regen: 1, health: 1, effect: 'No effect' },
+  { id: 'bandit', name: 'Bandit', regen: 1, health: 1, effect: 'No effect' },
+
 ]
 
 export const MINIBOSSES = [
@@ -22,41 +29,41 @@ export const MINIBOSSES = [
 
 export const SHOP_ITEMS = [
   {
-    id:          'health-potion',
-    name:        'Health Potion',
+    id: 'health-potion',
+    name: 'Health Potion',
     description: 'Restores 1 HP when used.',
-    effect:      'heal',
-    cost:        2,
+    effect: 'heal',
+    cost: 2,
   },
   {
-    id:          'shield',
-    name:        'Shield',
+    id: 'shield',
+    name: 'Shield',
     description: 'Blocks the boss ability for one guess.',
-    effect:      'shield',
-    cost:        4,
+    effect: 'shield',
+    cost: 4,
   },
   {
-    id:          'crystal-ball',
-    name:        'Crystal Ball',
+    id: 'crystal-ball',
+    name: 'Crystal Ball',
     description: 'Reveals 2 letters in the current word.',
-    effect:      'crystal-ball',
-    cost:        3,
+    effect: 'crystal-ball',
+    cost: 3,
   },
   {
-    id:          'crossbow',
-    name:        'Crossbow',
+    id: 'crossbow',
+    name: 'Crossbow',
     description: 'Reveals and autofills the first letter of the word.',
-    effect:      'crossbow',
-    cost:        2,
+    effect: 'crossbow',
+    cost: 2,
   },
 ]
 
 export const SPECIAL_ITEMS = [
   {
-    id:          'sneak-attack',
-    name:        'Sneak Attack',
+    id: 'sneak-attack',
+    name: 'Sneak Attack',
     description: 'Auto-solves this word for free. Use it or lose it.',
-    effect:      'sneak-attack',
+    effect: 'sneak-attack',
   },
 ]
 
@@ -67,21 +74,23 @@ export const JOURNEY_LENGTH = STAGE_SEQUENCE.length + 1
 
 export const BOSSES = [
   {
-    id:                   'shadow-sorcerer',
-    name:                 'Shadow Sorcerer',
-    health:               3,
-    regen:                0,
-    effect:               'The centermost column is obscured',
-    announcement:         'Your quest is to defeat the Shadow Sorcerer, who has cast a shadow over the center letter of your words.',
+    id: 'shadow-sorcerer',
+    name: 'Shadow Sorcerer',
+    health: 3,
+    regen: 0,
+    wordLength: 5,
+    effect: 'The centermost column is obscured',
+    announcement: 'Your quest is to defeat the Shadow Sorcerer, who has cast a shadow over the center letter of your words.',
     enhancedAnnouncement: 'You face the Shadow Sorcerer directly! Now TWO columns are shrouded from your sight.',
   },
   {
-    id:                   'gelatinous-cube',
-    name:                 'Gelatinous Cube',
-    health:               3,
-    regen:                0,
-    effect:               'A chosen letter deals double damage each round',
-    announcement:         'Your quest is to defeat the Gelatinous Cube. Each round it marks a letter — any guess containing that letter deals 2 damage instead of 1.',
+    id: 'gelatinous-cube',
+    name: 'Gelatinous Cube',
+    health: 3,
+    regen: 0,
+    wordLength: 5,
+    effect: 'A chosen letter deals double damage each round',
+    announcement: 'Your quest is to defeat the Gelatinous Cube. Each round it marks a letter — any guess containing that letter deals 2 damage instead of 1.',
     enhancedAnnouncement: 'You face the Gelatinous Cube directly! Now THREE letters are marked for double damage each round.',
   },
 ]

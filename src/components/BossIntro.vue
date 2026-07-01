@@ -22,6 +22,12 @@
 
           <div class="intro-slide">
             <img v-if="classImage" :src="classImage" :alt="classLabel" class="intro-img" />
+            <div v-else class="art-placeholder art-placeholder--intro">Art of damage</div>
+            <p class="intro-caption">Guess a word correctly to damage your enemy, but each incorrect word will damage you!</p>
+          </div>
+
+                    <div class="intro-slide">
+            <img v-if="classImage" :src="classImage" :alt="classLabel" class="intro-img" />
             <div v-else class="art-placeholder art-placeholder--intro">Art of {{ classLabel }}</div>
             <p class="intro-caption">Fight your way to the boss and defeat them to save the kingdom!</p>
           </div>
@@ -79,7 +85,7 @@ const props = defineProps({
 
 defineEmits(['begin'])
 
-const SLIDE_COUNT  = 3
+const SLIDE_COUNT  = 4
 const currentSlide = ref(0)
 const allVisible   = computed(() => currentSlide.value >= SLIDE_COUNT - 1)
 
