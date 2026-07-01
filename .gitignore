@@ -7,3 +7,6 @@ dist/
 
 # Local Netlify folder
 .netlify
+
+# Firebase service account key — never commit this
+firebase-service-account.json

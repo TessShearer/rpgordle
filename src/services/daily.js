@@ -1,5 +1,5 @@
 import { db } from '@/firebase.js'
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { doc, getDoc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore'
 import {
   CLASSES, ENEMIES, MINIBOSSES, BOSSES, SHOP_ITEMS, STAGE_SEQUENCE,
 } from '@/data/gameData.js'
@@ -76,6 +76,11 @@ async function generateDaily(dateKey) {
   }
 
   await setDoc(doc(db, 'dailies', dateKey), config)
+
+  // Keep only the last 30 days — delete the entry from 30 days ago if it exists
+  const expiredKey = offsetDayKey(dateKey, -30)
+  await deleteDoc(doc(db, 'dailies', expiredKey))
+
   return config
 }
 
