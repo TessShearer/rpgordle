@@ -79,6 +79,10 @@
                     </div>
                   </div>
                 </div>
+                <template v-if="playerClass === 'changeling' && changelingAbilities.length">
+                  <p class="portrait-hint-label">Changeling becomes</p>
+                  <p v-for="label in changelingAbilityLabels" :key="label" class="portrait-hint-value">a {{ label }}!</p>
+                </template>
               </div>
             </div>
             <div v-if="currentEnemy" class="portrait-slot">
@@ -119,6 +123,10 @@
                 <div v-if="crystalHints.length" class="feature-hint">
                   <p class="feature-label">crystal ball reveals...</p>
                   <p class="feature-letter">{{ crystalHints.join(', ') }}</p>
+                </div>
+                <div v-if="playerClass === 'changeling' && changelingAbilities.length" class="feature-hint">
+                  <p class="feature-label">Changeling becomes</p>
+                  <p v-for="label in changelingAbilityLabels" :key="label" class="feature-letter">a {{ label }}!</p>
                 </div>
               </div>
             </div>
@@ -598,12 +606,22 @@ function onKeyDown(e) {
 }
 
 async function submitGuess(skipValidation = false) {
-  if (currentGuess.value.length < wordLength.value) {
+  if (currentGuess.value.length < nonFrozenCount.value) {
     inputError.value = `Guess must be ${wordLength.value} letters`
     return
   }
 
-  const submitted = currentGuess.value
+  const submitted = effectiveGuessArr.value.join('')
+
+  // Enhanced Snowman: all known-present (yellow) letters must appear in the guess
+  if (currentBoss.value?.id === 'abominable-snowman' && stage.value >= STAGE_SEQUENCE.length) {
+    const missing = Object.keys(letterStatuses.value)
+      .filter(l => letterStatuses.value[l] === 'present' && !submitted.includes(l))
+    if (missing.length > 0) {
+      inputError.value = `Must use yellow letters: ${missing.join(', ')}`
+      return
+    }
+  }
 
   // Validate word (Village Idiot and internal calls skip this)
   if (!hasAbility('village-idiot') && !skipValidation) {
@@ -623,6 +641,8 @@ async function submitGuess(skipValidation = false) {
     }
   }
 
+  const alreadyGuessed = allGuessedWords.value.includes(submitted)
+  allGuessedWords.value = [...allGuessedWords.value, submitted]
   guesses.value = [...guesses.value, submitted]
   currentGuess.value = ''
 
@@ -673,13 +693,35 @@ async function submitGuess(skipValidation = false) {
       }, 1800)
     }
   } else {
+    // Abominable Snowman: freeze new green positions for future guesses
+    if (currentBoss.value?.id === 'abominable-snowman') {
+      const guessEval = evaluateGuess(submitted)
+      const newFrozen = { ...frozenSlots.value }
+      guessEval.forEach(({ letter, status }, col) => {
+        if (status === 'correct' && newFrozen[col] === undefined) newFrozen[col] = letter
+      })
+      frozenSlots.value = newFrozen
+    }
+
     const guessRow = guesses.value.length - 1
     const isShielded = shieldedRows.value.has(guessRow)
     const doubleDamage = !isShielded
       && currentBoss.value?.id === 'gelatinous-cube'
       && dangerLetters.value.length > 0
       && dangerLetters.value.some(l => submitted.includes(l))
-    playerHealth.value -= doubleDamage ? 2 : 1
+
+    // Necromancer: +1 for reused words; +1 enhanced for using absent (grey) letters
+    let necroPenalty = 0
+    if (currentBoss.value?.id === 'necromancer') {
+      if (alreadyGuessed) necroPenalty += 1
+      if (stage.value >= STAGE_SEQUENCE.length) {
+        const hasAbsentLetter = Object.keys(letterStatuses.value)
+          .some(l => letterStatuses.value[l] === 'absent' && submitted.includes(l))
+        if (hasAbsentLetter) necroPenalty += 1
+      }
+    }
+
+    playerHealth.value -= (doubleDamage ? 2 : 1) + necroPenalty
     if (playerHealth.value <= 0) {
       gameState.value = 'lost'
       setTimeout(() => { modal.value = 'lost' }, 600)
@@ -715,6 +757,8 @@ function handleModalAction() {
     inventory.value = []
     shieldedRows.value = new Set()
     crystalHints.value = []
+    frozenSlots.value = {}
+    allGuessedWords.value = []
     selectedBoss.value = null
     bossWordIndex.value = 0
     sneakAttackAvailable.value = false
@@ -741,6 +785,8 @@ function restartJourney() {
   inventory.value = []
   shieldedRows.value = new Set()
   crystalHints.value = []
+  frozenSlots.value = {}
+  allGuessedWords.value = []
   selectedBoss.value = null
   bossWordIndex.value = 0
   sneakAttackAvailable.value = false
@@ -791,6 +837,7 @@ function grantChangelingAbility() {
 
 function beginJourney() {
   screen.value = 'playing'
+  allGuessedWords.value = []
   if (playerClass.value === 'treasurer') {
     const pool = availableShopItems.value
     const shuffled = [...pool].sort(() => Math.random() - 0.5)
@@ -821,6 +868,7 @@ function beginBossFight() {
 async function startStage(stageNum) {
   stage.value = stageNum
   sneakAttackAvailable.value = hasAbility('assassin')
+  frozenSlots.value = {}
   const isBossFight = stageNum >= STAGE_SEQUENCE.length
   if (isBossFight) {
     currentEnemy.value = currentBoss.value
@@ -963,7 +1011,13 @@ function useItem() {
     const first = secretWord.value[0]
     if (first) currentGuess.value = first + currentGuess.value.slice(1)
   } else if (item.effect === 'sneak-attack') {
-    currentGuess.value = secretWord.value
+    // Build only the non-frozen portion of the secret word for currentGuess
+    const frozen = frozenSlots.value
+    let nonFrozenChars = ''
+    for (let i = 0; i < secretWord.value.length; i++) {
+      if (frozen[i] === undefined) nonFrozenChars += secretWord.value[i]
+    }
+    currentGuess.value = nonFrozenChars
     const idx = inventory.value.indexOf(item.id)
     if (idx !== -1) inventory.value.splice(idx, 1)
     pendingUseItem.value = null

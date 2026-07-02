@@ -527,6 +527,7 @@ body {
 .tile--correct { border-color: #538d4e; color: #538d4e; background: rgba(83,141,78,0.25); box-shadow: 0 0 8px 3px rgba(83,141,78,0.28); }
 .tile--present { border-color: #b59f3b; color: #b59f3b; background: rgba(181,159,59,0.25); box-shadow: 0 0 8px 3px rgba(181,159,59,0.28); }
 .tile--absent  { border-color: var(--gs-400); color: #adadad; background: rgba(0,0,0,0.03); }
+.tile--frozen  { border-color: #538d4e; color: #538d4e; background: rgba(83,141,78,0.25); box-shadow: 0 0 8px 3px rgba(83,141,78,0.28); }
 
 /* Keyboard */
 .keyboard {
