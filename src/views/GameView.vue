@@ -595,6 +595,7 @@ function onKeyDown(e) {
 function handleAllBoardsSolved() {
   const hitDamage = vorpalSwordActive.value ? 2 : 1
   vorpalSwordActive.value = false
+  lastRegen.value = 0
   enemyHealth.value -= hitDamage
   if (enemyHealth.value > 0) bossShaking.value = true
 
