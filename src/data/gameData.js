@@ -120,4 +120,15 @@ export const BOSSES = [
     announcement: 'Your quest is to defeat the Necromancer. Using the same word twice will deal an extra damage',
     enhancedAnnouncement: 'You found the boss! Using greyed out letters will now deal extra damage as well!',
   },
+  {
+    id: 'hydra',
+    name: 'Hydra',
+    health: 1,
+    regen: 0,
+    wordLength: 5,
+    boardCount: 4,
+    effect: 'Right now there is only the boss but i will add miniboss ok',
+    announcement: 'The Hydra blocks your path! You must defeat all four heads at the same time.',
+    enhancedAnnouncement: 'You found the Hydra!',
+  },
 ]

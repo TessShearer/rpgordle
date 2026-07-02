@@ -122,7 +122,7 @@
             </div>
           </aside>
 
-          <!-- Center: game board -->
+          <!-- Center: game board(s) -->
           <div class="game-center">
             <!-- Journey progress -->
             <div class="text-center mb-2">
@@ -130,23 +130,23 @@
               <div class="journey-dots mb-2">
                 <span v-for="i in JOURNEY_LENGTH" :key="i" class="journey-dot" :class="dotClass(i - 1)"></span>
               </div>
-              <p class="game-meta">{{ wordLength }}-letter {{ hasAbility('scholar') ? hintWordType : 'word' }}</p>
-              <p v-if="hasAbility('seer') && hintLetter" class="game-meta seer-hint">
-                Seer reveals this word has a{{ /^[aeiou]/i.test(hintLetter) ? 'n' : '' }} {{ hintLetter }}
-              </p>
-              <p v-if="hasAbility('scholar') && hintWordType" class="game-meta seer-hint">
-                Scholar lectures on {{ hintWordType }}s
-              </p>
             </div>
 
-            <!-- Board -->
-            <div class="board mb-2" :style="{ '--cols': wordLength }" :class="{ 'h-shake': boardShaking }"
-              @animationend="boardShaking = false">
-              <template v-for="row in boardRows" :key="row">
-                <div v-for="col in wordLength" :key="col" class="tile" :class="tileClass(row - 1, col - 1)">
-                  {{ tileChar(row - 1, col - 1) }}
-                </div>
-              </template>
+            <!-- Board(s) -->
+            <div class="boards-container" :class="{ 'boards-container--multi': boards.length > 1 }">
+              <WordleBoard
+                v-for="board in boards"
+                :key="board.id"
+                :board="board"
+                :current-guess="currentGuess"
+                :game-state="gameState"
+                :boss="currentBoss"
+                :is-boss-fight="isBossFight"
+                :has-seer="hasAbility('seer')"
+                :has-scholar="hasAbility('scholar')"
+                :board-shaking="boardShaking"
+                @shake-end="boardShaking = false"
+              />
             </div>
 
             <Transition name="modal">
@@ -178,15 +178,14 @@
 
             <div class="mt-3">
               <p class="enemy-name text-center">{{ currentBoss.name }} attacked the kingdom!</p>
-              <p class="monster-text text-center">{{ currentBoss.effect }}
-              </p>
+              <p class="monster-text text-center">{{ currentBoss.effect }}</p>
             </div>
 
             <!-- Testing box -->
             <div class="testing-box mt-3">
               <span class="testing-label">for testing</span>
               <p class="testing-reveal-label">reveal answer</p>
-              <p class="debug-answer mb-2">{{ secretWord.toLowerCase() }}</p>
+              <p v-for="b in boards" :key="b.id" class="debug-answer mb-1">{{ b.secretWord.toLowerCase() }}</p>
             </div>
           </div>
 
@@ -250,7 +249,7 @@
             </template>
             <template v-else>
               <p class="modal-message">{{ MODAL_CONTENT[modal].message }}</p>
-              <p v-if="modal === 'lost'" class="modal-word">{{ secretWord.toLowerCase() }}</p>
+              <p v-if="modal === 'lost'" class="modal-word">{{ boards.map(b => b.secretWord.toLowerCase()).join(', ') }}</p>
             </template>
             <button v-if="modal !== 'shop' && modal !== 'use-item'" class="btn btn-press px-5 py-2 mt-3"
               @click="handleModalAction">
@@ -272,6 +271,7 @@ import BossFightIntro from '@/components/BossFightIntro.vue'
 import ClassSelect from '@/components/ClassSelect.vue'
 import BossSelect from '@/components/BossSelect.vue'
 import EnemyIntro from '@/components/EnemyIntro.vue'
+import WordleBoard from '@/components/WordleBoard.vue'
 import { CHARACTER_IMAGES } from '@/assets/characterImages.js'
 import { fetchOrCreateDaily } from '@/services/daily.js'
 import { fetchGameWord, fetchWordData } from '@/services/words.js'
@@ -308,28 +308,21 @@ const wonDamage = ref(0)
 
 // ── Game state ────────────────────────────────────────────────────────────────
 const stage = ref(0)
-const secretWord = ref('')
-const guesses = ref([])
+const boards = ref([])
 const currentGuess = ref('')
 const gameState = ref('loading')
 const inputError = ref('')
 const modal = ref(null)
-const hintLetter = ref('')
-const hintWordType = ref('')
 const playerHealth = ref(0)
 const playerMaxHealth = ref(0)
 const currentBoss = ref(null)
 const currentEnemy = ref(null)
 const enemyHealth = ref(0)
-const hitWord = ref('')
 const lastRegen = ref(0)
 const dangerLetters = ref([])
 const inventory = ref([])
 const inventoryItems = computed(() => inventory.value.map(id => ALL_ITEMS.find(i => i.id === id)).filter(Boolean))
 const pendingUseItem = ref(null)
-const shieldedRows = ref(new Set())
-const crystalHints = ref([])
-const frozenSlots = ref({})
 const allGuessedWords = ref([])
 
 // ── Class abilities ───────────────────────────────────────────────────────────
@@ -349,6 +342,64 @@ const dailyLoading = ref(props.mode === 'daily')
 const dailyError = ref(false)
 const selectedBoss = ref(null)
 const bossWordIndex = ref(0)
+
+// ── Board helpers ─────────────────────────────────────────────────────────────
+function makeBoard(id, secretWord) {
+  return {
+    id,
+    secretWord,
+    guesses: [],
+    hintLetter: '',
+    hintWordType: '',
+    frozenSlots: {},
+    shieldedRows: new Set(),
+    crystalHints: [],
+    solved: false,
+  }
+}
+
+function buildEffectiveGuess(board) {
+  const frozen = board.frozenSlots
+  const len = board.secretWord.length
+  const result = []
+  let userIdx = 0
+  for (let i = 0; i < len; i++) {
+    if (frozen[i] !== undefined) {
+      result.push(frozen[i])
+    } else {
+      result.push(currentGuess.value[userIdx] ?? '')
+      userIdx++
+    }
+  }
+  return result.join('')
+}
+
+function evaluateGuess(guess, secretWord) {
+  const status = Array(guess.length).fill('absent')
+  const pool = secretWord.split('')
+  for (let i = 0; i < guess.length; i++) {
+    if (guess[i] === pool[i]) { status[i] = 'correct'; pool[i] = null }
+  }
+  for (let i = 0; i < guess.length; i++) {
+    if (status[i] === 'correct') continue
+    const j = pool.indexOf(guess[i])
+    if (j !== -1) { status[i] = 'present'; pool[j] = null }
+  }
+  return guess.split('').map((letter, i) => ({ letter, status: status[i] }))
+}
+
+function getUnionLetterStatuses() {
+  const priority = { correct: 3, present: 2, absent: 1 }
+  const map = {}
+  for (const board of boards.value) {
+    for (const guess of board.guesses) {
+      for (const { letter, status } of evaluateGuess(guess, board.secretWord)) {
+        if (!map[letter] || priority[status] > priority[map[letter]]) map[letter] = status
+      }
+    }
+  }
+  return map
+}
 
 const selectableClasses = computed(() => {
   if (props.mode === 'daily' && dailyConfig.value) {
@@ -376,18 +427,26 @@ function openShop() {
   modal.value = 'shop'
 }
 
+const isBossFight = computed(() => stage.value >= STAGE_SEQUENCE.length)
+
 const obscuredCols = computed(() => {
   if (currentBoss.value?.id !== 'shadow-sorcerer') return []
   const center = Math.floor((wordLength.value - 1) / 2)
-  const isBossFight = stage.value >= STAGE_SEQUENCE.length
-  return isBossFight ? [center, center + 1] : [center]
+  return isBossFight.value ? [center, center + 1] : [center]
 })
 
 // ── Derived ───────────────────────────────────────────────────────────────────
-const wordLength = computed(() => secretWord.value.length)
-const boardRows = computed(() =>
-  guesses.value.length + (gameState.value === 'playing' ? 1 : 0)
-)
+const wordLength = computed(() => boards.value[0]?.secretWord.length ?? 5)
+
+// Max non-frozen positions across all active boards (user must type enough for the most open board)
+const nonFrozenCount = computed(() => {
+  const active = boards.value.filter(b => !b.solved)
+  if (!active.length) return wordLength.value
+  return Math.max(...active.map(board => {
+    const frozen = Object.keys(board.frozenSlots).filter(k => Number(k) < wordLength.value).length
+    return wordLength.value - frozen
+  }))
+})
 
 const featureArtText = computed(() => {
   const cls = CLASSES.find(c => c.id === playerClass.value)
@@ -402,84 +461,38 @@ const shopPrompt = computed(() => {
 
 const featureArtImage = computed(() => CHARACTER_IMAGES[playerClass.value] ?? null)
 
-// ── Evaluation ────────────────────────────────────────────────────────────────
-function evaluateGuess(guess) {
-  const status = Array(guess.length).fill('absent')
-  const pool = secretWord.value.split('')
-
-  for (let i = 0; i < guess.length; i++) {
-    if (guess[i] === pool[i]) { status[i] = 'correct'; pool[i] = null }
-  }
-  for (let i = 0; i < guess.length; i++) {
-    if (status[i] === 'correct') continue
-    const j = pool.indexOf(guess[i])
-    if (j !== -1) { status[i] = 'present'; pool[j] = null }
-  }
-
-  return guess.split('').map((letter, i) => ({ letter, status: status[i] }))
-}
-
-const evaluatedRows = computed(() => guesses.value.map(evaluateGuess))
-const letterStatuses = computed(() => {
-  const priority = { correct: 3, present: 2, absent: 1 }
-  const map = {}
-  for (const row of evaluatedRows.value)
-    for (const { letter, status } of row)
-      if (!map[letter] || priority[status] > priority[map[letter]]) map[letter] = status
-  return map
-})
-
-// Like letterStatuses but skips obscured columns — used for keyboard hints so
-// the shadow sorcerer's hidden columns don't accidentally reveal letter info.
-const visibleLetterStatuses = computed(() => {
-  if (!obscuredCols.value.length) return letterStatuses.value
-  const priority = { correct: 3, present: 2, absent: 1 }
-  const map = {}
-  for (const row of evaluatedRows.value) {
-    for (let c = 0; c < row.length; c++) {
-      if (obscuredCols.value.includes(c)) continue
-      const { letter, status } = row[c]
-      if (!map[letter] || priority[status] > priority[map[letter]]) map[letter] = status
-    }
-  }
-  return map
-})
-
-// Layers seer + crystal ball hints on top of visibleLetterStatuses.
-// Revealed letters start yellow and only upgrade (never downgrade) from there.
+// Union letter statuses across all boards, skipping obscured columns, with seer/crystal hints layered on top
 const keyboardStatuses = computed(() => {
-  let base = visibleLetterStatuses.value
-  if (hasAbility('seer') && hintLetter.value && base[hintLetter.value] !== 'correct') {
-    base = { ...base, [hintLetter.value]: 'present' }
+  const priority = { correct: 3, present: 2, absent: 1 }
+  const obscured = obscuredCols.value
+  const base = {}
+
+  for (const board of boards.value) {
+    board.guesses.forEach((guess, rowIdx) => {
+      const evaluated = evaluateGuess(guess, board.secretWord)
+      evaluated.forEach(({ letter, status }, col) => {
+        if (obscured.includes(col)) return
+        if (!base[letter] || priority[status] > priority[base[letter]]) base[letter] = status
+      })
+    })
   }
-  for (const letter of crystalHints.value) {
-    if (!base[letter] || base[letter] === 'absent') {
-      base = { ...base, [letter]: 'present' }
+
+  // Seer hint from first board
+  if (hasAbility('seer')) {
+    const seerLetter = boards.value[0]?.hintLetter
+    if (seerLetter && base[seerLetter] !== 'correct') {
+      if (!base[seerLetter] || base[seerLetter] === 'absent') base[seerLetter] = 'present'
     }
   }
+
+  // Crystal hints from all boards
+  for (const board of boards.value) {
+    for (const letter of board.crystalHints) {
+      if (!base[letter] || base[letter] === 'absent') base[letter] = 'present'
+    }
+  }
+
   return base
-})
-
-// Snowman: non-frozen position count for input length gating
-const nonFrozenCount = computed(() => {
-  const frozenCount = Object.keys(frozenSlots.value).filter(k => Number(k) < wordLength.value).length
-  return wordLength.value - frozenCount
-})
-
-// Snowman: merges frozen letters with user-typed chars into a positional array
-const effectiveGuessArr = computed(() => {
-  const frozen = frozenSlots.value
-  const result = []
-  let userIdx = 0
-  for (let i = 0; i < wordLength.value; i++) {
-    if (frozen[i] !== undefined) {
-      result.push(frozen[i])
-    } else {
-      result.push(currentGuess.value[userIdx] ?? '')
-      userIdx++
-    }
-  }
-  return result
 })
 
 const changelingAbilityLabels = computed(() =>
@@ -491,30 +504,6 @@ function dotClass(i) {
   if (i < stage.value) return 'dot--done'
   if (i === stage.value) return 'dot--active'
   return 'dot--pending'
-}
-
-function isObscured(row, col) {
-  if (obscuredCols.value.length === 0 || !obscuredCols.value.includes(col)) return false
-  if (gameState.value === 'won') return false
-  if (shieldedRows.value.has(row)) return false
-  return true
-}
-
-function tileChar(row, col) {
-  if (isObscured(row, col)) return ''
-  if (row < guesses.value.length) return guesses.value[row][col] ?? ''
-  if (row === guesses.value.length) return effectiveGuessArr.value[col] ?? ''
-  return ''
-}
-
-function tileClass(row, col) {
-  if (isObscured(row, col)) return 'tile--obscured'
-  if (row < guesses.value.length) return `tile--${evaluatedRows.value[row][col].status}`
-  if (row === guesses.value.length && gameState.value === 'playing') {
-    if (frozenSlots.value[col] !== undefined) return 'tile--frozen'
-    return effectiveGuessArr.value[col] ? 'tile--filled' : 'tile--empty'
-  }
-  return 'tile--empty'
 }
 
 function keyClass(key) {
@@ -602,18 +591,75 @@ function onKeyDown(e) {
   if (/^[a-zA-Z]$/.test(e.key)) handleKey(e.key.toUpperCase())
 }
 
+// Called whenever all boards are solved — applies damage and advances
+function handleAllBoardsSolved() {
+  const hitDamage = vorpalSwordActive.value ? 2 : 1
+  vorpalSwordActive.value = false
+  enemyHealth.value -= hitDamage
+  if (enemyHealth.value > 0) bossShaking.value = true
+
+  if (enemyHealth.value <= 0) {
+    if (hasAbility('cleric')) {
+      lastRegen.value = playerMaxHealth.value - playerHealth.value
+      playerHealth.value = playerMaxHealth.value
+    } else {
+      const regen = currentEnemy.value.regen
+      lastRegen.value = Math.min(regen, playerMaxHealth.value - playerHealth.value)
+      playerHealth.value = Math.min(playerMaxHealth.value, playerHealth.value + regen)
+    }
+    gameState.value = 'won'
+    const isLast = stage.value === JOURNEY_LENGTH - 1
+    const isMiniboss = MINIBOSSES.some(m => m.id === currentEnemy.value?.id)
+    if (isLast) {
+      setTimeout(() => { modal.value = 'complete' }, 600)
+    } else if (isMiniboss) {
+      wonDamage.value = 0
+      wonMessage.value = true
+      shopPicksRemaining.value = hasAbility('thief') ? 2 : 1
+      shopTotalPicks.value = shopPicksRemaining.value
+      setTimeout(() => {
+        wonMessage.value = false
+        openShop()
+      }, 1800)
+    } else {
+      wonDamage.value = 0
+      wonMessage.value = true
+      setTimeout(() => {
+        wonMessage.value = false
+        startStage(stage.value + 1)
+      }, 1800)
+    }
+  } else {
+    gameState.value = 'won'
+    wonDamage.value = hitDamage
+    wonMessage.value = true
+    const advancing = isBossFight.value
+    setTimeout(() => {
+      wonMessage.value = false
+      if (advancing) bossWordIndex.value++
+      loadWord(false)
+    }, 1800)
+  }
+}
+
 async function submitGuess(skipValidation = false) {
+  const activeBoards = boards.value.filter(b => !b.solved)
+  if (!activeBoards.length) return
+
   if (currentGuess.value.length < nonFrozenCount.value) {
     inputError.value = `Guess must be ${wordLength.value} letters`
     return
   }
 
-  const submitted = effectiveGuessArr.value.join('')
+  // Use first active board's effective guess for validation and shared checks
+  const firstActive = activeBoards[0]
+  const submitted = buildEffectiveGuess(firstActive)
 
-  // Enhanced Snowman: all known-present (yellow) letters must appear in the guess
-  if (currentBoss.value?.id === 'abominable-snowman' && stage.value >= STAGE_SEQUENCE.length) {
-    const missing = Object.keys(letterStatuses.value)
-      .filter(l => letterStatuses.value[l] === 'present' && !submitted.includes(l))
+  // Enhanced Snowman: all known-yellow letters must appear in the guess
+  if (currentBoss.value?.id === 'abominable-snowman' && isBossFight.value) {
+    const unionStatuses = getUnionLetterStatuses()
+    const missing = Object.keys(unionStatuses)
+      .filter(l => unionStatuses[l] === 'present' && !submitted.includes(l))
     if (missing.length > 0) {
       inputError.value = `Must use yellow letters: ${missing.join(', ')}`
       return
@@ -638,84 +684,54 @@ async function submitGuess(skipValidation = false) {
     }
   }
 
+  // Build all per-board submissions BEFORE clearing currentGuess
+  const boardSubmissions = activeBoards.map(board => buildEffectiveGuess(board))
+
   const alreadyGuessed = allGuessedWords.value.includes(submitted)
   allGuessedWords.value = [...allGuessedWords.value, submitted]
-  guesses.value = [...guesses.value, submitted]
   currentGuess.value = ''
 
-  if (submitted === secretWord.value) {
-    const hitDamage = vorpalSwordActive.value ? 2 : 1
-    vorpalSwordActive.value = false
-    enemyHealth.value -= hitDamage
-    if (enemyHealth.value > 0) bossShaking.value = true
-    if (enemyHealth.value <= 0) {
-      // Cleric: heal to full on enemy defeat
-      if (hasAbility('cleric')) {
-        lastRegen.value = playerMaxHealth.value - playerHealth.value
-        playerHealth.value = playerMaxHealth.value
-      } else {
-        const regen = currentEnemy.value.regen
-        lastRegen.value = Math.min(regen, playerMaxHealth.value - playerHealth.value)
-        playerHealth.value = Math.min(playerMaxHealth.value, playerHealth.value + regen)
-      }
-      gameState.value = 'won'
-      const isLast = stage.value === JOURNEY_LENGTH - 1
-      const isMiniboss = MINIBOSSES.some(m => m.id === currentEnemy.value?.id)
-      if (isLast) {
-        setTimeout(() => { modal.value = 'complete' }, 600)
-      } else if (isMiniboss) {
-        wonDamage.value = 0
-        wonMessage.value = true
-        shopPicksRemaining.value = hasAbility('thief') ? 2 : 1
-        shopTotalPicks.value = shopPicksRemaining.value
-        setTimeout(() => {
-          wonMessage.value = false
-          openShop()
-        }, 1800)
-      } else {
-        wonDamage.value = 0
-        wonMessage.value = true
-        setTimeout(() => {
-          wonMessage.value = false
-          startStage(stage.value + 1)
-        }, 1800)
-      }
-    } else {
-      gameState.value = 'won'
-      wonDamage.value = hitDamage
-      wonMessage.value = true
-      const advancingBoss = stage.value >= STAGE_SEQUENCE.length
-      setTimeout(() => {
-        wonMessage.value = false
-        if (advancingBoss) bossWordIndex.value++
-        loadWord(false)
-      }, 1800)
-    }
-  } else {
-    // Abominable Snowman: freeze new green positions for future guesses
-    if (currentBoss.value?.id === 'abominable-snowman') {
-      const guessEval = evaluateGuess(submitted)
-      const newFrozen = { ...frozenSlots.value }
+  // Apply guess to each active board
+  let anyBoardSolvedThisGuess = false
+  for (let bi = 0; bi < activeBoards.length; bi++) {
+    const board = activeBoards[bi]
+    const boardSubmitted = boardSubmissions[bi]
+    board.guesses = [...board.guesses, boardSubmitted]
+
+    if (boardSubmitted === board.secretWord) {
+      board.solved = true
+      anyBoardSolvedThisGuess = true
+    } else if (currentBoss.value?.id === 'abominable-snowman') {
+      // Freeze new green positions
+      const guessEval = evaluateGuess(boardSubmitted, board.secretWord)
+      const newFrozen = { ...board.frozenSlots }
       guessEval.forEach(({ letter, status }, col) => {
         if (status === 'correct' && newFrozen[col] === undefined) newFrozen[col] = letter
       })
-      frozenSlots.value = newFrozen
+      board.frozenSlots = newFrozen
     }
+  }
 
-    const guessRow = guesses.value.length - 1
-    const isShielded = shieldedRows.value.has(guessRow)
+  const allSolved = boards.value.every(b => b.solved)
+
+  if (allSolved) {
+    handleAllBoardsSolved()
+  } else if (!anyBoardSolvedThisGuess) {
+    // No board solved — player takes damage
+    const guessRow = firstActive.guesses.length - 1
+    const isShielded = firstActive.shieldedRows.has(guessRow)
     const doubleDamage = !isShielded
       && currentBoss.value?.id === 'gelatinous-cube'
       && dangerLetters.value.length > 0
       && dangerLetters.value.some(l => submitted.includes(l))
 
-    // Necromancer: +1 for reused words; +1 enhanced for using absent (grey) letters
     let necroPenalty = 0
     if (currentBoss.value?.id === 'necromancer') {
       if (alreadyGuessed) necroPenalty += 1
-      if (stage.value >= STAGE_SEQUENCE.length) {
-        const hasAbsentLetter = Object.keys(letterStatuses.value)
-          .some(l => letterStatuses.value[l] === 'absent' && submitted.includes(l))
+      if (isBossFight.value) {
+        const unionStatuses = getUnionLetterStatuses()
+        const hasAbsentLetter = Object.keys(unionStatuses)
+          .some(l => unionStatuses[l] === 'absent' && submitted.includes(l))
         if (hasAbsentLetter) necroPenalty += 1
       }
     }
@@ -725,8 +741,7 @@ async function submitGuess(skipValidation = false) {
       gameState.value = 'lost'
       setTimeout(() => { modal.value = 'lost' }, 600)
     } else if (hasAbility('assassin') && sneakAttackAvailable.value) {
-      // Trigger sneak attack if 4+ letters are yellow (present)
-      const guessEval = evaluateGuess(submitted)
+      const guessEval = evaluateGuess(submitted, firstActive.secretWord)
       const yellowCount = guessEval.filter(c => c.status === 'present').length
       if (yellowCount >= 4) {
         sneakAttackAvailable.value = false
@@ -734,6 +749,7 @@ async function submitGuess(skipValidation = false) {
       }
     }
   }
+  // If anyBoardSolvedThisGuess but not allSolved: game continues, no damage
 }
 
 // ── Modal ─────────────────────────────────────────────────────────────────────
@@ -741,7 +757,6 @@ function handleModalAction() {
   if (modal.value === 'boss-announcement') {
     startStage(0)
   } else {
-    // lost or complete → back to intro
     screen.value = 'intro'
     playerClass.value = null
     changelingAbilities.value = []
@@ -754,11 +769,12 @@ function handleModalAction() {
     enemyHealth.value = 0
     dangerLetters.value = []
     inventory.value = []
-    shieldedRows.value = new Set()
-    crystalHints.value = []
-    frozenSlots.value = {}
+    boards.value = []
     allGuessedWords.value = []
     vorpalSwordActive.value = false
+    wonMessage.value = false
+    wonDamage.value = 0
+    lastRegen.value = 0
     selectedBoss.value = null
     bossWordIndex.value = 0
     sneakAttackAvailable.value = false
@@ -783,11 +799,12 @@ function restartJourney() {
   enemyHealth.value = 0
   dangerLetters.value = []
   inventory.value = []
-  shieldedRows.value = new Set()
-  crystalHints.value = []
-  frozenSlots.value = {}
+  boards.value = []
   allGuessedWords.value = []
   vorpalSwordActive.value = false
+  wonMessage.value = false
+  wonDamage.value = 0
+  lastRegen.value = 0
   selectedBoss.value = null
   bossWordIndex.value = 0
   sneakAttackAvailable.value = false
@@ -869,9 +886,7 @@ function beginBossFight() {
 async function startStage(stageNum) {
   stage.value = stageNum
   sneakAttackAvailable.value = hasAbility('assassin')
-  frozenSlots.value = {}
-  const isBossFight = stageNum >= STAGE_SEQUENCE.length
-  if (isBossFight) {
+  if (isBossFight.value) {
     currentEnemy.value = currentBoss.value
     enemyHealth.value = currentBoss.value.health
     bossWordIndex.value = 0
@@ -890,19 +905,13 @@ async function startStage(stageNum) {
   }
 }
 
-function applyDangerLetters(isBossFight) {
+function applyDangerLetters(isBoss) {
   if (currentBoss.value?.id !== 'gelatinous-cube') return
   const alpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-  const count = isBossFight ? 3 : 1
+  const count = isBoss ? 3 : 1
   const picked = new Set()
   while (picked.size < count) picked.add(alpha[Math.floor(Math.random() * 26)])
   dangerLetters.value = [...picked]
-}
-
-function applySeerHint() {
-  if (!hasAbility('seer')) return
-  const idx = Math.floor(Math.random() * secretWord.value.length)
-  hintLetter.value = secretWord.value[idx]
 }
 
 function finishWordLoad(showModal) {
@@ -918,45 +927,52 @@ function finishWordLoad(showModal) {
 
 async function loadWord(showModal) {
   gameState.value = 'loading'
-  secretWord.value = ''
-  guesses.value = []
+  boards.value = []
   currentGuess.value = ''
   inputError.value = ''
   modal.value = null
-  hintLetter.value = ''
-  hintWordType.value = ''
   dangerLetters.value = []
-  shieldedRows.value = new Set()
-  crystalHints.value = []
   // Unused sneak attack disappears when a new word begins
   inventory.value = inventory.value.filter(id => id !== 'sneak-attack')
 
-  const isBossFight = stage.value >= STAGE_SEQUENCE.length
+  const isBoss = isBossFight.value
+  const boardCount = isBoss ? (currentBoss.value?.boardCount ?? 1) : 1
+  const wordLen = isBoss ? currentBoss.value.wordLength : 5
 
   if (props.mode === 'daily' && dailyConfig.value) {
-    const wordKey = isBossFight ? `boss-${bossWordIndex.value}` : `stage-${stage.value}`
-    secretWord.value = dailyConfig.value.words[wordKey]
-    applyDangerLetters(isBossFight)
-    applySeerHint()
-    if (hasAbility('scholar')) hintWordType.value = 'word'
+    for (let i = 0; i < boardCount; i++) {
+      const wordKey = isBoss ? `boss-${bossWordIndex.value}-board-${i}` : `stage-${stage.value}`
+      const fallbackKey = isBoss ? `boss-${bossWordIndex.value}` : `stage-${stage.value}`
+      const word = (dailyConfig.value.words[wordKey] ?? dailyConfig.value.words[fallbackKey] ?? '').toUpperCase()
+      const b = makeBoard(i, word)
+      if (hasAbility('seer') && word) b.hintLetter = word[Math.floor(Math.random() * word.length)]
+      if (hasAbility('scholar')) b.hintWordType = 'word'
+      boards.value.push(b)
+    }
+    applyDangerLetters(isBoss)
     finishWordLoad(showModal)
     return
   }
 
   try {
-    const wordLen = isBossFight ? currentBoss.value.wordLength : 5
-    const wordLower = await fetchGameWord({ minLength: wordLen, maxLength: wordLen })
-    secretWord.value = wordLower.toUpperCase()
-    applyDangerLetters(isBossFight)
-    applySeerHint()
-    if (hasAbility('scholar')) {
-      try {
-        const data = await fetchWordData(wordLower)
-        hintWordType.value = data?.partOfSpeech || 'word'
-      } catch {
-        hintWordType.value = 'word'
+    for (let i = 0; i < boardCount; i++) {
+      const wordLower = await fetchGameWord({ minLength: wordLen, maxLength: wordLen })
+      const word = wordLower.toUpperCase()
+      const b = makeBoard(i, word)
+      if (hasAbility('seer')) {
+        b.hintLetter = word[Math.floor(Math.random() * word.length)]
       }
+      if (hasAbility('scholar')) {
+        try {
+          const data = await fetchWordData(wordLower)
+          b.hintWordType = data?.partOfSpeech || 'word'
+        } catch {
+          b.hintWordType = 'word'
+        }
+      }
+      boards.value.push(b)
     }
+    applyDangerLetters(isBoss)
     finishWordLoad(showModal)
   } catch {
     gameState.value = 'error'
@@ -1005,26 +1021,31 @@ function useItem() {
   if (item.effect === 'heal') {
     playerHealth.value = Math.min(playerMaxHealth.value, playerHealth.value + 1)
   } else if (item.effect === 'shield') {
-    shieldedRows.value = new Set([...shieldedRows.value, guesses.value.length])
+    // Shield the current guess row on all boards
+    const rowToShield = boards.value[0]?.guesses.length ?? 0
+    for (const board of boards.value) {
+      board.shieldedRows = new Set([...board.shieldedRows, rowToShield])
+    }
   } else if (item.effect === 'crystal-ball') {
     revealCrystalHint()
   } else if (item.effect === 'crossbow') {
-    const first = secretWord.value[0]
+    const board = boards.value.find(b => !b.solved) ?? boards.value[0]
+    const first = board?.secretWord[0]
     if (first) currentGuess.value = first + currentGuess.value.slice(1)
   } else if (item.effect === 'vorpal-sword') {
     vorpalSwordActive.value = true
   } else if (item.effect === 'sneak-attack') {
-    // Build only the non-frozen portion of the secret word for currentGuess
-    const frozen = frozenSlots.value
-    let nonFrozenChars = ''
-    for (let i = 0; i < secretWord.value.length; i++) {
-      if (frozen[i] === undefined) nonFrozenChars += secretWord.value[i]
+    // Auto-solve the first unsolved board by inserting its answer directly
+    const board = boards.value.find(b => !b.solved)
+    if (board) {
+      board.guesses = [...board.guesses, board.secretWord]
+      board.solved = true
     }
-    currentGuess.value = nonFrozenChars
     const idx = inventory.value.indexOf(item.id)
     if (idx !== -1) inventory.value.splice(idx, 1)
     pendingUseItem.value = null
-    submitGuess(true)
+    // Trigger win if that was the last board
+    if (boards.value.every(b => b.solved)) handleAllBoardsSolved()
     return
   }
   const idx = inventory.value.indexOf(item.id)
@@ -1034,31 +1055,32 @@ function useItem() {
 }
 
 function revealCrystalHint() {
-  const known = new Set(Object.keys(letterStatuses.value))
-  if (hintLetter.value) known.add(hintLetter.value)
-  crystalHints.value.forEach(l => known.add(l))
-  const wordLetters = [...new Set(secretWord.value.split(''))]
+  const board = boards.value.find(b => !b.solved) ?? boards.value[0]
+  if (!board) return
+  const unionStatuses = getUnionLetterStatuses()
+  const known = new Set(Object.keys(unionStatuses))
+  if (board.hintLetter) known.add(board.hintLetter)
+  board.crystalHints.forEach(l => known.add(l))
+  const wordLetters = [...new Set(board.secretWord.split(''))]
   const unknown = wordLetters.filter(l => !known.has(l))
   const pool = unknown.length ? unknown : wordLetters
   const shuffled = [...pool].sort(() => Math.random() - 0.5)
-  crystalHints.value = [...crystalHints.value, ...shuffled.slice(0, 2)]
-}
-
-function articleFor(name) {
-  return /^[aeiou]/i.test(name) ? 'An' : 'A'
+  board.crystalHints = [...board.crystalHints, ...shuffled.slice(0, 2)]
 }
 
 async function applyAnnoyingKidGuess() {
+  const board = boards.value[0]
+  if (!board) return
   let word
   try {
-    word = (await fetchGameWord({ minLength: wordLength.value, maxLength: wordLength.value })).toUpperCase()
+    word = (await fetchGameWord({ minLength: board.secretWord.length, maxLength: board.secretWord.length })).toUpperCase()
   } catch { /* fall through */ }
-  if (!word || word === secretWord.value) {
+  if (!word || word === board.secretWord) {
     const alpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-    do { word = Array.from({ length: wordLength.value }, () => alpha[Math.floor(Math.random() * 26)]).join('') }
-    while (word === secretWord.value)
+    do { word = Array.from({ length: board.secretWord.length }, () => alpha[Math.floor(Math.random() * 26)]).join('') }
+    while (word === board.secretWord)
   }
-  guesses.value = [word]
+  board.guesses = [word]
 
   const doubleDamage = currentBoss.value?.id === 'gelatinous-cube'
     && dangerLetters.value.length > 0
