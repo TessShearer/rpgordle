@@ -68,10 +68,6 @@
                 </template>
               </div>
               <div class="portrait-info-col">
-                <template v-if="crystalHints.length">
-                  <p class="portrait-hint-label">crystal ball</p>
-                  <p class="portrait-hint-value">{{ crystalHints.join(', ') }}</p>
-                </template>
                 <div v-if="inventoryItems.length" class="inventory">
                   <p class="portrait-hint-label">Inventory</p>
                   <div class="inventory-list">
@@ -108,7 +104,7 @@
                     :class="{ 'health-pip--lost': n > playerHealth }"></span>
                 </div>
                 <template v-if="playerClass === 'changeling' && changelingAbilities.length">
-                  <p v-for="label in changelingAbilityLabels" :key="label" class="changeling-ability-line">a {{ label }}!</p>
+                  <p v-for="label in changelingAbilityLabels" :key="label" class="changeling-ability-line">Changeling becomes... a {{ label }}!</p>
                 </template>
               </div>
               <div class="class-feature-info-col">
@@ -121,10 +117,6 @@
                       <p class="inventory-item-name">{{ item.name }}</p>
                     </div>
                   </div>
-                </div>
-                <div v-if="crystalHints.length" class="feature-hint">
-                  <p class="feature-label">crystal ball reveals...</p>
-                  <p class="feature-letter">{{ crystalHints.join(', ') }}</p>
                 </div>
               </div>
             </div>
@@ -452,13 +444,19 @@ const visibleLetterStatuses = computed(() => {
   return map
 })
 
-// Layers seer hint on top of visibleLetterStatuses: the revealed letter starts
-// yellow and stays yellow until an actual guess promotes it to green.
+// Layers seer + crystal ball hints on top of visibleLetterStatuses.
+// Revealed letters start yellow and only upgrade (never downgrade) from there.
 const keyboardStatuses = computed(() => {
-  if (!hasAbility('seer') || !hintLetter.value) return visibleLetterStatuses.value
-  const letter = hintLetter.value
-  if (visibleLetterStatuses.value[letter] === 'correct') return visibleLetterStatuses.value
-  return { ...visibleLetterStatuses.value, [letter]: 'present' }
+  let base = visibleLetterStatuses.value
+  if (hasAbility('seer') && hintLetter.value && base[hintLetter.value] !== 'correct') {
+    base = { ...base, [hintLetter.value]: 'present' }
+  }
+  for (const letter of crystalHints.value) {
+    if (!base[letter] || base[letter] === 'absent') {
+      base = { ...base, [letter]: 'present' }
+    }
+  }
+  return base
 })
 
 // Snowman: non-frozen position count for input length gating
