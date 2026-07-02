@@ -381,6 +381,15 @@ body {
   margin: 0;
 }
 
+.changeling-ability-line {
+  font-size: 0.6rem;
+  color: var(--gs-500, #7a7a7a);
+  text-align: center;
+  margin: 0;
+  line-height: 1.4;
+  font-style: italic;
+}
+
 .portrait-hint-value {
   font-size: 1.8rem;
   font-weight: 700;

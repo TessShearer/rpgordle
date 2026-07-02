@@ -63,6 +63,9 @@
                   <span v-for="n in playerMaxHealth" :key="n" class="health-pip health-pip--player"
                     :class="{ 'health-pip--lost': n > playerHealth }"></span>
                 </div>
+                <template v-if="playerClass === 'changeling' && changelingAbilities.length">
+                  <p v-for="label in changelingAbilityLabels" :key="label" class="changeling-ability-line">a {{ label }}!</p>
+                </template>
               </div>
               <div class="portrait-info-col">
                 <template v-if="crystalHints.length">
@@ -79,10 +82,6 @@
                     </div>
                   </div>
                 </div>
-                <template v-if="playerClass === 'changeling' && changelingAbilities.length">
-                  <p class="portrait-hint-label">Changeling becomes</p>
-                  <p v-for="label in changelingAbilityLabels" :key="label" class="portrait-hint-value">a {{ label }}!</p>
-                </template>
               </div>
             </div>
             <div v-if="currentEnemy" class="portrait-slot">
@@ -108,6 +107,9 @@
                   <span v-for="n in playerMaxHealth" :key="n" class="health-pip health-pip--player"
                     :class="{ 'health-pip--lost': n > playerHealth }"></span>
                 </div>
+                <template v-if="playerClass === 'changeling' && changelingAbilities.length">
+                  <p v-for="label in changelingAbilityLabels" :key="label" class="changeling-ability-line">a {{ label }}!</p>
+                </template>
               </div>
               <div class="class-feature-info-col">
                 <div v-if="inventoryItems.length" class="inventory">
@@ -123,10 +125,6 @@
                 <div v-if="crystalHints.length" class="feature-hint">
                   <p class="feature-label">crystal ball reveals...</p>
                   <p class="feature-letter">{{ crystalHints.join(', ') }}</p>
-                </div>
-                <div v-if="playerClass === 'changeling' && changelingAbilities.length" class="feature-hint">
-                  <p class="feature-label">Changeling becomes</p>
-                  <p v-for="label in changelingAbilityLabels" :key="label" class="feature-letter">a {{ label }}!</p>
                 </div>
               </div>
             </div>
