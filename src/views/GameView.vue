@@ -151,8 +151,8 @@
 
             <Transition name="modal">
               <div v-if="wonMessage" class="won-message-inline">
-                <p class="won-message-text">Word guessed!<span v-if="wonDamage"> 1 damage!</span></p>
-                <p v-if="lastRegen > 0" class="won-message-sub">You healed {{ lastRegen }} HP!</p>
+                <p class="won-message-text"><span v-if="wonDamage > 0">{{ wonDamage }} damage!</span><span v-else>{{ currentEnemy?.name }} defeated!</span></p>
+                <p v-if="lastRegen > 0" class="won-message-sub">{{ lastRegen }} healed!</p>
                 <div class="won-progress-track">
                   <div class="won-progress-fill"></div>
                 </div>
@@ -304,7 +304,7 @@ const bossIntroRef = ref(null)
 const bossFightIntroRef = ref(null)
 const enemyIntroRef = ref(null)
 const wonMessage = ref(false)
-const wonDamage = ref(false)
+const wonDamage = ref(0)
 
 // ── Game state ────────────────────────────────────────────────────────────────
 const stage = ref(0)
@@ -334,6 +334,7 @@ const allGuessedWords = ref([])
 
 // ── Class abilities ───────────────────────────────────────────────────────────
 const sneakAttackAvailable = ref(false)
+const vorpalSwordActive = ref(false)
 const boardShaking = ref(false)
 const bossShaking = ref(false)
 const shopPicksRemaining = ref(1)
@@ -643,7 +644,9 @@ async function submitGuess(skipValidation = false) {
   currentGuess.value = ''
 
   if (submitted === secretWord.value) {
-    enemyHealth.value -= 1
+    const hitDamage = vorpalSwordActive.value ? 2 : 1
+    vorpalSwordActive.value = false
+    enemyHealth.value -= hitDamage
     if (enemyHealth.value > 0) bossShaking.value = true
     if (enemyHealth.value <= 0) {
       // Cleric: heal to full on enemy defeat
@@ -661,7 +664,7 @@ async function submitGuess(skipValidation = false) {
       if (isLast) {
         setTimeout(() => { modal.value = 'complete' }, 600)
       } else if (isMiniboss) {
-        wonDamage.value = false
+        wonDamage.value = 0
         wonMessage.value = true
         shopPicksRemaining.value = hasAbility('thief') ? 2 : 1
         shopTotalPicks.value = shopPicksRemaining.value
@@ -670,7 +673,7 @@ async function submitGuess(skipValidation = false) {
           openShop()
         }, 1800)
       } else {
-        wonDamage.value = false
+        wonDamage.value = 0
         wonMessage.value = true
         setTimeout(() => {
           wonMessage.value = false
@@ -679,7 +682,7 @@ async function submitGuess(skipValidation = false) {
       }
     } else {
       gameState.value = 'won'
-      wonDamage.value = true
+      wonDamage.value = hitDamage
       wonMessage.value = true
       const advancingBoss = stage.value >= STAGE_SEQUENCE.length
       setTimeout(() => {
@@ -755,6 +758,7 @@ function handleModalAction() {
     crystalHints.value = []
     frozenSlots.value = {}
     allGuessedWords.value = []
+    vorpalSwordActive.value = false
     selectedBoss.value = null
     bossWordIndex.value = 0
     sneakAttackAvailable.value = false
@@ -783,6 +787,7 @@ function restartJourney() {
   crystalHints.value = []
   frozenSlots.value = {}
   allGuessedWords.value = []
+  vorpalSwordActive.value = false
   selectedBoss.value = null
   bossWordIndex.value = 0
   sneakAttackAvailable.value = false
@@ -1006,6 +1011,8 @@ function useItem() {
   } else if (item.effect === 'crossbow') {
     const first = secretWord.value[0]
     if (first) currentGuess.value = first + currentGuess.value.slice(1)
+  } else if (item.effect === 'vorpal-sword') {
+    vorpalSwordActive.value = true
   } else if (item.effect === 'sneak-attack') {
     // Build only the non-frozen portion of the secret word for currentGuess
     const frozen = frozenSlots.value
