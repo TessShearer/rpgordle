@@ -335,6 +335,7 @@ const shopTotalPicks = ref(1)
 const selectedShopItemId = ref(null)
 const freeplayShopItems = ref([])
 const validating = ref(false)
+const annoyingKidTyping = ref(false)
 
 // ── Daily / freeplay ──────────────────────────────────────────────────────────
 const dailyConfig = ref(null)
@@ -518,7 +519,7 @@ function keyClass(key) {
 
 // ── Input ─────────────────────────────────────────────────────────────────────
 function handleKey(key) {
-  if (gameState.value !== 'playing' || modal.value || validating.value) return
+  if (gameState.value !== 'playing' || modal.value || validating.value || annoyingKidTyping.value) return
   inputError.value = ''
   if (key === '⌫') {
     currentGuess.value = currentGuess.value.slice(0, -1)
@@ -1072,6 +1073,7 @@ function revealCrystalHint() {
 async function applyAnnoyingKidGuess() {
   const board = boards.value[0]
   if (!board) return
+
   let word
   try {
     word = (await fetchGameWord({ minLength: board.secretWord.length, maxLength: board.secretWord.length })).toUpperCase()
@@ -1081,19 +1083,22 @@ async function applyAnnoyingKidGuess() {
     do { word = Array.from({ length: board.secretWord.length }, () => alpha[Math.floor(Math.random() * 26)]).join('') }
     while (word === board.secretWord)
   }
-  board.guesses = [word]
 
-  const doubleDamage = currentBoss.value?.id === 'gelatinous-cube'
-    && dangerLetters.value.length > 0
-    && dangerLetters.value.some(l => word.includes(l))
-  playerHealth.value -= doubleDamage ? 2 : 1
+  // Show the board and block player input while the kid types
+  gameState.value = 'playing'
+  annoyingKidTyping.value = true
+  currentGuess.value = ''
 
-  if (playerHealth.value <= 0) {
-    gameState.value = 'lost'
-    setTimeout(() => { modal.value = 'lost' }, 600)
-  } else {
-    gameState.value = 'playing'
+  for (const letter of word) {
+    await new Promise(r => setTimeout(r, 180))
+    currentGuess.value += letter
   }
+
+  // Brief pause so the player can read the word before it submits
+  await new Promise(r => setTimeout(r, 500))
+
+  annoyingKidTyping.value = false
+  await submitGuess(true)
 }
 
 onMounted(async () => {
