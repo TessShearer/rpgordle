@@ -25,7 +25,7 @@ export const ENEMIES = [
 
 export const MINIBOSSES = [
   { id: 'annoying-kid', name: 'Annoying Kid', regen: 1, health: 1, effect: 'He will make your first guess for you' },
-  { id: 'hydra-miniboss', name: 'Hydra', regen: 0, health: 1, wordLength: 5, boardCount: 2, effect: 'Sever both heads before it retreats and grows back stronger!' },
+  { id: 'hydra-miniboss', name: 'Hydra', regen: 0, health: 1, wordLength: 5, boardCount: 1, effect: 'Cut off its head!' },
 ]
 
 export const SHOP_ITEMS = [
@@ -130,12 +130,17 @@ export const BOSSES = [
   {
     id: 'hydra',
     name: 'Hydra',
-    health: 2,
+    health: 3,
     regen: 0,
     wordLength: 5,
-    boardCount: 4,
-    effect: 'Cut off all four heads simultaneously — the Hydra has grown back from its wounds.',
-    announcement: 'The Hydra has returned, more powerful than before! Defeat all four heads at once to prevail.',
-    enhancedAnnouncement: 'The Hydra has returned!',
+    boardCount: 2,
+    rounds: [
+      { boardCount: 2, wordLength: 5 },
+      { boardCount: 4, wordLength: 5 },
+      { boardCount: 6, wordLength: 5 },
+    ],
+    effect: 'The Hydra grews more heads as you cut them off',
+    announcement: 'Your quest is to defeath the Hydra by cutting off its head(s?)',
+    enhancedAnnouncement: 'The Hydra grew more heads and returned! Give it another go.',
   },
 ]
