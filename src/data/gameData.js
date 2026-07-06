@@ -96,9 +96,15 @@ export const BOSSES = [
     name: 'Gelatinous Cube',
     health: 3,
     regen: 0,
-    wordLength: 5,
-    effect: 'A chosen letter deals double damage each round',
-    announcement: 'Your quest is to defeat the Gelatinous Cube. Each round it marks a letter — any guess containing that letter deals 2 damage instead of 1.',
+    wordLength: 8,
+    boardCount: 1,
+    rounds: [
+      { boardCount: 1, wordLength: 8 },
+      { boardCount: 2, wordLength: 5 },
+      { boardCount: 4, wordLength: 3 },
+    ],
+    effect: 'Strike it down and it splits! Each round a letter is marked for double damage.',
+    announcement: 'Your quest is to defeat the Gelatinous Cube. Each round it marks a letter — any guess containing that letter deals 2 damage. Strike it down and it splits into smaller oozes!',
     enhancedAnnouncement: 'You found the boss! Now THREE letters are marked for double damage each round.',
   },
   {

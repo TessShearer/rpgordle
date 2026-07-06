@@ -78,14 +78,16 @@ async function generateDaily(dateKey) {
       words[`stage-${i}`] = await fetchWord()
     }
   }
-  const bossBoardCount = boss.boardCount ?? 1
   for (let round = 0; round < boss.health; round++) {
+    const roundConfig = boss.rounds?.[round]
+    const bossBoardCount = roundConfig?.boardCount ?? boss.boardCount ?? 1
+    const bossWordLen = roundConfig?.wordLength ?? boss.wordLength ?? 5
     if (bossBoardCount > 1) {
       for (let b = 0; b < bossBoardCount; b++) {
-        words[`boss-${round}-board-${b}`] = await fetchWord(boss.wordLength)
+        words[`boss-${round}-board-${b}`] = await fetchWord(bossWordLen)
       }
     } else {
-      words[`boss-${round}`] = await fetchWord(boss.wordLength)
+      words[`boss-${round}`] = await fetchWord(bossWordLen)
     }
   }
 

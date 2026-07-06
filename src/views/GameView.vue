@@ -956,12 +956,15 @@ async function loadWord(showModal) {
   inventory.value = inventory.value.filter(id => id !== 'sneak-attack')
 
   const isBoss = isBossFight.value
-  const boardCount = isBoss
-    ? (currentBoss.value?.boardCount ?? 1)
-    : (currentEnemy.value?.boardCount ?? 1)
-  const wordLen = isBoss
-    ? currentBoss.value.wordLength
-    : (currentEnemy.value?.wordLength ?? 5)
+  let boardCount, wordLen
+  if (isBoss) {
+    const roundConfig = currentBoss.value?.rounds?.[bossWordIndex.value]
+    boardCount = roundConfig?.boardCount ?? currentBoss.value?.boardCount ?? 1
+    wordLen = roundConfig?.wordLength ?? currentBoss.value?.wordLength ?? 5
+  } else {
+    boardCount = currentEnemy.value?.boardCount ?? 1
+    wordLen = currentEnemy.value?.wordLength ?? 5
+  }
 
   if (props.mode === 'daily' && dailyConfig.value) {
     for (let i = 0; i < boardCount; i++) {
