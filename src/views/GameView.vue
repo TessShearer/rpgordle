@@ -38,6 +38,57 @@
       <BossFightIntro v-else-if="screen === 'boss-fight-intro'" ref="bossFightIntroRef" :boss="currentBoss"
         @begin="beginBossFight" />
 
+      <!-- ── Stats Screen ───────────────────────────────────────────────── -->
+      <div v-else-if="screen === 'stats'" class="stats-screen">
+        <h2 class="stats-title">{{ gameResult === 'won' ? '⚔️ Quest Complete!' : '💀 Quest Failed' }}</h2>
+
+        <div class="stats-body">
+          <p class="stats-label">Played as:</p>
+          <p class="stats-class-name">{{ CLASSES.find(c => c.id === playerClass)?.name }}</p>
+
+          <template v-for="(entry, ei) in gameLog" :key="ei">
+            <div v-if="!entry.isBoss" class="stats-encounter">
+              <p class="stats-encounter-name">
+                {{ entry.name }}: {{ totalGuessCount(entry) }} {{ totalGuessCount(entry) === 1 ? 'guess' : 'guesses' }}
+              </p>
+              <template v-for="(board, bi) in entry.boards" :key="bi">
+                <p v-if="entry.boards.length > 1" class="stats-board-divider">— Word {{ bi + 1 }} —</p>
+                <p v-for="(guess, gi) in board.guesses" :key="gi" class="stats-row">{{ emojiRow(guess, board.secretWord) }}</p>
+                <p v-if="!board.solved" class="stats-answer">Answer: {{ board.secretWord.toLowerCase() }}</p>
+              </template>
+            </div>
+          </template>
+
+          <template v-if="gameLog.some(e => e.isBoss)">
+            <p class="stats-section-label">Boss Stats:</p>
+            <template v-for="(entry, ei) in gameLog.filter(e => e.isBoss)" :key="ei">
+              <div class="stats-encounter">
+                <p class="stats-encounter-name">
+                  {{ entry.name }}{{ gameLog.filter(e => e.isBoss).length > 1 ? ` (Round ${entry.roundIndex + 1})` : '' }}:
+                  {{ totalGuessCount(entry) }} {{ totalGuessCount(entry) === 1 ? 'guess' : 'guesses' }}
+                </p>
+                <template v-for="(board, bi) in entry.boards" :key="bi">
+                  <p v-if="entry.boards.length > 1" class="stats-board-divider">— Head {{ bi + 1 }} —</p>
+                  <p v-for="(guess, gi) in board.guesses" :key="gi" class="stats-row">{{ emojiRow(guess, board.secretWord) }}</p>
+                  <p v-if="!board.solved" class="stats-answer">Answer: {{ board.secretWord.toLowerCase() }}</p>
+                </template>
+              </div>
+            </template>
+          </template>
+
+          <p class="stats-health">
+            {{ gameResult === 'won' ? `Remaining health: ${playerHealth}` : 'Defeated!' }}
+          </p>
+        </div>
+
+        <div class="stats-actions">
+          <button class="btn btn-press px-5 py-2" @click="copyStats">
+            {{ copied ? '✓ Copied!' : 'Copy to Clipboard' }}
+          </button>
+          <button class="btn btn-reset px-5 py-2 mt-2" @click="restartJourney">Play Again</button>
+        </div>
+      </div>
+
       <!-- ── Game ───────────────────────────────────────────────────────── -->
       <template v-else>
 
@@ -347,6 +398,11 @@ const dailyError = ref(false)
 const selectedBoss = ref(null)
 const bossWordIndex = ref(0)
 
+// ── Stats ─────────────────────────────────────────────────────────────────────
+const gameLog = ref([])
+const gameResult = ref(null)
+const copied = ref(false)
+
 // ── Board helpers ─────────────────────────────────────────────────────────────
 function makeBoard(id, secretWord) {
   return {
@@ -595,6 +651,91 @@ function onKeyDown(e) {
   if (/^[a-zA-Z]$/.test(e.key)) handleKey(e.key.toUpperCase())
 }
 
+function recordCurrentRound() {
+  gameLog.value.push({
+    name: currentEnemy.value?.name ?? '',
+    isBoss: isBossFight.value,
+    roundIndex: isBossFight.value ? bossWordIndex.value : 0,
+    boards: boards.value.map(b => ({
+      secretWord: b.secretWord,
+      guesses: [...b.guesses],
+      solved: b.solved,
+    }))
+  })
+}
+
+function emojiRow(guess, secretWord) {
+  const status = Array(guess.length).fill('absent')
+  const pool = secretWord.split('')
+  for (let i = 0; i < guess.length; i++) {
+    if (guess[i] === pool[i]) { status[i] = 'correct'; pool[i] = null }
+  }
+  for (let i = 0; i < guess.length; i++) {
+    if (status[i] === 'correct') continue
+    const j = pool.indexOf(guess[i])
+    if (j !== -1) { status[i] = 'present'; pool[j] = null }
+  }
+  return status.map(s => s === 'correct' ? '🟩' : s === 'present' ? '🟨' : '⬜️').join(' ')
+}
+
+function totalGuessCount(entry) {
+  return entry.boards.reduce((sum, b) => sum + b.guesses.length, 0)
+}
+
+function generateStatsText() {
+  const lines = []
+  const className = CLASSES.find(c => c.id === playerClass.value)?.name ?? playerClass.value
+  lines.push('Played as:')
+  lines.push(className)
+
+  for (const entry of gameLog.value.filter(e => !e.isBoss)) {
+    lines.push('')
+    const count = totalGuessCount(entry)
+    lines.push(`${entry.name}: ${count} ${count === 1 ? 'guess' : 'guesses'}`)
+    for (let bi = 0; bi < entry.boards.length; bi++) {
+      const board = entry.boards[bi]
+      if (entry.boards.length > 1) lines.push(`Word ${bi + 1}:`)
+      for (const guess of board.guesses) lines.push(emojiRow(guess, board.secretWord))
+      if (!board.solved) lines.push(`Answer: ${board.secretWord.toLowerCase()}`)
+      if (bi < entry.boards.length - 1) lines.push('')
+    }
+  }
+
+  const bossEntries = gameLog.value.filter(e => e.isBoss)
+  if (bossEntries.length > 0) {
+    lines.push('')
+    lines.push('Boss Stats:')
+    for (const entry of bossEntries) {
+      lines.push('')
+      const count = totalGuessCount(entry)
+      const roundLabel = bossEntries.length > 1 ? ` (Round ${entry.roundIndex + 1})` : ''
+      lines.push(`${entry.name}${roundLabel}: ${count} ${count === 1 ? 'guess' : 'guesses'}`)
+      for (let bi = 0; bi < entry.boards.length; bi++) {
+        const board = entry.boards[bi]
+        if (entry.boards.length > 1) lines.push(`Head ${bi + 1}:`)
+        for (const guess of board.guesses) lines.push(emojiRow(guess, board.secretWord))
+        if (!board.solved) lines.push(`Answer: ${board.secretWord.toLowerCase()}`)
+        if (bi < entry.boards.length - 1) lines.push('')
+      }
+    }
+  }
+
+  lines.push('')
+  lines.push(gameResult.value === 'won'
+    ? `Remaining health: ${playerHealth.value}`
+    : 'Defeated!')
+
+  return lines.join('\n')
+}
+
+async function copyStats() {
+  try {
+    await navigator.clipboard.writeText(generateStatsText())
+    copied.value = true
+    setTimeout(() => { copied.value = false }, 2000)
+  } catch { /* clipboard unavailable */ }
+}
+
 // Called whenever all boards are solved — applies damage and advances
 function handleAllBoardsSolved() {
   const hitDamage = vorpalSwordActive.value ? 2 : 1
@@ -604,6 +745,7 @@ function handleAllBoardsSolved() {
   if (enemyHealth.value > 0) bossShaking.value = true
 
   if (enemyHealth.value <= 0) {
+    recordCurrentRound()
     if (hasAbility('cleric')) {
       lastRegen.value = playerMaxHealth.value - playerHealth.value
       playerHealth.value = playerMaxHealth.value
@@ -616,7 +758,13 @@ function handleAllBoardsSolved() {
     const isLast = stage.value === JOURNEY_LENGTH - 1
     const isMiniboss = MINIBOSSES.some(m => m.id === currentEnemy.value?.id)
     if (isLast) {
-      setTimeout(() => { modal.value = 'complete' }, 600)
+      gameResult.value = 'won'
+      wonDamage.value = 0
+      wonMessage.value = true
+      setTimeout(() => {
+        wonMessage.value = false
+        screen.value = 'stats'
+      }, 1800)
     } else if (isMiniboss) {
       wonDamage.value = 0
       wonMessage.value = true
@@ -635,6 +783,7 @@ function handleAllBoardsSolved() {
       }, 1800)
     }
   } else {
+    recordCurrentRound()
     gameState.value = 'won'
     wonDamage.value = hitDamage
     wonMessage.value = true
@@ -751,8 +900,10 @@ async function submitGuess(skipValidation = false) {
 
     playerHealth.value -= (doubleDamage ? 2 : 1) + necroPenalty
     if (playerHealth.value <= 0) {
+      recordCurrentRound()
       gameState.value = 'lost'
-      setTimeout(() => { modal.value = 'lost' }, 600)
+      gameResult.value = 'lost'
+      setTimeout(() => { screen.value = 'stats' }, 1200)
     } else if (hasAbility('assassin') && sneakAttackAvailable.value) {
       const guessEval = evaluateGuess(submitted, firstActive.secretWord)
       const yellowCount = guessEval.filter(c => c.status === 'present').length
@@ -795,6 +946,9 @@ function handleModalAction() {
     shopTotalPicks.value = 1
     freeplayShopItems.value = []
     validating.value = false
+    gameLog.value = []
+    gameResult.value = null
+    copied.value = false
   }
 }
 
@@ -824,6 +978,9 @@ function restartJourney() {
   shopPicksRemaining.value = 1
   freeplayShopItems.value = []
   validating.value = false
+  gameLog.value = []
+  gameResult.value = null
+  copied.value = false
 }
 
 function showClassSelect() {
