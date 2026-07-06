@@ -531,6 +531,11 @@ body {
   opacity: 0.5;
 }
 
+.wordle-board--compact .board {
+  --tile-size: min(28px, calc((180px - (var(--cols) - 1) * 3px) / var(--cols)));
+  gap: 3px;
+}
+
 /* Board */
 .board {
   --tile-size: min(44px, calc((300px - (var(--cols) - 1) * 4px) / var(--cols)));

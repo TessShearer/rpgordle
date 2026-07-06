@@ -146,6 +146,7 @@
                 :has-scholar="hasAbility('scholar')"
                 :board-shaking="boardShaking"
                 :zombie-rising="zombieRising"
+                :compact="board.solved && boards.length > 1"
                 @shake-end="boardShaking = false"
               />
             </div>
@@ -905,7 +906,14 @@ async function startStage(stageNum) {
     screen.value = 'boss-fight-intro'
   } else {
     const stageType = STAGE_SEQUENCE[stageNum]
-    const pool = stageType === 'miniboss' ? MINIBOSSES : ENEMIES
+    let pool
+    if (stageType === 'miniboss') {
+      pool = currentBoss.value?.id === 'hydra'
+        ? MINIBOSSES.filter(m => m.id === 'hydra-miniboss')
+        : MINIBOSSES.filter(m => m.id !== 'hydra-miniboss')
+    } else {
+      pool = ENEMIES
+    }
     if (props.mode === 'daily' && dailyConfig.value) {
       const enemyId = dailyConfig.value.stageEnemies[stageNum]
       currentEnemy.value = pool.find(e => e.id === enemyId) ?? pool[Math.floor(Math.random() * pool.length)]
@@ -948,12 +956,16 @@ async function loadWord(showModal) {
   inventory.value = inventory.value.filter(id => id !== 'sneak-attack')
 
   const isBoss = isBossFight.value
-  const boardCount = isBoss ? (currentBoss.value?.boardCount ?? 1) : 1
-  const wordLen = isBoss ? currentBoss.value.wordLength : 5
+  const boardCount = isBoss
+    ? (currentBoss.value?.boardCount ?? 1)
+    : (currentEnemy.value?.boardCount ?? 1)
+  const wordLen = isBoss
+    ? currentBoss.value.wordLength
+    : (currentEnemy.value?.wordLength ?? 5)
 
   if (props.mode === 'daily' && dailyConfig.value) {
     for (let i = 0; i < boardCount; i++) {
-      const wordKey = isBoss ? `boss-${bossWordIndex.value}-board-${i}` : `stage-${stage.value}`
+      const wordKey = isBoss ? `boss-${bossWordIndex.value}-board-${i}` : `stage-${stage.value}-board-${i}`
       const fallbackKey = isBoss ? `boss-${bossWordIndex.value}` : `stage-${stage.value}`
       const word = (dailyConfig.value.words[wordKey] ?? dailyConfig.value.words[fallbackKey] ?? '').toUpperCase()
       const b = makeBoard(i, word)

@@ -1,15 +1,17 @@
 <template>
-  <div class="wordle-board" :class="{ 'wordle-board--solved': board.solved }">
-    <!-- Per-board hints -->
-    <div class="text-center mb-2">
-      <p class="game-meta">{{ wordLength }}-letter {{ hasScholar && board.hintWordType ? board.hintWordType : 'word' }}</p>
-      <p v-if="hasSeer && board.hintLetter" class="game-meta seer-hint">
-        Seer reveals this word has a{{ /^[aeiou]/i.test(board.hintLetter) ? 'n' : '' }} {{ board.hintLetter }}
-      </p>
-      <p v-if="hasScholar && board.hintWordType" class="game-meta seer-hint">
-        Scholar lectures on {{ board.hintWordType }}s
-      </p>
-    </div>
+  <div class="wordle-board" :class="{ 'wordle-board--solved': board.solved, 'wordle-board--compact': compact && board.solved }">
+    <!-- Per-board hints (hidden in compact mode) -->
+    <template v-if="!(compact && board.solved)">
+      <div class="text-center mb-2">
+        <p class="game-meta">{{ wordLength }}-letter {{ hasScholar && board.hintWordType ? board.hintWordType : 'word' }}</p>
+        <p v-if="hasSeer && board.hintLetter" class="game-meta seer-hint">
+          Seer reveals this word has a{{ /^[aeiou]/i.test(board.hintLetter) ? 'n' : '' }} {{ board.hintLetter }}
+        </p>
+        <p v-if="hasScholar && board.hintWordType" class="game-meta seer-hint">
+          Scholar lectures on {{ board.hintWordType }}s
+        </p>
+      </div>
+    </template>
 
     <!-- Board grid -->
     <div class="board mb-2" :style="{ '--cols': wordLength }"
@@ -42,6 +44,7 @@ const props = defineProps({
   hasScholar: { type: Boolean, default: false },
   boardShaking:  { type: Boolean, default: false },
   zombieRising:  { type: Boolean, default: false },
+  compact:       { type: Boolean, default: false },
 })
 
 defineEmits(['shake-end'])
@@ -85,9 +88,10 @@ function evaluateGuess(guess) {
 
 const evaluatedRows = computed(() => props.board.guesses.map(evaluateGuess))
 
-const boardRows = computed(() =>
-  props.board.guesses.length + (props.gameState === 'playing' && !props.board.solved ? 1 : 0)
-)
+const boardRows = computed(() => {
+  if (props.compact && props.board.solved) return 1
+  return props.board.guesses.length + (props.gameState === 'playing' && !props.board.solved ? 1 : 0)
+})
 
 function isObscured(row, col) {
   if (!obscuredCols.value.includes(col)) return false
@@ -97,6 +101,9 @@ function isObscured(row, col) {
 }
 
 function tileChar(row, col) {
+  if (props.compact && props.board.solved) {
+    return props.board.guesses[props.board.guesses.length - 1]?.[col] ?? ''
+  }
   if (isObscured(row, col)) return ''
   if (row < props.board.guesses.length) return props.board.guesses[row][col] ?? ''
   if (row === props.board.guesses.length) return effectiveGuessArr.value[col] ?? ''
@@ -104,6 +111,7 @@ function tileChar(row, col) {
 }
 
 function tileClass(row, col) {
+  if (props.compact && props.board.solved) return 'tile--correct'
   if (isObscured(row, col)) return 'tile--obscured'
   if (row < props.board.guesses.length) return `tile--${evaluatedRows.value[row][col].status}`
   if (row === props.board.guesses.length && props.gameState === 'playing' && !props.board.solved) {

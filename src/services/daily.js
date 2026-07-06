@@ -53,16 +53,40 @@ async function generateDaily(dateKey) {
 
   const stageEnemies = {}
   for (let i = 0; i < STAGE_SEQUENCE.length; i++) {
-    const pool      = STAGE_SEQUENCE[i] === 'miniboss' ? MINIBOSSES : ENEMIES
-    stageEnemies[i] = pickRandom(pool).id
+    if (STAGE_SEQUENCE[i] === 'miniboss' && boss.id === 'hydra') {
+      stageEnemies[i] = 'hydra-miniboss'
+    } else {
+      const pool = STAGE_SEQUENCE[i] === 'miniboss'
+        ? MINIBOSSES.filter(m => m.id !== 'hydra-miniboss')
+        : ENEMIES
+      stageEnemies[i] = pickRandom(pool).id
+    }
   }
 
   const words = {}
   for (let i = 0; i < STAGE_SEQUENCE.length; i++) {
-    words[`stage-${i}`] = await fetchWord()
+    const stageType = STAGE_SEQUENCE[i]
+    const pool = stageType === 'miniboss' ? MINIBOSSES : ENEMIES
+    const enemy = pool.find(e => e.id === stageEnemies[i])
+    const stageBoardCount = enemy?.boardCount ?? 1
+    const stageWordLen = enemy?.wordLength ?? 5
+    if (stageBoardCount > 1) {
+      for (let b = 0; b < stageBoardCount; b++) {
+        words[`stage-${i}-board-${b}`] = await fetchWord(stageWordLen)
+      }
+    } else {
+      words[`stage-${i}`] = await fetchWord()
+    }
   }
-  for (let i = 0; i < boss.health; i++) {
-    words[`boss-${i}`] = await fetchWord(boss.wordLength)
+  const bossBoardCount = boss.boardCount ?? 1
+  for (let round = 0; round < boss.health; round++) {
+    if (bossBoardCount > 1) {
+      for (let b = 0; b < bossBoardCount; b++) {
+        words[`boss-${round}-board-${b}`] = await fetchWord(boss.wordLength)
+      }
+    } else {
+      words[`boss-${round}`] = await fetchWord(boss.wordLength)
+    }
   }
 
   const config = {

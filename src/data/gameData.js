@@ -25,6 +25,7 @@ export const ENEMIES = [
 
 export const MINIBOSSES = [
   { id: 'annoying-kid', name: 'Annoying Kid', regen: 1, health: 1, effect: 'He will make your first guess for you' },
+  { id: 'hydra-miniboss', name: 'Hydra', regen: 0, health: 1, wordLength: 5, boardCount: 2, effect: 'Sever both heads before it retreats and grows back stronger!' },
 ]
 
 export const SHOP_ITEMS = [
@@ -123,12 +124,12 @@ export const BOSSES = [
   {
     id: 'hydra',
     name: 'Hydra',
-    health: 1,
+    health: 2,
     regen: 0,
     wordLength: 5,
     boardCount: 4,
-    effect: 'Right now there is only the boss but i will add miniboss ok',
-    announcement: 'The Hydra blocks your path! You must defeat all four heads at the same time.',
-    enhancedAnnouncement: 'You found the Hydra!',
+    effect: 'Cut off all four heads simultaneously — the Hydra has grown back from its wounds.',
+    announcement: 'The Hydra has returned, more powerful than before! Defeat all four heads at once to prevail.',
+    enhancedAnnouncement: 'The Hydra has returned!',
   },
 ]
