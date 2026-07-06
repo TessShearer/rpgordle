@@ -187,6 +187,7 @@
               <WordleBoard
                 v-for="board in boards"
                 :key="board.id"
+                :ref="(el) => setBoardRef(board.id, el)"
                 :board="board"
                 :current-guess="currentGuess"
                 :game-state="gameState"
@@ -195,7 +196,6 @@
                 :has-seer="hasAbility('seer')"
                 :has-scholar="hasAbility('scholar')"
                 :board-shaking="boardShaking"
-                :board-scrambling="boardScrambling"
                 :zombie-rising="zombieRising"
                 :compact="board.solved && boards.length > 1"
                 @shake-end="boardShaking = false"
@@ -317,7 +317,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { CLASSES, ENEMIES, MINIBOSSES, BOSSES, SHOP_ITEMS, ALL_ITEMS, STAGE_SEQUENCE, JOURNEY_LENGTH } from '@/data/gameData.js'
 import BossIntro from '@/components/BossIntro.vue'
 import BossFightIntro from '@/components/BossFightIntro.vue'
@@ -382,7 +382,6 @@ const allGuessedWords = ref([])
 const sneakAttackAvailable = ref(false)
 const vorpalSwordActive = ref(false)
 const boardShaking = ref(false)
-const boardScrambling = ref(false)
 const bossShaking = ref(false)
 const shopPicksRemaining = ref(1)
 const shopTotalPicks = ref(1)
@@ -392,6 +391,14 @@ const validating = ref(false)
 const annoyingKidTyping = ref(false)
 const zombieRising = ref(false)
 const fortuneTellerGreyLetters = ref([])
+
+// ── Board component refs (plain object — not reactive) ────────────────────────
+const boardRefs = {}
+
+function setBoardRef(id, el) {
+  if (el) boardRefs[id] = el
+  else delete boardRefs[id]
+}
 
 // ── Daily / freeplay ──────────────────────────────────────────────────────────
 const dailyConfig = ref(null)
@@ -530,7 +537,7 @@ const keyboardStatuses = computed(() => {
   const base = {}
 
   for (const board of boards.value) {
-    board.guesses.forEach((guess, rowIdx) => {
+    board.guesses.forEach((guess) => {
       const evaluated = evaluateGuess(guess, board.secretWord)
       evaluated.forEach(({ letter, status }, col) => {
         if (obscured.includes(col)) return
@@ -554,7 +561,7 @@ const keyboardStatuses = computed(() => {
     }
   }
 
-  // Fortune Teller: pre-reveal absent letters (only if not already known)
+  // Fortune Teller: pre-reveal absent letters (only if not already known from guesses)
   for (const letter of fortuneTellerGreyLetters.value) {
     if (!base[letter]) base[letter] = 'absent'
   }
@@ -742,6 +749,76 @@ async function copyStats() {
   } catch { /* clipboard unavailable */ }
 }
 
+// ── Tricksy Fairy FLIP scramble ───────────────────────────────────────────────
+// Returns a mapping of oldCol → newCol for a Fisher-Yates shuffle.
+// Handles duplicate letters by greedy first-available matching.
+function computeColMapping(oldLetters, newLetters) {
+  const mapping = {}
+  const usedNewCols = new Set()
+  oldLetters.forEach((letter, oldCol) => {
+    for (let newCol = 0; newCol < newLetters.length; newCol++) {
+      if (!usedNewCols.has(newCol) && newLetters[newCol] === letter) {
+        mapping[oldCol] = newCol
+        usedNewCols.add(newCol)
+        break
+      }
+    }
+  })
+  return mapping
+}
+
+async function doFairyScramble(board) {
+  // 1. Snapshot tile positions and letters BEFORE the shuffle
+  const snapshots = boardRefs[board.id]?.getInputRowRects() ?? []
+  if (snapshots.length === 0) return
+
+  const snapshotByCol = {}
+  snapshots.forEach(s => { snapshotByCol[s.col] = s })
+
+  // 2. Compute shuffle permutation
+  const oldLetters = currentGuess.value.split('')
+  const newLetters = [...oldLetters]
+  for (let i = newLetters.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[newLetters[i], newLetters[j]] = [newLetters[j], newLetters[i]]
+  }
+
+  const colMapping = computeColMapping(oldLetters, newLetters)
+
+  // 3. Update currentGuess — tiles now show the new letters at their grid positions
+  currentGuess.value = newLetters.join('')
+  await nextTick()
+
+  // 4. Invert: apply transforms so each tile appears at its letter's old position
+  // (tile at newCol gets the transform to look like it's still at oldCol)
+  Object.entries(colMapping).forEach(([oldColStr, newCol]) => {
+    const oldCol = parseInt(oldColStr)
+    if (oldCol === newCol) return
+    const dx = snapshotByCol[oldCol].rect.left - snapshotByCol[newCol].rect.left
+    const dy = snapshotByCol[oldCol].rect.top - snapshotByCol[newCol].rect.top
+    const el = snapshotByCol[newCol].el
+    el.style.transition = 'none'
+    el.style.transform = `translate(${dx}px, ${dy}px)`
+  })
+
+  // 5. Force reflow so the browser registers the inverted positions before animating
+  document.body.getBoundingClientRect()
+
+  // 6. Play: clear transforms with a spring transition — letters fly to their new homes
+  snapshots.forEach(({ el }) => {
+    el.style.transition = 'transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1)'
+    el.style.transform = ''
+  })
+
+  await new Promise(r => setTimeout(r, 420))
+
+  // 7. Cleanup inline styles
+  snapshots.forEach(({ el }) => {
+    el.style.transition = ''
+    el.style.transform = ''
+  })
+}
+
 // Called whenever all boards are solved — applies damage and advances
 function handleAllBoardsSolved() {
   const hitDamage = vorpalSwordActive.value ? 2 : 1
@@ -811,21 +888,12 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
     return
   }
 
-  // Use first active board's effective guess for validation and shared checks
   const firstActive = activeBoards[0]
   const submitted = buildEffectiveGuess(firstActive)
 
-  // Tricksy Fairy: scramble the letters unless the guess is already correct
+  // Tricksy Fairy: FLIP-animate the scramble unless the guess is already correct
   if (!skipScramble && currentEnemy.value?.id === 'tricksy-fairy' && submitted !== firstActive.secretWord) {
-    const letters = currentGuess.value.split('')
-    for (let i = letters.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1))
-      ;[letters[i], letters[j]] = [letters[j], letters[i]]
-    }
-    boardScrambling.value = true
-    await new Promise(r => setTimeout(r, 450))
-    currentGuess.value = letters.join('')
-    boardScrambling.value = false
+    await doFairyScramble(firstActive)
     await submitGuess(true, true)
     return
   }
@@ -968,7 +1036,6 @@ function handleModalAction() {
     freeplayShopItems.value = []
     validating.value = false
     fortuneTellerGreyLetters.value = []
-    boardScrambling.value = false
     gameLog.value = []
     gameResult.value = null
     copied.value = false
@@ -1002,7 +1069,6 @@ function restartJourney() {
   freeplayShopItems.value = []
   validating.value = false
   fortuneTellerGreyLetters.value = []
-  boardScrambling.value = false
   gameLog.value = []
   gameResult.value = null
   copied.value = false

@@ -23,6 +23,7 @@
           class="tile"
           :class="tileClass(row - 1, col - 1)"
           :style="tileStyle(row - 1, col - 1)"
+          :ref="(el) => setTileRef(row - 1, col - 1, el)"
         >
           {{ tileChar(row - 1, col - 1) }}
         </div>
@@ -49,6 +50,27 @@ const props = defineProps({
 })
 
 defineEmits(['shake-end'])
+
+// Keyed by [row][col] — plain object, no reactivity needed
+const tileRefs = {}
+
+function setTileRef(row, col, el) {
+  if (!tileRefs[row]) tileRefs[row] = {}
+  if (el) tileRefs[row][col] = el
+  else delete tileRefs[row][col]
+}
+
+function getInputRowRects() {
+  const row = props.board.guesses.length
+  const result = []
+  for (let col = 0; col < wordLength.value; col++) {
+    const el = tileRefs[row]?.[col]
+    if (el) result.push({ col, letter: effectiveGuessArr.value[col], rect: el.getBoundingClientRect(), el })
+  }
+  return result
+}
+
+defineExpose({ getInputRowRects })
 
 const wordLength = computed(() => props.board.secretWord.length || 5)
 

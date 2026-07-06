@@ -25,8 +25,8 @@ export const ENEMIES = [
 ]
 
 export const MINIBOSSES = [
-  { id: 'annoying-kid', name: 'Annoying Kid', regen: 1, health: 1, effect: 'He will make your first guess for you' },
-  { id: 'cerberus', name: 'Cerberus', regen: 1, health: 1, boardCount: 3, wordLength: 5, effect: 'Three heads — defeat all simultaneously' },
+  // { id: 'annoying-kid', name: 'Annoying Kid', regen: 1, health: 1, effect: 'He will make your first guess for you' },
+  // { id: 'cerberus', name: 'Cerberus', regen: 1, health: 1, boardCount: 3, wordLength: 5, effect: 'Three heads — defeat all simultaneously' },
   { id: 'tricksy-fairy', name: 'Tricksy Fairy', regen: 2, health: 1, wordLength: 5, boardCount: 1, effect: 'Unless your answer is correct, the fairy will scramble your letters!' },
   { id: 'hydra-miniboss', name: 'Hydra', regen: 0, health: 1, wordLength: 5, boardCount: 1, effect: 'Cut off its head!' },
 ]
