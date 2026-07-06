@@ -8,6 +8,7 @@ export const CLASSES = [
   { id: 'cleric', name: 'Cleric', health: 8, description: 'Heal to full after every fight.' },
   { id: 'village-idiot', name: 'Village Idiot', health: 10, description: 'Any string of letters is a valid guess, not just real words.' },
   { id: 'thief', name: 'The Thief', health: 9, description: 'Take 2 items from the shop instead of 1.' },
+  { id: 'fortune-teller', name: 'Fortune Teller', health: 10, description: 'Reveal some letters that are not in the word.' },
   { id: 'changeling', name: 'The Changeling', health: 11, description: 'Gain the ability of a random character, and gain another later on.' },
 ]
 
@@ -25,6 +26,8 @@ export const ENEMIES = [
 
 export const MINIBOSSES = [
   { id: 'annoying-kid', name: 'Annoying Kid', regen: 1, health: 1, effect: 'He will make your first guess for you' },
+  { id: 'cerberus', name: 'Cerberus', regen: 1, health: 1, boardCount: 3, wordLength: 5, effect: 'Three heads — defeat all simultaneously' },
+  { id: 'tricksy-fairy', name: 'Tricksy Fairy', regen: 2, health: 1, wordLength: 5, boardCount: 1, effect: 'Unless your answer is correct, the fairy will scramble your letters!' },
   { id: 'hydra-miniboss', name: 'Hydra', regen: 0, health: 1, wordLength: 5, boardCount: 1, effect: 'Cut off its head!' },
 ]
 
@@ -117,7 +120,7 @@ export const BOSSES = [
     announcement: 'Your quest is to defeat the Aboninable Snowman. It will freeze a correctly guessed letter in place for all future guesses.',
     enhancedAnnouncement: 'You found the boss! Now yellow letters must be used!',
   },
-    {
+  {
     id: 'necromancer',
     name: 'Necromancer',
     health: 3,

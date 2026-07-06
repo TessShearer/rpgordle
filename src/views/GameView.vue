@@ -60,7 +60,6 @@
           </template>
 
           <template v-if="gameLog.some(e => e.isBoss)">
-            <p class="stats-section-label">Boss Stats:</p>
             <template v-for="(entry, ei) in gameLog.filter(e => e.isBoss)" :key="ei">
               <div class="stats-encounter">
                 <p class="stats-encounter-name">
@@ -196,6 +195,7 @@
                 :has-seer="hasAbility('seer')"
                 :has-scholar="hasAbility('scholar')"
                 :board-shaking="boardShaking"
+                :board-scrambling="boardScrambling"
                 :zombie-rising="zombieRising"
                 :compact="board.solved && boards.length > 1"
                 @shake-end="boardShaking = false"
@@ -382,6 +382,7 @@ const allGuessedWords = ref([])
 const sneakAttackAvailable = ref(false)
 const vorpalSwordActive = ref(false)
 const boardShaking = ref(false)
+const boardScrambling = ref(false)
 const bossShaking = ref(false)
 const shopPicksRemaining = ref(1)
 const shopTotalPicks = ref(1)
@@ -390,6 +391,7 @@ const freeplayShopItems = ref([])
 const validating = ref(false)
 const annoyingKidTyping = ref(false)
 const zombieRising = ref(false)
+const fortuneTellerGreyLetters = ref([])
 
 // ── Daily / freeplay ──────────────────────────────────────────────────────────
 const dailyConfig = ref(null)
@@ -521,7 +523,7 @@ const shopPrompt = computed(() => {
 
 const featureArtImage = computed(() => CHARACTER_IMAGES[playerClass.value] ?? null)
 
-// Union letter statuses across all boards, skipping obscured columns, with seer/crystal hints layered on top
+// Union letter statuses across all boards, skipping obscured columns, with class/crystal hints layered on top
 const keyboardStatuses = computed(() => {
   const priority = { correct: 3, present: 2, absent: 1 }
   const obscured = obscuredCols.value
@@ -550,6 +552,11 @@ const keyboardStatuses = computed(() => {
     for (const letter of board.crystalHints) {
       if (!base[letter] || base[letter] === 'absent') base[letter] = 'present'
     }
+  }
+
+  // Fortune Teller: pre-reveal absent letters (only if not already known)
+  for (const letter of fortuneTellerGreyLetters.value) {
+    if (!base[letter]) base[letter] = 'absent'
   }
 
   return base
@@ -704,7 +711,6 @@ function generateStatsText() {
   const bossEntries = gameLog.value.filter(e => e.isBoss)
   if (bossEntries.length > 0) {
     lines.push('')
-    lines.push('Boss Stats:')
     for (const entry of bossEntries) {
       lines.push('')
       const count = totalGuessCount(entry)
@@ -796,7 +802,7 @@ function handleAllBoardsSolved() {
   }
 }
 
-async function submitGuess(skipValidation = false) {
+async function submitGuess(skipValidation = false, skipScramble = false) {
   const activeBoards = boards.value.filter(b => !b.solved)
   if (!activeBoards.length) return
 
@@ -808,6 +814,21 @@ async function submitGuess(skipValidation = false) {
   // Use first active board's effective guess for validation and shared checks
   const firstActive = activeBoards[0]
   const submitted = buildEffectiveGuess(firstActive)
+
+  // Tricksy Fairy: scramble the letters unless the guess is already correct
+  if (!skipScramble && currentEnemy.value?.id === 'tricksy-fairy' && submitted !== firstActive.secretWord) {
+    const letters = currentGuess.value.split('')
+    for (let i = letters.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[letters[i], letters[j]] = [letters[j], letters[i]]
+    }
+    boardScrambling.value = true
+    await new Promise(r => setTimeout(r, 450))
+    currentGuess.value = letters.join('')
+    boardScrambling.value = false
+    await submitGuess(true, true)
+    return
+  }
 
   // Enhanced Snowman: all known-yellow letters must appear in the guess
   if (currentBoss.value?.id === 'abominable-snowman' && isBossFight.value) {
@@ -946,6 +967,8 @@ function handleModalAction() {
     shopTotalPicks.value = 1
     freeplayShopItems.value = []
     validating.value = false
+    fortuneTellerGreyLetters.value = []
+    boardScrambling.value = false
     gameLog.value = []
     gameResult.value = null
     copied.value = false
@@ -978,6 +1001,8 @@ function restartJourney() {
   shopPicksRemaining.value = 1
   freeplayShopItems.value = []
   validating.value = false
+  fortuneTellerGreyLetters.value = []
+  boardScrambling.value = false
   gameLog.value = []
   gameResult.value = null
   copied.value = false
@@ -1091,6 +1116,14 @@ function applyDangerLetters(isBoss) {
   dangerLetters.value = [...picked]
 }
 
+function applyFortuneTellerHints() {
+  if (!hasAbility('fortune-teller')) return
+  const allWordLetters = new Set(boards.value.flatMap(b => b.secretWord.split('')))
+  const pool = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').filter(l => !allWordLetters.has(l))
+  const shuffled = [...pool].sort(() => Math.random() - 0.5)
+  fortuneTellerGreyLetters.value = shuffled.slice(0, 4)
+}
+
 function finishWordLoad(showModal) {
   gameState.value = 'ready'
   if (showModal) {
@@ -1109,6 +1142,7 @@ async function loadWord(showModal) {
   inputError.value = ''
   modal.value = null
   dangerLetters.value = []
+  fortuneTellerGreyLetters.value = []
   // Unused sneak attack disappears when a new word begins
   inventory.value = inventory.value.filter(id => id !== 'sneak-attack')
 
@@ -1134,6 +1168,7 @@ async function loadWord(showModal) {
       boards.value.push(b)
     }
     applyDangerLetters(isBoss)
+    applyFortuneTellerHints()
     finishWordLoad(showModal)
     return
   }
@@ -1157,6 +1192,7 @@ async function loadWord(showModal) {
       boards.value.push(b)
     }
     applyDangerLetters(isBoss)
+    applyFortuneTellerHints()
     finishWordLoad(showModal)
   } catch {
     gameState.value = 'error'

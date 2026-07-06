@@ -42,9 +42,10 @@ const props = defineProps({
   isBossFight: { type: Boolean, default: false },
   hasSeer: { type: Boolean, default: false },
   hasScholar: { type: Boolean, default: false },
-  boardShaking:  { type: Boolean, default: false },
-  zombieRising:  { type: Boolean, default: false },
-  compact:       { type: Boolean, default: false },
+  boardShaking:    { type: Boolean, default: false },
+  boardScrambling: { type: Boolean, default: false },
+  zombieRising:    { type: Boolean, default: false },
+  compact:         { type: Boolean, default: false },
 })
 
 defineEmits(['shake-end'])
@@ -116,6 +117,7 @@ function tileClass(row, col) {
   if (row < props.board.guesses.length) return `tile--${evaluatedRows.value[row][col].status}`
   if (row === props.board.guesses.length && props.gameState === 'playing' && !props.board.solved) {
     if (props.zombieRising && effectiveGuessArr.value[col]) return 'tile--filled tile--zombie'
+    if (props.boardScrambling && effectiveGuessArr.value[col]) return 'tile--filled tile--scrambling'
     if (props.board.frozenSlots[col] !== undefined) return 'tile--frozen'
     return effectiveGuessArr.value[col] ? 'tile--filled' : 'tile--empty'
   }
@@ -123,14 +125,12 @@ function tileClass(row, col) {
 }
 
 function tileStyle(row, col) {
-  if (
-    props.zombieRising &&
-    row === props.board.guesses.length &&
-    props.gameState === 'playing' &&
-    !props.board.solved &&
-    effectiveGuessArr.value[col]
-  ) {
+  const isCurrentRow = row === props.board.guesses.length && props.gameState === 'playing' && !props.board.solved
+  if (isCurrentRow && props.zombieRising && effectiveGuessArr.value[col]) {
     return { animationDelay: `${col * 100}ms` }
+  }
+  if (isCurrentRow && props.boardScrambling && effectiveGuessArr.value[col]) {
+    return { animationDelay: `${col * 55}ms` }
   }
   return {}
 }
