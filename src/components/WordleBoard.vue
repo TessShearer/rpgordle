@@ -111,7 +111,7 @@ function tileChar(row, col) {
 }
 
 function tileClass(row, col) {
-  if (props.compact && props.board.solved) return 'tile--correct'
+  if (props.compact && props.board.solved) return 'tile--correct tile--compact-shrink'
   if (isObscured(row, col)) return 'tile--obscured'
   if (row < props.board.guesses.length) return `tile--${evaluatedRows.value[row][col].status}`
   if (row === props.board.guesses.length && props.gameState === 'playing' && !props.board.solved) {
