@@ -16,7 +16,12 @@
       :class="{ 'h-shake': boardShaking && !board.solved }"
       @animationend="$emit('shake-end')">
       <template v-for="row in boardRows" :key="row">
-        <div v-for="col in wordLength" :key="col" class="tile" :class="tileClass(row - 1, col - 1)">
+        <div
+          v-for="col in wordLength" :key="col"
+          class="tile"
+          :class="tileClass(row - 1, col - 1)"
+          :style="tileStyle(row - 1, col - 1)"
+        >
           {{ tileChar(row - 1, col - 1) }}
         </div>
       </template>
@@ -35,7 +40,8 @@ const props = defineProps({
   isBossFight: { type: Boolean, default: false },
   hasSeer: { type: Boolean, default: false },
   hasScholar: { type: Boolean, default: false },
-  boardShaking: { type: Boolean, default: false },
+  boardShaking:  { type: Boolean, default: false },
+  zombieRising:  { type: Boolean, default: false },
 })
 
 defineEmits(['shake-end'])
@@ -101,9 +107,23 @@ function tileClass(row, col) {
   if (isObscured(row, col)) return 'tile--obscured'
   if (row < props.board.guesses.length) return `tile--${evaluatedRows.value[row][col].status}`
   if (row === props.board.guesses.length && props.gameState === 'playing' && !props.board.solved) {
+    if (props.zombieRising && effectiveGuessArr.value[col]) return 'tile--filled tile--zombie'
     if (props.board.frozenSlots[col] !== undefined) return 'tile--frozen'
     return effectiveGuessArr.value[col] ? 'tile--filled' : 'tile--empty'
   }
   return 'tile--empty'
+}
+
+function tileStyle(row, col) {
+  if (
+    props.zombieRising &&
+    row === props.board.guesses.length &&
+    props.gameState === 'playing' &&
+    !props.board.solved &&
+    effectiveGuessArr.value[col]
+  ) {
+    return { animationDelay: `${col * 100}ms` }
+  }
+  return {}
 }
 </script>

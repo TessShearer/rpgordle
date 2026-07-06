@@ -145,6 +145,7 @@
                 :has-seer="hasAbility('seer')"
                 :has-scholar="hasAbility('scholar')"
                 :board-shaking="boardShaking"
+                :zombie-rising="zombieRising"
                 @shake-end="boardShaking = false"
               />
             </div>
@@ -336,6 +337,7 @@ const selectedShopItemId = ref(null)
 const freeplayShopItems = ref([])
 const validating = ref(false)
 const annoyingKidTyping = ref(false)
+const zombieRising = ref(false)
 
 // ── Daily / freeplay ──────────────────────────────────────────────────────────
 const dailyConfig = ref(null)
@@ -690,6 +692,14 @@ async function submitGuess(skipValidation = false) {
   const boardSubmissions = activeBoards.map(board => buildEffectiveGuess(board))
 
   const alreadyGuessed = allGuessedWords.value.includes(submitted)
+
+  // Necromancer: animate repeated words rising up as zombies before submitting
+  if (currentBoss.value?.id === 'necromancer' && alreadyGuessed) {
+    zombieRising.value = true
+    await new Promise(r => setTimeout(r, wordLength.value * 100 + 950))
+    zombieRising.value = false
+  }
+
   allGuessedWords.value = [...allGuessedWords.value, submitted]
   currentGuess.value = ''
 
