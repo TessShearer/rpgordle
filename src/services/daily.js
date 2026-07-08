@@ -25,8 +25,8 @@ function pickRandom(arr, count) {
   return count ? shuffled.slice(0, count) : shuffled[0]
 }
 
-async function fetchWord(length = 5) {
-  const word = await fetchGameWord({ minLength: length, maxLength: length })
+async function fetchWord(length = 5, extra = {}) {
+  const word = await fetchGameWord({ minLength: length, maxLength: length, ...extra })
   return word.toUpperCase()
 }
 
@@ -70,12 +70,15 @@ async function generateDaily(dateKey) {
     const enemy = pool.find(e => e.id === stageEnemies[i])
     const stageBoardCount = enemy?.boardCount ?? 1
     const stageWordLen = enemy?.wordLength ?? 5
+    const wordExtra = {}
+    if (enemy?.id === 'mirror-spirit') wordExtra.palindrome = true
+    if (enemy?.id === 'know-it-all') wordExtra.difficulty = 2
     if (stageBoardCount > 1) {
       for (let b = 0; b < stageBoardCount; b++) {
-        words[`stage-${i}-board-${b}`] = await fetchWord(stageWordLen)
+        words[`stage-${i}-board-${b}`] = await fetchWord(stageWordLen, wordExtra)
       }
     } else {
-      words[`stage-${i}`] = await fetchWord()
+      words[`stage-${i}`] = await fetchWord(stageWordLen, wordExtra)
     }
   }
   for (let round = 0; round < boss.health; round++) {

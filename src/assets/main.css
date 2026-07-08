@@ -1615,3 +1615,32 @@ body {
   gap: 0.5rem;
 }
 
+
+/* ── Know It All modal ───────────────────────────────────────────────────────── */
+.kit-message {
+  min-height: 4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.kit-definition {
+  font-style: italic;
+  color: var(--gs-600);
+}
+
+.kit-dismiss:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.kit-fade-enter-active,
+.kit-fade-leave-active {
+  transition: opacity 0.45s ease;
+}
+
+.kit-fade-enter-from,
+.kit-fade-leave-to {
+  opacity: 0;
+}

@@ -30,8 +30,7 @@ const COL = 'words'
  * randomSeed range query so every call gets a different word without fetching
  * the whole collection.
  */
-export async function fetchGameWord({ minLength = 5, maxLength = 5 } = {}) {
-  const seed = Math.random()
+export async function fetchGameWord({ minLength = 5, maxLength = 5, palindrome = null, difficulty = null } = {}) {
   const targetLength = minLength + Math.floor(Math.random() * (maxLength - minLength + 1))
   const col  = collection(db, COL)
   const base = [
@@ -39,25 +38,33 @@ export async function fetchGameWord({ minLength = 5, maxLength = 5 } = {}) {
     where('length',  '==', targetLength),
   ]
 
-  // Walk forward from random seed point
+  // Filtered queries (palindrome / difficulty): fetch a pool and pick randomly.
+  // These require additional Firestore composite indexes. Firestore will log a
+  // clickable link to create them the first time each query runs.
+  if (palindrome !== null || difficulty !== null) {
+    const filters = [...base]
+    if (palindrome !== null) filters.push(where('palindrome', '==', palindrome))
+    if (difficulty !== null) filters.push(where('difficulty', '==', difficulty))
+    const snap = await getDocs(query(col, ...filters, limit(200)))
+    if (snap.empty) throw new Error(`No matching words found with length ${targetLength}.`)
+    const docs = snap.docs
+    return docs[Math.floor(Math.random() * docs.length)].data().word
+  }
+
+  // Standard random-seed approach for regular words
+  const seed = Math.random()
   let snap = await getDocs(
     query(col, ...base, where('randomSeed', '>=', seed), orderBy('randomSeed'), limit(1))
   )
-
-  // Wrap around to the start of the collection if nothing found ahead
   if (snap.empty) {
-    snap = await getDocs(
-      query(col, ...base, orderBy('randomSeed'), limit(1))
-    )
+    snap = await getDocs(query(col, ...base, orderBy('randomSeed'), limit(1)))
   }
-
   if (snap.empty) {
     throw new Error(
       `No enabled words found with length ${targetLength}. ` +
       `Add words to the Firestore "words" collection.`
     )
   }
-
   return snap.docs[0].data().word
 }
 

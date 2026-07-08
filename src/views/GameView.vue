@@ -300,11 +300,26 @@
                 <button class="btn btn-reset px-4 py-2" @click="cancelUseItem">No</button>
               </div>
             </template>
+            <template v-else-if="modal === 'know-it-all'">
+              <Transition name="kit-fade" mode="out-in">
+                <p v-if="knowItAllModalPhase === 'taunt'" key="taunt" class="modal-message kit-message">
+                  Looks like you're having trouble... not everyone can have the extensive vocabulary that I do... let me help you
+                </p>
+                <p v-else key="definition" class="modal-message kit-message">
+                  This word is defined as <em class="kit-definition">{{ knowItAllDefinition }}</em>
+                </p>
+              </Transition>
+              <button class="btn btn-press px-5 py-2 mt-3 kit-dismiss"
+                :disabled="!knowItAllCanDismiss"
+                @click="dismissKnowItAllModal">
+                {{ knowItAllCanDismiss ? 'Got it' : '...' }}
+              </button>
+            </template>
             <template v-else>
               <p class="modal-message">{{ MODAL_CONTENT[modal].message }}</p>
               <p v-if="modal === 'lost'" class="modal-word">{{ boards.map(b => b.secretWord.toLowerCase()).join(', ') }}</p>
             </template>
-            <button v-if="modal !== 'shop' && modal !== 'use-item'" class="btn btn-press px-5 py-2 mt-3"
+            <button v-if="modal !== 'shop' && modal !== 'use-item' && modal !== 'know-it-all'" class="btn btn-press px-5 py-2 mt-3"
               @click="handleModalAction">
               {{ MODAL_CONTENT[modal].button }}
             </button>
@@ -411,6 +426,11 @@ const bossWordIndex = ref(0)
 const gameLog = ref([])
 const gameResult = ref(null)
 const copied = ref(false)
+
+// ── Know It All modal ─────────────────────────────────────────────────────────
+const knowItAllDefinition = ref('')
+const knowItAllModalPhase = ref('taunt')
+const knowItAllCanDismiss = ref(false)
 
 // ── Board helpers ─────────────────────────────────────────────────────────────
 function makeBoard(id, secretWord) {
@@ -909,6 +929,15 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
     }
   }
 
+  // Mirror Spirit: all guesses must be palindromes
+  if (currentEnemy.value?.id === 'mirror-spirit') {
+    if (submitted !== submitted.split('').reverse().join('')) {
+      boardShaking.value = true
+      inputError.value = 'Guess must be a palindrome!'
+      return
+    }
+  }
+
   // Validate word (Village Idiot, internal calls, and correct answers skip this)
   const isCorrectAnswer = activeBoards.some(b => buildEffectiveGuess(b) === b.secretWord)
   if (!hasAbility('village-idiot') && !skipValidation && !isCorrectAnswer) {
@@ -994,12 +1023,20 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
       gameState.value = 'lost'
       gameResult.value = 'lost'
       setTimeout(() => { screen.value = 'stats' }, 1200)
-    } else if (hasAbility('assassin') && sneakAttackAvailable.value) {
-      const guessEval = evaluateGuess(submitted, firstActive.secretWord)
-      const yellowCount = guessEval.filter(c => c.status === 'present').length
-      if (yellowCount >= 4) {
-        sneakAttackAvailable.value = false
-        inventory.value = [...inventory.value, 'sneak-attack']
+    } else {
+      if (hasAbility('assassin') && sneakAttackAvailable.value) {
+        const guessEval = evaluateGuess(submitted, firstActive.secretWord)
+        const yellowCount = guessEval.filter(c => c.status === 'present').length
+        if (yellowCount >= 4) {
+          sneakAttackAvailable.value = false
+          inventory.value = [...inventory.value, 'sneak-attack']
+        }
+      }
+      if (currentEnemy.value?.id === 'know-it-all') {
+        const active = boards.value[0]
+        if (active && !active.solved && active.guesses.length === 3) {
+          showKnowItAllModal(active.secretWord)
+        }
       }
     }
   }
@@ -1010,6 +1047,8 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
 function handleModalAction() {
   if (modal.value === 'boss-announcement') {
     startStage(0)
+  } else if (modal.value === 'know-it-all') {
+    dismissKnowItAllModal()
   } else {
     screen.value = 'intro'
     playerClass.value = null
@@ -1040,6 +1079,9 @@ function handleModalAction() {
     gameLog.value = []
     gameResult.value = null
     copied.value = false
+    knowItAllDefinition.value = ''
+    knowItAllModalPhase.value = 'taunt'
+    knowItAllCanDismiss.value = false
   }
 }
 
@@ -1073,6 +1115,35 @@ function restartJourney() {
   gameLog.value = []
   gameResult.value = null
   copied.value = false
+  knowItAllDefinition.value = ''
+  knowItAllModalPhase.value = 'taunt'
+  knowItAllCanDismiss.value = false
+}
+
+// ── Know It All modal ─────────────────────────────────────────────────────────
+async function showKnowItAllModal(secretWord) {
+  knowItAllModalPhase.value = 'taunt'
+  knowItAllCanDismiss.value = false
+  knowItAllDefinition.value = ''
+  modal.value = 'know-it-all'
+
+  // Fetch definition and wait for taunt display time in parallel
+  const [data] = await Promise.all([
+    fetchWordData(secretWord.toLowerCase()).catch(() => null),
+    new Promise(r => setTimeout(r, 2500)),
+  ])
+
+  if (modal.value !== 'know-it-all') return
+  knowItAllDefinition.value = data?.definition || 'a most sophisticated word'
+  knowItAllModalPhase.value = 'definition'
+  setTimeout(() => {
+    if (modal.value === 'know-it-all') knowItAllCanDismiss.value = true
+  }, 1000)
+}
+
+function dismissKnowItAllModal() {
+  if (!knowItAllCanDismiss.value) return
+  modal.value = null
 }
 
 function showClassSelect() {
@@ -1241,8 +1312,11 @@ async function loadWord(showModal) {
   }
 
   try {
+    const wordOptions = { minLength: wordLen, maxLength: wordLen }
+    if (currentEnemy.value?.id === 'mirror-spirit') wordOptions.palindrome = true
+    if (currentEnemy.value?.id === 'know-it-all') wordOptions.difficulty = 2
     for (let i = 0; i < boardCount; i++) {
-      const wordLower = await fetchGameWord({ minLength: wordLen, maxLength: wordLen })
+      const wordLower = await fetchGameWord(wordOptions)
       const word = wordLower.toUpperCase()
       const b = makeBoard(i, word)
       if (hasAbility('seer')) {

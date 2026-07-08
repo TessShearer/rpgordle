@@ -1,15 +1,15 @@
 export const CLASSES = [
-  { id: 'peasant', name: 'Peasant', health: 10, description: 'A peasant with no abilities.' },
-  { id: 'seer', name: 'Seer', health: 5, description: 'Reveals a letter from each word.' },
-  { id: 'knight', name: 'Knight', health: 15, description: 'Knights have extra health' },
-  { id: 'scholar', name: 'Scholar', health: 7, description: 'Can tell you information about the word.' },
-  { id: 'treasurer', name: 'Treasurer', health: 7, description: 'Start the game with 2 inventory items' },
-  { id: 'assassin', name: 'Assassin', health: 9, description: 'Can sneak attack with enough yellow letters.' },
-  { id: 'cleric', name: 'Cleric', health: 8, description: 'Heal to full after every fight.' },
-  { id: 'village-idiot', name: 'Village Idiot', health: 10, description: 'Any string of letters is a valid guess, not just real words.' },
-  { id: 'thief', name: 'The Thief', health: 9, description: 'Take 2 items from the shop instead of 1.' },
+  { id: 'peasant', name: 'Peasant', health: 13, description: 'A peasant with no abilities.' },
+  { id: 'seer', name: 'Seer', health: 8, description: 'Reveals a letter from each word.' },
+  { id: 'knight', name: 'Knight', health: 18, description: 'Knights have extra health' },
+  { id: 'scholar', name: 'Scholar', health: 8, description: 'Can tell you information about the word.' },
+  { id: 'treasurer', name: 'Treasurer', health: 10, description: 'Start the game with 2 inventory items' },
+  { id: 'assassin', name: 'Assassin', health: 10, description: 'Can sneak attack with enough yellow letters.' },
+  { id: 'cleric', name: 'Cleric', health: 4, description: 'Heal to full after every fight.' },
+  { id: 'village-idiot', name: 'Village Idiot', health: 12, description: 'Any string of letters is a valid guess, not just real words.' },
+  { id: 'thief', name: 'The Thief', health: 11, description: 'Take 2 items from the shop instead of 1.' },
   { id: 'fortune-teller', name: 'Fortune Teller', health: 10, description: 'Reveal some letters that are not in the word.' },
-  { id: 'changeling', name: 'The Changeling', health: 11, description: 'Gain the ability of a random character, and gain another later on.' },
+  { id: 'changeling', name: 'The Changeling', health: 10, description: 'Gain the ability of a random character, and gain another later on.' },
 ]
 
 export const ENEMIES = [
@@ -25,9 +25,10 @@ export const ENEMIES = [
 ]
 
 export const MINIBOSSES = [
-  // { id: 'annoying-kid', name: 'Annoying Kid', regen: 1, health: 1, effect: 'He will make your first guess for you' },
-  // { id: 'cerberus', name: 'Cerberus', regen: 1, health: 1, boardCount: 3, wordLength: 5, effect: 'Three heads — defeat all simultaneously' },
-  { id: 'tricksy-fairy', name: 'Tricksy Fairy', regen: 2, health: 1, wordLength: 5, boardCount: 1, effect: 'Unless your answer is correct, the fairy will scramble your letters!' },
+  { id: 'annoying-kid', name: 'Annoying Kid', regen: 1, health: 1, effect: 'He will make your first guess for you' },
+  { id: 'cerberus', name: 'Cerberus', regen: 1, health: 1, boardCount: 3, wordLength: 5, effect: 'Should a dog have three heads?' },
+  { id: 'mirror-spirit', name: 'Mirror Spirit', regen: 2, health: 1, wordLength: 5, boardCount: 1, effect: 'The answer (and all your guesses) must be the same forwards and backwards!' },
+  { id: 'know-it-all', name: 'Know It All', regen: 2, health: 1, wordLength: 5, boardCount: 1, effect: 'The answer is a word he does not think you will know.' },
   { id: 'hydra-miniboss', name: 'Hydra', regen: 0, health: 1, wordLength: 5, boardCount: 1, effect: 'Cut off its head!' },
 ]
 
@@ -113,7 +114,7 @@ export const BOSSES = [
   {
     id: 'abominable-snowman',
     name: 'Abominable Snowman',
-    health: 3,
+    health: 2,
     regen: 0,
     wordLength: 5,
     effect: 'Freezes correct guesses in place',
@@ -123,7 +124,7 @@ export const BOSSES = [
   {
     id: 'necromancer',
     name: 'Necromancer',
-    health: 3,
+    health: 2,
     regen: 0,
     wordLength: 5,
     effect: 'Take extra damage for repeated used words',
