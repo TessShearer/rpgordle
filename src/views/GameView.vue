@@ -131,9 +131,7 @@
               </div>
             </div>
             <div v-if="currentEnemy" class="portrait-slot">
-              <div class="art-placeholder art-placeholder--portrait" :class="{ 'h-shake': bossShaking }">Art of {{
-        currentEnemy.name
-      }}</div>
+              <div class="art-placeholder art-placeholder--portrait" :class="{ 'h-shake': bossShaking }">Art of {{ currentEnemy.name }}</div>
               <p class="portrait-stat">{{ currentEnemy.name }}</p>
               <div class="enemy-health portrait-pips">
                 <span v-for="n in currentEnemy.health" :key="n" class="health-pip"
@@ -232,6 +230,10 @@
             <div class="mt-3">
               <p class="enemy-name text-center">{{ currentBoss.name }} attacked the kingdom!</p>
               <p class="monster-text text-center">{{ currentBoss.effect }}</p>
+            </div>
+
+            <div v-if="currentBoss?.id === 'necromancer'" class="graveyard-slot graveyard-slot--strip mt-2">
+              <GraveyardDisplay :words="allGuessedWords" />
             </div>
 
             <!-- Testing box -->
@@ -340,6 +342,7 @@ import ClassSelect from '@/components/ClassSelect.vue'
 import BossSelect from '@/components/BossSelect.vue'
 import EnemyIntro from '@/components/EnemyIntro.vue'
 import WordleBoard from '@/components/WordleBoard.vue'
+import GraveyardDisplay from '@/components/GraveyardDisplay.vue'
 import { CHARACTER_IMAGES } from '@/assets/characterImages.js'
 import { fetchOrCreateDaily } from '@/services/daily.js'
 import { fetchGameWord, fetchWordData } from '@/services/words.js'
@@ -972,6 +975,17 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
   allGuessedWords.value = [...allGuessedWords.value, submitted]
   currentGuess.value = ''
 
+  // Snapshot absent letters from PREVIOUS guesses before this one is recorded.
+  // Used by the Necromancer boss-fight penalty — must be computed here, not after
+  // board.guesses is updated, or the current guess would evaluate itself as absent.
+  const prevAbsentLetters = new Set()
+  if (currentBoss.value?.id === 'necromancer' && isBossFight.value) {
+    const prevStatuses = getUnionLetterStatuses()
+    for (const [l, s] of Object.entries(prevStatuses)) {
+      if (s === 'absent') prevAbsentLetters.add(l)
+    }
+  }
+
   // Apply guess to each active board
   let anyBoardSolvedThisGuess = false
   for (let bi = 0; bi < activeBoards.length; bi++) {
@@ -1010,9 +1024,7 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
     if (currentBoss.value?.id === 'necromancer') {
       if (alreadyGuessed) necroPenalty += 1
       if (isBossFight.value) {
-        const unionStatuses = getUnionLetterStatuses()
-        const hasAbsentLetter = Object.keys(unionStatuses)
-          .some(l => unionStatuses[l] === 'absent' && submitted.includes(l))
+        const hasAbsentLetter = submitted.split('').some(l => prevAbsentLetters.has(l))
         if (hasAbsentLetter) necroPenalty += 1
       }
     }

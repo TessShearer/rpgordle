@@ -1644,3 +1644,79 @@ body {
 .kit-fade-leave-to {
   opacity: 0;
 }
+
+/* ── Graveyard Display (Necromancer) ─────────────────────────────────────────── */
+.graveyard-slot {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0.4rem;
+  flex-shrink: 0;
+}
+
+.graveyard-slot--portrait {
+  width: 80px;
+  height: 80px;
+}
+
+.graveyard-slot--monster {
+  width: 100%;
+  height: 130px;
+}
+
+.graveyard-slot--strip {
+  width: 100%;
+  height: 72px;
+}
+
+.graveyard {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.graveyard-bg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, #0c1a0a 0%, #162812 60%, #090f07 100%);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 3px;
+}
+
+.graveyard-label {
+  font-size: 0.45rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: rgba(90, 150, 70, 0.35);
+  pointer-events: none;
+}
+
+.graveyard-words {
+  position: absolute;
+  inset: 0;
+  padding: 3px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  align-content: flex-start;
+}
+
+.graveyard-word {
+  display: inline-block;
+  font-size: 0.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #ffffff;
+  text-shadow:
+    0 0 4px #22c55e,
+    0 0 10px rgba(34, 197, 94, 0.35);
+  padding: 0 2px;
+  transform-origin: center 80%;
+  animation: ghost-float var(--dur, 2s) ease-in-out infinite alternate;
+}
+
+@keyframes ghost-float {
+  from { transform: rotate(var(--rot, 0deg)) translateY(0px); }
+  to   { transform: rotate(var(--rot, 0deg)) translateY(-4px); }
+}
