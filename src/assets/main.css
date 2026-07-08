@@ -1720,3 +1720,32 @@ body {
   from { transform: rotate(var(--rot, 0deg)) translateY(0px); }
   to   { transform: rotate(var(--rot, 0deg)) translateY(-4px); }
 }
+
+/* ── Slumbering Giant snore bars ──────────────────────────────────────────── */
+.snore-bars {
+  display: flex;
+  gap: 3px;
+  width: 100%;
+  margin: 2px 0 1px;
+  padding: 0 2px;
+  box-sizing: border-box;
+}
+
+.snore-bar {
+  flex: 1;
+  height: 4px;
+  border-radius: 1px;
+  background: var(--gs-200);
+  border: 1px solid var(--gs-400);
+  transition: background 0.25s, border-color 0.25s;
+}
+
+.snore-bar--filled {
+  background: #e67e22;
+  border-color: #d35400;
+}
+
+.snore-bars--awake .snore-bar--filled {
+  background: #e74c3c;
+  border-color: #c0392b;
+}

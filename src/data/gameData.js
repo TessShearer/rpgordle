@@ -29,6 +29,7 @@ export const MINIBOSSES = [
   { id: 'cerberus', name: 'Cerberus', regen: 1, health: 1, boardCount: 3, wordLength: 5, effect: 'Should a dog have three heads?' },
   { id: 'mirror-spirit', name: 'Mirror Spirit', regen: 2, health: 1, wordLength: 5, boardCount: 1, effect: 'The answer (and all your guesses) must be the same forwards and backwards!' },
   { id: 'know-it-all', name: 'Know It All', regen: 2, health: 1, wordLength: 5, boardCount: 1, effect: 'The answer is a word he does not think you will know.' },
+  { id: 'slumbering-giant', name: 'Slumbering Giant', regen: 2, health: 1, wordLength: 5, boardCount: 1, effect: 'You won\'t take any damage from a wrong guess...unless you wake him up, then you will take a lot of damage.' },
   { id: 'hydra-miniboss', name: 'Hydra', regen: 0, health: 1, wordLength: 5, boardCount: 1, effect: 'Cut off its head!' },
 ]
 
@@ -66,6 +67,13 @@ export const SHOP_ITEMS = [
     name: 'Vorpal Sword',
     description: 'When used, your next hit deals an extra damage.',
     effect: 'vorpal-sword',
+    cost: 2,
+  },
+    {
+    id: 'caltrops',
+    name: 'Caltrops',
+    description: 'Reveal 4 letters that aren\'t in the answer.',
+    effect: 'caltrops',
     cost: 2,
   },
 ]

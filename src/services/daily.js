@@ -49,7 +49,8 @@ async function generateDaily(dateKey) {
   const classPool         = CLASSES.filter(c => !yesterdayClassIds.includes(c.id))
   const classIds          = pickRandom(classPool.length >= 3 ? classPool : CLASSES, 3).map(c => c.id)
 
-  const shopItemIds = pickRandom(SHOP_ITEMS, 3).map(s => s.id)
+  const shopPool = boss.id === 'hydra' ? SHOP_ITEMS.filter(s => s.id !== 'shield') : SHOP_ITEMS
+  const shopItemIds = pickRandom(shopPool, 3).map(s => s.id)
 
   const stageEnemies = {}
   for (let i = 0; i < STAGE_SEQUENCE.length; i++) {

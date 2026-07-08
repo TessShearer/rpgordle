@@ -132,6 +132,9 @@
             </div>
             <div v-if="currentEnemy" class="portrait-slot">
               <div class="art-placeholder art-placeholder--portrait" :class="{ 'h-shake': bossShaking }">Art of {{ currentEnemy.name }}</div>
+              <div v-if="currentEnemy.id === 'slumbering-giant'" class="snore-bars" :class="{ 'snore-bars--awake': giantAwake }">
+                <div v-for="i in 4" :key="i" class="snore-bar" :class="{ 'snore-bar--filled': i <= giantSnoreBars }"></div>
+              </div>
               <p class="portrait-stat">{{ currentEnemy.name }}</p>
               <div class="enemy-health portrait-pips">
                 <span v-for="n in currentEnemy.health" :key="n" class="health-pip"
@@ -249,6 +252,9 @@
             <div v-if="currentEnemy" class="enemy-section">
               <div class="art-placeholder art-placeholder--monster" :class="{ 'h-shake': bossShaking }"
                 @animationend="bossShaking = false">Art of {{ currentEnemy.name }}</div>
+              <div v-if="currentEnemy.id === 'slumbering-giant'" class="snore-bars" :class="{ 'snore-bars--awake': giantAwake }">
+                <div v-for="i in 4" :key="i" class="snore-bar" :class="{ 'snore-bar--filled': i <= giantSnoreBars }"></div>
+              </div>
               <p class="enemy-name">{{ currentEnemy.name }}</p>
               <div class="enemy-health">
                 <span v-for="n in currentEnemy.health" :key="n" class="health-pip"
@@ -409,6 +415,8 @@ const validating = ref(false)
 const annoyingKidTyping = ref(false)
 const zombieRising = ref(false)
 const fortuneTellerGreyLetters = ref([])
+const giantSnoreBars = ref(0)
+const giantAwake = ref(false)
 
 // ── Board component refs (plain object — not reactive) ────────────────────────
 const boardRefs = {}
@@ -501,10 +509,13 @@ const selectableClasses = computed(() => {
 })
 
 const availableShopItems = computed(() => {
+  const noShield = currentBoss.value?.id === 'hydra'
   if (props.mode === 'daily' && dailyConfig.value) {
-    return SHOP_ITEMS.filter(s => dailyConfig.value.shopItemIds.includes(s.id))
+    return SHOP_ITEMS.filter(s =>
+      dailyConfig.value.shopItemIds.includes(s.id) && !(noShield && s.id === 'shield')
+    )
   }
-  return SHOP_ITEMS
+  return noShield ? SHOP_ITEMS.filter(s => s.id !== 'shield') : SHOP_ITEMS
 })
 
 const currentShopItems = computed(() =>
@@ -513,7 +524,10 @@ const currentShopItems = computed(() =>
 
 function openShop() {
   if (props.mode !== 'daily') {
-    const shuffled = [...SHOP_ITEMS].sort(() => Math.random() - 0.5)
+    const pool = currentBoss.value?.id === 'hydra'
+      ? SHOP_ITEMS.filter(s => s.id !== 'shield')
+      : SHOP_ITEMS
+    const shuffled = [...pool].sort(() => Math.random() - 0.5)
     freeplayShopItems.value = shuffled.slice(0, 3)
   }
   modal.value = 'shop'
@@ -1012,42 +1026,68 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
   if (allSolved) {
     handleAllBoardsSolved()
   } else if (!anyBoardSolvedThisGuess) {
-    // No board solved — player takes damage
-    const guessRow = firstActive.guesses.length - 1
-    const isShielded = firstActive.shieldedRows.has(guessRow)
-    const doubleDamage = !isShielded
-      && currentBoss.value?.id === 'gelatinous-cube'
-      && dangerLetters.value.length > 0
-      && dangerLetters.value.some(l => submitted.includes(l))
-
-    let necroPenalty = 0
-    if (currentBoss.value?.id === 'necromancer') {
-      if (alreadyGuessed) necroPenalty += 1
-      if (isBossFight.value) {
-        const hasAbsentLetter = submitted.split('').some(l => prevAbsentLetters.has(l))
-        if (hasAbsentLetter) necroPenalty += 1
-      }
-    }
-
-    playerHealth.value -= (doubleDamage ? 2 : 1) + necroPenalty
-    if (playerHealth.value <= 0) {
-      recordCurrentRound()
-      gameState.value = 'lost'
-      gameResult.value = 'lost'
-      setTimeout(() => { screen.value = 'stats' }, 1200)
-    } else {
-      if (hasAbility('assassin') && sneakAttackAvailable.value) {
-        const guessEval = evaluateGuess(submitted, firstActive.secretWord)
-        const yellowCount = guessEval.filter(c => c.status === 'present').length
-        if (yellowCount >= 4) {
-          sneakAttackAvailable.value = false
-          inventory.value = [...inventory.value, 'sneak-attack']
+    if (currentEnemy.value?.id === 'slumbering-giant') {
+      // Slumbering Giant: wrong guesses fill snore bars, not player health
+      if (!giantAwake.value) {
+        giantSnoreBars.value++
+        if (giantSnoreBars.value >= 4) {
+          giantAwake.value = true
+          playerHealth.value -= 7
+          if (playerHealth.value <= 0) {
+            recordCurrentRound()
+            gameState.value = 'lost'
+            gameResult.value = 'lost'
+            setTimeout(() => { screen.value = 'stats' }, 1200)
+          }
+        }
+      } else {
+        // Giant is awake: 2 damage per wrong guess
+        playerHealth.value -= 2
+        if (playerHealth.value <= 0) {
+          recordCurrentRound()
+          gameState.value = 'lost'
+          gameResult.value = 'lost'
+          setTimeout(() => { screen.value = 'stats' }, 1200)
         }
       }
-      if (currentEnemy.value?.id === 'know-it-all') {
-        const active = boards.value[0]
-        if (active && !active.solved && active.guesses.length === 3) {
-          showKnowItAllModal(active.secretWord)
+    } else {
+      // No board solved — player takes damage
+      const guessRow = firstActive.guesses.length - 1
+      const isShielded = firstActive.shieldedRows.has(guessRow)
+      const doubleDamage = !isShielded
+        && currentBoss.value?.id === 'gelatinous-cube'
+        && dangerLetters.value.length > 0
+        && dangerLetters.value.some(l => submitted.includes(l))
+
+      let necroPenalty = 0
+      if (currentBoss.value?.id === 'necromancer') {
+        if (alreadyGuessed) necroPenalty += 1
+        if (isBossFight.value) {
+          const hasAbsentLetter = submitted.split('').some(l => prevAbsentLetters.has(l))
+          if (hasAbsentLetter) necroPenalty += 1
+        }
+      }
+
+      playerHealth.value -= (doubleDamage ? 2 : 1) + necroPenalty
+      if (playerHealth.value <= 0) {
+        recordCurrentRound()
+        gameState.value = 'lost'
+        gameResult.value = 'lost'
+        setTimeout(() => { screen.value = 'stats' }, 1200)
+      } else {
+        if (hasAbility('assassin') && sneakAttackAvailable.value) {
+          const guessEval = evaluateGuess(submitted, firstActive.secretWord)
+          const yellowCount = guessEval.filter(c => c.status === 'present').length
+          if (yellowCount >= 4) {
+            sneakAttackAvailable.value = false
+            inventory.value = [...inventory.value, 'sneak-attack']
+          }
+        }
+        if (currentEnemy.value?.id === 'know-it-all') {
+          const active = boards.value[0]
+          if (active && !active.solved && active.guesses.length === 3) {
+            showKnowItAllModal(active.secretWord)
+          }
         }
       }
     }
@@ -1088,6 +1128,8 @@ function handleModalAction() {
     freeplayShopItems.value = []
     validating.value = false
     fortuneTellerGreyLetters.value = []
+    giantSnoreBars.value = 0
+    giantAwake.value = false
     gameLog.value = []
     gameResult.value = null
     copied.value = false
@@ -1124,6 +1166,8 @@ function restartJourney() {
   freeplayShopItems.value = []
   validating.value = false
   fortuneTellerGreyLetters.value = []
+  giantSnoreBars.value = 0
+  giantAwake.value = false
   gameLog.value = []
   gameResult.value = null
   copied.value = false
@@ -1293,6 +1337,8 @@ async function loadWord(showModal) {
   modal.value = null
   dangerLetters.value = []
   fortuneTellerGreyLetters.value = []
+  giantSnoreBars.value = 0
+  giantAwake.value = false
   // Unused sneak attack disappears when a new word begins
   inventory.value = inventory.value.filter(id => id !== 'sneak-attack')
 
@@ -1407,6 +1453,12 @@ function useItem() {
     if (first) currentGuess.value = first + currentGuess.value.slice(1)
   } else if (item.effect === 'vorpal-sword') {
     vorpalSwordActive.value = true
+  } else if (item.effect === 'caltrops') {
+    const allWordLetters = new Set(boards.value.flatMap(b => b.secretWord.split('')))
+    const already = new Set(fortuneTellerGreyLetters.value)
+    const pool = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').filter(l => !allWordLetters.has(l) && !already.has(l))
+    const shuffled = [...pool].sort(() => Math.random() - 0.5)
+    fortuneTellerGreyLetters.value = [...fortuneTellerGreyLetters.value, ...shuffled.slice(0, 4)]
   } else if (item.effect === 'sneak-attack') {
     // Auto-solve the first unsolved board by inserting its answer directly
     const board = boards.value.find(b => !b.solved)
