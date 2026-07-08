@@ -909,8 +909,9 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
     }
   }
 
-  // Validate word (Village Idiot and internal calls skip this)
-  if (!hasAbility('village-idiot') && !skipValidation) {
+  // Validate word (Village Idiot, internal calls, and correct answers skip this)
+  const isCorrectAnswer = activeBoards.some(b => buildEffectiveGuess(b) === b.secretWord)
+  if (!hasAbility('village-idiot') && !skipValidation && !isCorrectAnswer) {
     validating.value = true
     try {
       const res = await fetch(`/api/word/validate?word=${submitted.toLowerCase()}`)
