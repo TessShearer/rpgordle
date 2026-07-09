@@ -11,9 +11,6 @@
           <li class="nav-item">
             <RouterLink class="nav-link" to="/game-info">Game Info</RouterLink>
           </li>
-          <li class="nav-item">
-            <RouterLink class="nav-link" to="/word-info">Word Info</RouterLink>
-          </li>
         </ul>
     </div>
   </nav>

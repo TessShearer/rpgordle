@@ -29,7 +29,7 @@ export const MINIBOSSES = [
   { id: 'cerberus', name: 'Cerberus', regen: 1, health: 1, boardCount: 3, wordLength: 5, effect: 'Should a dog have three heads?' },
   { id: 'mirror-spirit', name: 'Mirror Spirit', regen: 2, health: 1, wordLength: 5, boardCount: 1, effect: 'The answer (and all your guesses) must be the same forwards and backwards!' },
   { id: 'know-it-all', name: 'Know It All', regen: 2, health: 1, wordLength: 5, boardCount: 1, effect: 'The answer is a word he does not think you will know.' },
-  { id: 'slumbering-giant', name: 'Slumbering Giant', regen: 2, health: 1, wordLength: 5, boardCount: 1, effect: 'You won\'t take any damage from a wrong guess...unless you wake him up, then you will take a lot of damage.' },
+  { id: 'slumbering-giant', name: 'Slumbering Giant', regen: 2, health: 1, wordLength: 5, boardCount: 1, effect: 'You won\'t take any damage from a wrong guess...unless you wake him up.' },
   { id: 'hydra-miniboss', name: 'Hydra', regen: 0, health: 1, wordLength: 5, boardCount: 1, effect: 'Cut off its head!' },
 ]
 
@@ -115,9 +115,9 @@ export const BOSSES = [
       { boardCount: 2, wordLength: 5 },
       { boardCount: 4, wordLength: 3 },
     ],
-    effect: 'Strike it down and it splits! Each round a letter is marked for double damage.',
-    announcement: 'Your quest is to defeat the Gelatinous Cube. Each round it marks a letter — any guess containing that letter deals 2 damage. Strike it down and it splits into smaller oozes!',
-    enhancedAnnouncement: 'You found the boss! Now THREE letters are marked for double damage each round.',
+    effect: 'Each round a letter is slimed for double damage.',
+    announcement: 'Your quest is to defeat the Gelatinous Cube. It will cover letters in toxic goo, and guessing with that letter will deal extra damage.',
+    enhancedAnnouncement: 'You found the boss! Now THREE letters are slimed for double damage.',
   },
   {
     id: 'abominable-snowman',

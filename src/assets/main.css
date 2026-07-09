@@ -343,6 +343,10 @@ body {
   flex: 1;
 }
 
+.portrait-slot--enemy {
+  justify-content: flex-end;
+}
+
 .portrait-img-col {
   flex-shrink: 0;
   display: flex;
@@ -371,6 +375,15 @@ body {
   letter-spacing: 0.06em;
   color: var(--gs-600);
   margin: 0;
+}
+
+.portrait-enemy-effect {
+  font-size: 0.62rem;
+  color: var(--gs-500);
+  margin: 2px 0 0;
+  font-style: italic;
+  text-align: center;
+  max-width: 120px;
 }
 
 .portrait-hint-label {
@@ -763,11 +776,48 @@ body {
 }
 
 .inventory-item {
+  position: relative;
+  width: 56px;
+  height: 74px;
+  perspective: 400px;
+  cursor: pointer;
+}
+
+.inventory-item-inner {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.4s ease;
+  border-radius: 0.4rem;
+}
+
+@media (hover: hover) {
+  .inventory-item:hover .inventory-item-inner {
+    transform: rotateY(180deg);
+  }
+}
+
+.inventory-item-front,
+.inventory-item-back {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: 0.4rem;
+  border: 1px solid var(--gs-200);
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 0.2rem;
-  cursor: default;
+  padding: 0.3rem;
+}
+
+.inventory-item-back {
+  transform: rotateY(180deg);
+  background: var(--gs-800);
+  border-color: var(--gs-700);
 }
 
 .art-placeholder--inv {
@@ -784,11 +834,13 @@ body {
   max-width: 52px;
 }
 
-.inventory-item {
-  cursor: pointer;
-  transition: transform 0.15s;
+.inventory-item-desc {
+  font-size: 0.58rem;
+  text-align: center;
+  color: var(--gs-100);
+  margin: 0;
+  line-height: 1.3;
 }
-.inventory-item:hover { transform: translateY(-2px); }
 
 .modal-actions {
   display: flex;
@@ -1620,9 +1672,11 @@ body {
 .kit-message {
   min-height: 4rem;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
+  gap: 0.4rem;
 }
 
 .kit-definition {
@@ -1748,4 +1802,30 @@ body {
 .snore-bars--awake .snore-bar--filled {
   background: #e74c3c;
   border-color: #c0392b;
+}
+
+/* ── Miniboss test page ───────────────────────────────────────────────────── */
+.miniboss-test-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.miniboss-test-warning {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #e74c3c;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0.75rem 1rem 0.25rem;
+  line-height: 1.4;
+}
+
+.miniboss-forced-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #e74c3c;
+  margin: 0 0 0.25rem;
 }

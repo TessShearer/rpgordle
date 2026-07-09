@@ -26,6 +26,18 @@
       <BossSelect v-else-if="screen === 'boss-select'" :bosses="BOSSES" :selected-boss-id="selectedBoss"
         @select="selectedBoss = $event" @confirm="confirmBossSelect" />
 
+      <!-- ── Miniboss Test Select ──────────────────────────────────────── -->
+      <div v-else-if="screen === 'miniboss-select'" class="miniboss-test-wrapper">
+        <p class="miniboss-test-warning">ONLY FOR TESTING — CANNOT CHOOSE MINIBOSS IN FINAL VERSION</p>
+        <BossSelect :bosses="MINIBOSSES" :selected-boss-id="selectedMiniboss"
+          @select="selectedMiniboss = $event" @confirm="confirmMinibossSelect" />
+        <div class="text-center mt-2">
+          <button class="btn btn-reset btn-sm" @click="selectedMiniboss = null; screen = 'boss-select'">
+            Skip (random miniboss)
+          </button>
+        </div>
+      </div>
+
       <!-- ── Boss Intro ────────────────────────────────────────────────── -->
       <BossIntro v-else-if="screen === 'boss-intro'" ref="bossIntroRef" :boss="currentBoss" :player-class="playerClass"
         @begin="beginJourney" />
@@ -51,11 +63,6 @@
               <p class="stats-encounter-name">
                 {{ entry.name }}: {{ totalGuessCount(entry) }} {{ totalGuessCount(entry) === 1 ? 'guess' : 'guesses' }}
               </p>
-              <template v-for="(board, bi) in entry.boards" :key="bi">
-                <p v-if="entry.boards.length > 1" class="stats-board-divider">— Word {{ bi + 1 }} —</p>
-                <p v-for="(guess, gi) in board.guesses" :key="gi" class="stats-row">{{ emojiRow(guess, board.secretWord) }}</p>
-                <p v-if="!board.solved" class="stats-answer">Answer: {{ board.secretWord.toLowerCase() }}</p>
-              </template>
             </div>
           </template>
 
@@ -66,11 +73,6 @@
                   {{ entry.name }}{{ gameLog.filter(e => e.isBoss).length > 1 ? ` (Round ${entry.roundIndex + 1})` : '' }}:
                   {{ totalGuessCount(entry) }} {{ totalGuessCount(entry) === 1 ? 'guess' : 'guesses' }}
                 </p>
-                <template v-for="(board, bi) in entry.boards" :key="bi">
-                  <p v-if="entry.boards.length > 1" class="stats-board-divider">— Head {{ bi + 1 }} —</p>
-                  <p v-for="(guess, gi) in board.guesses" :key="gi" class="stats-row">{{ emojiRow(guess, board.secretWord) }}</p>
-                  <p v-if="!board.solved" class="stats-answer">Answer: {{ board.secretWord.toLowerCase() }}</p>
-                </template>
               </div>
             </template>
           </template>
@@ -121,24 +123,34 @@
                 <div v-if="inventoryItems.length" class="inventory">
                   <p class="portrait-hint-label">Inventory</p>
                   <div class="inventory-list">
-                    <div v-for="(item, i) in inventoryItems" :key="i" class="inventory-item" :title="item.description"
+                    <div v-for="(item, i) in inventoryItems" :key="i" class="inventory-item"
                       @click="confirmUseItem(item)">
-                      <div class="art-placeholder art-placeholder--inv">{{ item.name }}</div>
-                      <p class="inventory-item-name">{{ item.name }}</p>
+                      <div class="inventory-item-inner">
+                        <div class="inventory-item-front">
+                          <div class="art-placeholder art-placeholder--inv">{{ item.name }}</div>
+                          <p class="inventory-item-name">{{ item.name }}</p>
+                        </div>
+                        <div class="inventory-item-back">
+                          <p class="inventory-item-desc">{{ item.description }}</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-            <div v-if="currentEnemy" class="portrait-slot">
-              <div class="art-placeholder art-placeholder--portrait" :class="{ 'h-shake': bossShaking }">Art of {{ currentEnemy.name }}</div>
-              <div v-if="currentEnemy.id === 'slumbering-giant'" class="snore-bars" :class="{ 'snore-bars--awake': giantAwake }">
-                <div v-for="i in 4" :key="i" class="snore-bar" :class="{ 'snore-bar--filled': i <= giantSnoreBars }"></div>
-              </div>
-              <p class="portrait-stat">{{ currentEnemy.name }}</p>
-              <div class="enemy-health portrait-pips">
-                <span v-for="n in currentEnemy.health" :key="n" class="health-pip"
-                  :class="{ 'health-pip--lost': n > enemyHealth }"></span>
+            <div v-if="currentEnemy" class="portrait-slot portrait-slot--enemy">
+              <div class="portrait-img-col">
+                <div class="art-placeholder art-placeholder--portrait" :class="{ 'h-shake': bossShaking }">Art of {{ currentEnemy.name }}</div>
+                <div v-if="currentEnemy.id === 'slumbering-giant'" class="snore-bars" :class="{ 'snore-bars--awake': giantAwake }">
+                  <div v-for="i in 4" :key="i" class="snore-bar" :class="{ 'snore-bar--filled': i <= giantSnoreBars }"></div>
+                </div>
+                <p class="portrait-stat">{{ currentEnemy.name }}</p>
+                <div class="enemy-health portrait-pips">
+                  <span v-for="n in currentEnemy.health" :key="n" class="health-pip"
+                    :class="{ 'health-pip--lost': n > enemyHealth }"></span>
+                </div>
+                <p v-if="currentEnemy.effect" class="portrait-enemy-effect">{{ currentEnemy.effect }}</p>
               </div>
             </div>
           </div>
@@ -162,10 +174,17 @@
                 <div v-if="inventoryItems.length" class="inventory">
                   <p class="feature-label">Inventory</p>
                   <div class="inventory-list">
-                    <div v-for="(item, i) in inventoryItems" :key="i" class="inventory-item" :title="item.description"
+                    <div v-for="(item, i) in inventoryItems" :key="i" class="inventory-item"
                       @click="confirmUseItem(item)">
-                      <div class="art-placeholder art-placeholder--inv">{{ item.name }}</div>
-                      <p class="inventory-item-name">{{ item.name }}</p>
+                      <div class="inventory-item-inner">
+                        <div class="inventory-item-front">
+                          <div class="art-placeholder art-placeholder--inv">{{ item.name }}</div>
+                          <p class="inventory-item-name">{{ item.name }}</p>
+                        </div>
+                        <div class="inventory-item-back">
+                          <p class="inventory-item-desc">{{ item.description }}</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -308,14 +327,20 @@
                 <button class="btn btn-reset px-4 py-2" @click="cancelUseItem">No</button>
               </div>
             </template>
+            <template v-else-if="modal === 'giant-wakeup'">
+              <div class="art-placeholder art-placeholder--modal-monster my-3">Art of Angry Giant</div>
+              <p class="modal-message">The giant woke up!!</p>
+              <button class="btn btn-press px-5 py-2 mt-3" @click="dismissGiantWakeup">7 Damage!?</button>
+            </template>
             <template v-else-if="modal === 'know-it-all'">
               <Transition name="kit-fade" mode="out-in">
                 <p v-if="knowItAllModalPhase === 'taunt'" key="taunt" class="modal-message kit-message">
                   Looks like you're having trouble... not everyone can have the extensive vocabulary that I do... let me help you
                 </p>
-                <p v-else key="definition" class="modal-message kit-message">
-                  This word is defined as <em class="kit-definition">{{ knowItAllDefinition }}</em>
-                </p>
+                <div v-else key="definition" class="modal-message kit-message">
+                  <span>This word is defined as</span>
+                  <em class="kit-definition">{{ knowItAllDefinition }}</em>
+                </div>
               </Transition>
               <button class="btn btn-press px-5 py-2 mt-3 kit-dismiss"
                 :disabled="!knowItAllCanDismiss"
@@ -327,7 +352,7 @@
               <p class="modal-message">{{ MODAL_CONTENT[modal].message }}</p>
               <p v-if="modal === 'lost'" class="modal-word">{{ boards.map(b => b.secretWord.toLowerCase()).join(', ') }}</p>
             </template>
-            <button v-if="modal !== 'shop' && modal !== 'use-item' && modal !== 'know-it-all'" class="btn btn-press px-5 py-2 mt-3"
+            <button v-if="modal !== 'shop' && modal !== 'use-item' && modal !== 'know-it-all' && modal !== 'giant-wakeup'" class="btn btn-press px-5 py-2 mt-3"
               @click="handleModalAction">
               {{ MODAL_CONTENT[modal].button }}
             </button>
@@ -417,6 +442,9 @@ const zombieRising = ref(false)
 const fortuneTellerGreyLetters = ref([])
 const giantSnoreBars = ref(0)
 const giantAwake = ref(false)
+
+// ── Boss / miniboss selection ─────────────────────────────────────────────────
+const selectedMiniboss = ref(null)
 
 // ── Board component refs (plain object — not reactive) ────────────────────────
 const boardRefs = {}
@@ -672,6 +700,21 @@ function onKeyDown(e) {
     }
     return
   }
+  if (screen.value === 'miniboss-select') {
+    const idx = MINIBOSSES.findIndex(m => m.id === selectedMiniboss.value)
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+      e.preventDefault()
+      selectedMiniboss.value = MINIBOSSES[(idx + 1) % MINIBOSSES.length].id
+    } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+      e.preventDefault()
+      selectedMiniboss.value = MINIBOSSES[idx < 1 ? MINIBOSSES.length - 1 : idx - 1].id
+    } else if (e.key === 'Enter' && selectedMiniboss.value) {
+      confirmMinibossSelect(selectedMiniboss.value)
+    } else if (e.key === 'Escape') {
+      screen.value = 'boss-select'
+    }
+    return
+  }
   if (screen.value === 'boss-intro') {
     if (e.key === 'Enter') {
       if (bossIntroRef.value?.allVisible) beginJourney()
@@ -715,20 +758,6 @@ function recordCurrentRound() {
   })
 }
 
-function emojiRow(guess, secretWord) {
-  const status = Array(guess.length).fill('absent')
-  const pool = secretWord.split('')
-  for (let i = 0; i < guess.length; i++) {
-    if (guess[i] === pool[i]) { status[i] = 'correct'; pool[i] = null }
-  }
-  for (let i = 0; i < guess.length; i++) {
-    if (status[i] === 'correct') continue
-    const j = pool.indexOf(guess[i])
-    if (j !== -1) { status[i] = 'present'; pool[j] = null }
-  }
-  return status.map(s => s === 'correct' ? '🟩' : s === 'present' ? '🟨' : '⬜️').join(' ')
-}
-
 function totalGuessCount(entry) {
   return entry.boards.reduce((sum, b) => sum + b.guesses.length, 0)
 }
@@ -743,30 +772,15 @@ function generateStatsText() {
     lines.push('')
     const count = totalGuessCount(entry)
     lines.push(`${entry.name}: ${count} ${count === 1 ? 'guess' : 'guesses'}`)
-    for (let bi = 0; bi < entry.boards.length; bi++) {
-      const board = entry.boards[bi]
-      if (entry.boards.length > 1) lines.push(`Word ${bi + 1}:`)
-      for (const guess of board.guesses) lines.push(emojiRow(guess, board.secretWord))
-      if (!board.solved) lines.push(`Answer: ${board.secretWord.toLowerCase()}`)
-      if (bi < entry.boards.length - 1) lines.push('')
-    }
   }
 
   const bossEntries = gameLog.value.filter(e => e.isBoss)
   if (bossEntries.length > 0) {
     lines.push('')
     for (const entry of bossEntries) {
-      lines.push('')
       const count = totalGuessCount(entry)
       const roundLabel = bossEntries.length > 1 ? ` (Round ${entry.roundIndex + 1})` : ''
       lines.push(`${entry.name}${roundLabel}: ${count} ${count === 1 ? 'guess' : 'guesses'}`)
-      for (let bi = 0; bi < entry.boards.length; bi++) {
-        const board = entry.boards[bi]
-        if (entry.boards.length > 1) lines.push(`Head ${bi + 1}:`)
-        for (const guess of board.guesses) lines.push(emojiRow(guess, board.secretWord))
-        if (!board.solved) lines.push(`Answer: ${board.secretWord.toLowerCase()}`)
-        if (bi < entry.boards.length - 1) lines.push('')
-      }
     }
   }
 
@@ -980,7 +994,7 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
   const alreadyGuessed = allGuessedWords.value.includes(submitted)
 
   // Necromancer: animate repeated words rising up as zombies before submitting
-  if (currentBoss.value?.id === 'necromancer' && alreadyGuessed) {
+  if (currentBoss.value?.id === 'necromancer' && alreadyGuessed && !isCorrectAnswer) {
     zombieRising.value = true
     await new Promise(r => setTimeout(r, wordLength.value * 100 + 950))
     zombieRising.value = false
@@ -1033,12 +1047,7 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
         if (giantSnoreBars.value >= 4) {
           giantAwake.value = true
           playerHealth.value -= 7
-          if (playerHealth.value <= 0) {
-            recordCurrentRound()
-            gameState.value = 'lost'
-            gameResult.value = 'lost'
-            setTimeout(() => { screen.value = 'stats' }, 1200)
-          }
+          modal.value = 'giant-wakeup'
         }
       } else {
         // Giant is awake: 2 damage per wrong guess
@@ -1061,7 +1070,7 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
 
       let necroPenalty = 0
       if (currentBoss.value?.id === 'necromancer') {
-        if (alreadyGuessed) necroPenalty += 1
+        if (alreadyGuessed && !isCorrectAnswer) necroPenalty += 1
         if (isBossFight.value) {
           const hasAbsentLetter = submitted.split('').some(l => prevAbsentLetters.has(l))
           if (hasAbsentLetter) necroPenalty += 1
@@ -1121,6 +1130,7 @@ function handleModalAction() {
     wonDamage.value = 0
     lastRegen.value = 0
     selectedBoss.value = null
+    selectedMiniboss.value = null
     bossWordIndex.value = 0
     sneakAttackAvailable.value = false
     shopPicksRemaining.value = 1
@@ -1160,6 +1170,7 @@ function restartJourney() {
   wonDamage.value = 0
   lastRegen.value = 0
   selectedBoss.value = null
+  selectedMiniboss.value = null
   bossWordIndex.value = 0
   sneakAttackAvailable.value = false
   shopPicksRemaining.value = 1
@@ -1218,13 +1229,19 @@ function selectClass(cls) {
     screen.value = 'boss-intro'
   } else {
     selectedBoss.value = null
-    screen.value = 'boss-select'
+    screen.value = 'miniboss-select'
   }
 }
 
 function confirmBossSelect(bossId) {
   currentBoss.value = BOSSES.find(b => b.id === bossId)
   beginJourney()
+}
+
+// Stores the forced miniboss choice and returns to boss select to continue the normal flow.
+function confirmMinibossSelect(minibossId) {
+  selectedMiniboss.value = minibossId
+  screen.value = 'boss-select'
 }
 
 // Abilities the changeling can inherit (excludes stat-only and starting-bonus classes)
@@ -1282,19 +1299,29 @@ async function startStage(stageNum) {
     screen.value = 'boss-fight-intro'
   } else {
     const stageType = STAGE_SEQUENCE[stageNum]
-    let pool
     if (stageType === 'miniboss') {
-      pool = currentBoss.value?.id === 'hydra'
-        ? MINIBOSSES.filter(m => m.id === 'hydra-miniboss')
-        : MINIBOSSES.filter(m => m.id !== 'hydra-miniboss')
+      if (selectedMiniboss.value) {
+        // Use the forced miniboss chosen on the dev test screen
+        currentEnemy.value = MINIBOSSES.find(m => m.id === selectedMiniboss.value)
+      } else {
+        const pool = currentBoss.value?.id === 'hydra'
+          ? MINIBOSSES.filter(m => m.id === 'hydra-miniboss')
+          : MINIBOSSES.filter(m => m.id !== 'hydra-miniboss')
+        if (props.mode === 'daily' && dailyConfig.value) {
+          const enemyId = dailyConfig.value.stageEnemies[stageNum]
+          currentEnemy.value = pool.find(e => e.id === enemyId) ?? pool[Math.floor(Math.random() * pool.length)]
+        } else {
+          currentEnemy.value = pool[Math.floor(Math.random() * pool.length)]
+        }
+      }
     } else {
-      pool = ENEMIES
-    }
-    if (props.mode === 'daily' && dailyConfig.value) {
-      const enemyId = dailyConfig.value.stageEnemies[stageNum]
-      currentEnemy.value = pool.find(e => e.id === enemyId) ?? pool[Math.floor(Math.random() * pool.length)]
-    } else {
-      currentEnemy.value = pool[Math.floor(Math.random() * pool.length)]
+      const pool = ENEMIES
+      if (props.mode === 'daily' && dailyConfig.value) {
+        const enemyId = dailyConfig.value.stageEnemies[stageNum]
+        currentEnemy.value = pool.find(e => e.id === enemyId) ?? pool[Math.floor(Math.random() * pool.length)]
+      } else {
+        currentEnemy.value = pool[Math.floor(Math.random() * pool.length)]
+      }
     }
     enemyHealth.value = currentEnemy.value.health
     await loadWord(true)
@@ -1432,6 +1459,16 @@ function confirmUseItem(item) {
 function cancelUseItem() {
   pendingUseItem.value = null
   modal.value = null
+}
+
+function dismissGiantWakeup() {
+  modal.value = null
+  if (playerHealth.value <= 0) {
+    recordCurrentRound()
+    gameState.value = 'lost'
+    gameResult.value = 'lost'
+    setTimeout(() => { screen.value = 'stats' }, 1200)
+  }
 }
 
 function useItem() {

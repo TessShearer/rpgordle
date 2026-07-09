@@ -14,11 +14,6 @@ const routes = [
     props: { mode: 'freeplay' },
   },
   {
-    path: '/word-info',
-    name: 'word-info',
-    component: () => import('@/views/HomeView.vue'),
-  },
-  {
     path: '/game-info',
     name: 'game-info',
     component: () => import('@/views/GameInfoView.vue'),
