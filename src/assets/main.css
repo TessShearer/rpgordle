@@ -2070,3 +2070,24 @@ body {
   65%  { opacity: 1; transform: scale(1.25); }
   100% { opacity: 0; transform: scale(1.25); }
 }
+
+/* ── Crossbow arrow animation ─────────────────────────────────────────────── */
+.crossbow-arrow {
+  position: fixed;
+  left: 20px;
+  bottom: 20px;
+  width: 65px;
+  height: 28px;
+  background: var(--gs-600);
+  border: 2px solid var(--gs-400);
+  border-radius: 4px;
+  z-index: 1000;
+  pointer-events: none;
+  animation: crossbow-shot 0.65s ease-in forwards;
+}
+
+@keyframes crossbow-shot {
+  0%   { opacity: 1; transform: translate(0, 0) rotate(-40deg) scale(1); }
+  75%  { opacity: 1; transform: translate(18vw, -52vh) rotate(-40deg) scale(0.9); }
+  100% { opacity: 0; transform: translate(20vw, -58vh) rotate(-40deg) scale(0.7); }
+}

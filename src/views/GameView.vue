@@ -387,6 +387,9 @@
     <!-- Shield animation -->
     <div v-if="shieldAnim" class="shield-anim" aria-hidden="true"></div>
 
+    <!-- Crossbow arrow animation -->
+    <div v-if="crossbowAnim" class="crossbow-arrow" aria-hidden="true"></div>
+
   </main>
 </template>
 
@@ -479,6 +482,7 @@ const caltropsFlyingAnim = ref(false)
 const vorpalSwordAnim = ref(false)
 const healthPotionAnim = ref(false)
 const shieldAnim = ref(false)
+const crossbowAnim = ref(false)
 const _pendingKeyPops = []
 
 // ── Boss / miniboss selection ─────────────────────────────────────────────────
@@ -1634,6 +1638,8 @@ function useItem() {
   } else if (item.effect === 'crystal-ball') {
     revealCrystalHint()
   } else if (item.effect === 'crossbow') {
+    crossbowAnim.value = true
+    setTimeout(() => { crossbowAnim.value = false }, 700)
     const board = boards.value.find(b => !b.solved) ?? boards.value[0]
     const first = board?.secretWord[0]
     if (first) currentGuess.value = first + currentGuess.value.slice(1)
