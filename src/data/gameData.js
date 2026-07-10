@@ -26,10 +26,11 @@ export const ENEMIES = [
 
 export const MINIBOSSES = [
   { id: 'annoying-kid', name: 'Annoying Kid', regen: 1, health: 1, effect: 'He will make your first guess for you' },
+  { id: 'tricksy-fairy', name: 'Tricksy Fairy', regen: 1, health: 1, effect: 'If your guess is not correct, she will scramble it before submitting.' },
   { id: 'cerberus', name: 'Cerberus', regen: 1, health: 1, boardCount: 3, wordLength: 5, effect: 'Should a dog have three heads?' },
   { id: 'mirror-spirit', name: 'Mirror Spirit', regen: 2, health: 1, wordLength: 5, boardCount: 1, effect: 'The answer (and all your guesses) must be the same forwards and backwards!' },
   { id: 'know-it-all', name: 'Know It All', regen: 2, health: 1, wordLength: 5, boardCount: 1, effect: 'The answer is a word he does not think you will know.' },
-  { id: 'slumbering-giant', name: 'Slumbering Giant', regen: 2, health: 1, wordLength: 5, boardCount: 1, effect: 'You won\'t take any damage from a wrong guess...unless you wake him up.' },
+  { id: 'slumbering-giant', name: 'Slumbering Giant', regen: 2, health: 1, wordLength: 5, boardCount: 1, effect: 'You won\'t take any damage from a wrong guess...unless you wake her up.' },
   { id: 'hydra-miniboss', name: 'Hydra', regen: 0, health: 1, wordLength: 5, boardCount: 1, effect: 'Cut off its head!' },
 ]
 
@@ -69,11 +70,18 @@ export const SHOP_ITEMS = [
     effect: 'vorpal-sword',
     cost: 2,
   },
-    {
+  {
     id: 'caltrops',
     name: 'Caltrops',
     description: 'Reveal 4 letters that aren\'t in the answer.',
     effect: 'caltrops',
+    cost: 2,
+  },
+    {
+    id: 'smoke-bomb',
+    name: 'Smoke Bomb',
+    description: 'When used, you take no damage from your next incorrect guess',
+    effect: 'smoke-bomb',
     cost: 2,
   },
 ]
@@ -115,8 +123,19 @@ export const BOSSES = [
       { boardCount: 2, wordLength: 5 },
       { boardCount: 4, wordLength: 3 },
     ],
+    effect: 'Can survive being split into pieces.',
+    announcement: 'Your quest is to defeat the Gelatinous Cube. It is hiding deep in the kingdom and can survive being split to pieces',
+    enhancedAnnouncement: 'You found the boss! Chop him to bits!',
+  },
+    {
+    id: 'toxic-slime',
+    name: 'Toxic Slime',
+    health: 2,
+    regen: 0,
+    wordLength: 5,
+    boardCount: 1,
     effect: 'Each round a letter is slimed for double damage.',
-    announcement: 'Your quest is to defeat the Gelatinous Cube. It will cover letters in toxic goo, and guessing with that letter will deal extra damage.',
+    announcement: 'Your quest is to defeat the Toxic Slime. It will cover letters in toxic goo, and guessing with that letter will deal extra damage.',
     enhancedAnnouncement: 'You found the boss! Now THREE letters are slimed for double damage.',
   },
   {

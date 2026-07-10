@@ -204,22 +204,26 @@
 
             <!-- Board(s) -->
             <div class="boards-container" :class="{ 'boards-container--multi': boards.length > 1 }">
-              <WordleBoard
-                v-for="board in boards"
-                :key="board.id"
-                :ref="(el) => setBoardRef(board.id, el)"
-                :board="board"
-                :current-guess="currentGuess"
-                :game-state="gameState"
-                :boss="currentBoss"
-                :is-boss-fight="isBossFight"
-                :has-seer="hasAbility('seer')"
-                :has-scholar="hasAbility('scholar')"
-                :board-shaking="boardShaking"
-                :zombie-rising="zombieRising"
-                :compact="board.solved && boards.length > 1"
-                @shake-end="boardShaking = false"
-              />
+              <template v-for="board in boards" :key="board.id">
+                <div v-if="board.solved && boards.length > 1" class="solved-word-chip">
+                  <span v-for="(letter, i) in board.secretWord.split('')" :key="i" class="solved-chip-tile">{{ letter }}</span>
+                </div>
+                <WordleBoard
+                  v-else
+                  :ref="(el) => setBoardRef(board.id, el)"
+                  :board="board"
+                  :current-guess="currentGuess"
+                  :game-state="gameState"
+                  :boss="currentBoss"
+                  :is-boss-fight="isBossFight"
+                  :has-seer="hasAbility('seer')"
+                  :has-scholar="hasAbility('scholar')"
+                  :board-shaking="boardShaking"
+                  :zombie-rising="zombieRising"
+                  :compact="false"
+                  @shake-end="boardShaking = false"
+                />
+              </template>
             </div>
 
             <Transition name="modal">
@@ -235,8 +239,11 @@
             <p v-if="inputError" class="text-danger text-center small mb-2">{{ inputError }}</p>
 
             <!-- Submit + Keyboard -->
-            <div v-if="gameState === 'playing'" class="text-center mb-2">
+            <div v-if="gameState === 'playing'" class="submit-row mb-2">
               <button class="btn btn-press px-4 py-1" @click="handleKey('ENTER')">Submit</button>
+              <button v-if="inventory.includes('sneak-attack')" class="btn btn-sneak-attack px-4 py-1" @click="triggerSneakAttack">
+                <span class="sneak-attack-text">Sneak Attack!</span>
+              </button>
             </div>
             <div v-if="gameState === 'playing'" class="keyboard">
               <div v-for="(row, r) in KEY_ROWS" :key="r" class="key-row">
@@ -442,6 +449,7 @@ const zombieRising = ref(false)
 const fortuneTellerGreyLetters = ref([])
 const giantSnoreBars = ref(0)
 const giantAwake = ref(false)
+const smokeBombActive = ref(false)
 
 // ── Boss / miniboss selection ─────────────────────────────────────────────────
 const selectedMiniboss = ref(null)
@@ -602,6 +610,7 @@ const keyboardStatuses = computed(() => {
   const base = {}
 
   for (const board of boards.value) {
+    if (board.solved && boards.value.length > 1) continue
     board.guesses.forEach((guess) => {
       const evaluated = evaluateGuess(guess, board.secretWord)
       evaluated.forEach(({ letter, status }, col) => {
@@ -759,7 +768,7 @@ function recordCurrentRound() {
 }
 
 function totalGuessCount(entry) {
-  return entry.boards.reduce((sum, b) => sum + b.guesses.length, 0)
+  return Math.max(0, ...entry.boards.map(b => b.guesses.length))
 }
 
 function generateStatsText() {
@@ -1060,43 +1069,49 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
         }
       }
     } else {
-      // No board solved — player takes damage
-      const guessRow = firstActive.guesses.length - 1
-      const isShielded = firstActive.shieldedRows.has(guessRow)
-      const doubleDamage = !isShielded
-        && currentBoss.value?.id === 'gelatinous-cube'
-        && dangerLetters.value.length > 0
-        && dangerLetters.value.some(l => submitted.includes(l))
+      // No board solved — player takes damage (smoke bomb absorbs it if active)
+      if (smokeBombActive.value) {
+        smokeBombActive.value = false
+      } else {
+        const guessRow = firstActive.guesses.length - 1
+        const isShielded = firstActive.shieldedRows.has(guessRow)
+        const doubleDamage = !isShielded
+          && currentBoss.value?.id === 'toxic-slime'
+          && dangerLetters.value.length > 0
+          && dangerLetters.value.some(l => submitted.includes(l))
 
-      let necroPenalty = 0
-      if (currentBoss.value?.id === 'necromancer') {
-        if (alreadyGuessed && !isCorrectAnswer) necroPenalty += 1
-        if (isBossFight.value) {
-          const hasAbsentLetter = submitted.split('').some(l => prevAbsentLetters.has(l))
-          if (hasAbsentLetter) necroPenalty += 1
+        let necroPenalty = 0
+        if (currentBoss.value?.id === 'necromancer') {
+          if (alreadyGuessed && !isCorrectAnswer) necroPenalty += 1
+          if (isBossFight.value) {
+            const hasAbsentLetter = submitted.split('').some(l => prevAbsentLetters.has(l))
+            if (hasAbsentLetter) necroPenalty += 1
+          }
+        }
+
+        playerHealth.value -= (doubleDamage ? 2 : 1) + necroPenalty
+        if (playerHealth.value <= 0) {
+          recordCurrentRound()
+          gameState.value = 'lost'
+          gameResult.value = 'lost'
+          setTimeout(() => { screen.value = 'stats' }, 1200)
+          return
         }
       }
 
-      playerHealth.value -= (doubleDamage ? 2 : 1) + necroPenalty
-      if (playerHealth.value <= 0) {
-        recordCurrentRound()
-        gameState.value = 'lost'
-        gameResult.value = 'lost'
-        setTimeout(() => { screen.value = 'stats' }, 1200)
-      } else {
-        if (hasAbility('assassin') && sneakAttackAvailable.value) {
-          const guessEval = evaluateGuess(submitted, firstActive.secretWord)
-          const yellowCount = guessEval.filter(c => c.status === 'present').length
-          if (yellowCount >= 4) {
-            sneakAttackAvailable.value = false
-            inventory.value = [...inventory.value, 'sneak-attack']
-          }
+      // These run on any wrong guess regardless of smoke bomb
+      if (hasAbility('assassin') && sneakAttackAvailable.value) {
+        const guessEval = evaluateGuess(submitted, firstActive.secretWord)
+        const yellowCount = guessEval.filter(c => c.status === 'present').length
+        if (yellowCount >= 3) {
+          sneakAttackAvailable.value = false
+          inventory.value = [...inventory.value, 'sneak-attack']
         }
-        if (currentEnemy.value?.id === 'know-it-all') {
-          const active = boards.value[0]
-          if (active && !active.solved && active.guesses.length === 3) {
-            showKnowItAllModal(active.secretWord)
-          }
+      }
+      if (currentEnemy.value?.id === 'know-it-all') {
+        const active = boards.value[0]
+        if (active && !active.solved && active.guesses.length === 3) {
+          showKnowItAllModal(active.secretWord)
         }
       }
     }
@@ -1139,6 +1154,7 @@ function handleModalAction() {
     validating.value = false
     fortuneTellerGreyLetters.value = []
     giantSnoreBars.value = 0
+  smokeBombActive.value = false
     giantAwake.value = false
     gameLog.value = []
     gameResult.value = null
@@ -1178,6 +1194,7 @@ function restartJourney() {
   validating.value = false
   fortuneTellerGreyLetters.value = []
   giantSnoreBars.value = 0
+  smokeBombActive.value = false
   giantAwake.value = false
   gameLog.value = []
   gameResult.value = null
@@ -1329,7 +1346,7 @@ async function startStage(stageNum) {
 }
 
 function applyDangerLetters(isBoss) {
-  if (currentBoss.value?.id !== 'gelatinous-cube') return
+  if (currentBoss.value?.id !== 'toxic-slime') return
   const alpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
   const count = isBoss ? 3 : 1
   const picked = new Set()
@@ -1365,6 +1382,7 @@ async function loadWord(showModal) {
   dangerLetters.value = []
   fortuneTellerGreyLetters.value = []
   giantSnoreBars.value = 0
+  smokeBombActive.value = false
   giantAwake.value = false
   // Unused sneak attack disappears when a new word begins
   inventory.value = inventory.value.filter(id => id !== 'sneak-attack')
@@ -1461,6 +1479,19 @@ function cancelUseItem() {
   modal.value = null
 }
 
+function triggerSneakAttack() {
+  if (gameState.value !== 'playing') return
+  const idx = inventory.value.indexOf('sneak-attack')
+  if (idx === -1) return
+  const board = boards.value.find(b => !b.solved)
+  if (board) {
+    board.guesses = [...board.guesses, board.secretWord]
+    board.solved = true
+  }
+  inventory.value.splice(idx, 1)
+  if (boards.value.every(b => b.solved)) handleAllBoardsSolved()
+}
+
 function dismissGiantWakeup() {
   modal.value = null
   if (playerHealth.value <= 0) {
@@ -1490,6 +1521,8 @@ function useItem() {
     if (first) currentGuess.value = first + currentGuess.value.slice(1)
   } else if (item.effect === 'vorpal-sword') {
     vorpalSwordActive.value = true
+  } else if (item.effect === 'smoke-bomb') {
+    smokeBombActive.value = true
   } else if (item.effect === 'caltrops') {
     const allWordLetters = new Set(boards.value.flatMap(b => b.secretWord.split('')))
     const already = new Set(fortuneTellerGreyLetters.value)

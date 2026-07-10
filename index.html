@@ -4,6 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>RPGordle</title>
+    <script>
+      // Prevent pinch-zoom and gesture-zoom on mobile (Safari ignores user-scalable=no since iOS 10)
+      document.addEventListener('gesturestart',  function(e) { e.preventDefault(); }, { passive: false });
+      document.addEventListener('gesturechange', function(e) { e.preventDefault(); }, { passive: false });
+      document.addEventListener('touchmove', function(e) {
+        if (e.touches && e.touches.length > 1) e.preventDefault();
+      }, { passive: false });
+    </script>
   </head>
   <body>
     <div id="app"></div>
