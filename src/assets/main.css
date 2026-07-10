@@ -547,7 +547,14 @@ body {
 
 .scholar-word-type {
   display: inline-block;
-  animation: key-pop 0.55s ease-out;
+  font-weight: bold;
+  animation: scholar-pop 1.0s ease-out;
+}
+
+@keyframes scholar-pop {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(2.4); }
+  100% { transform: scale(1); }
 }
 
 .game-status {
@@ -2040,4 +2047,26 @@ body {
   0%   { opacity: 1; transform: translate(0, 0) rotate(-15deg) scale(1); }
   65%  { opacity: 1; transform: translate(-20vw, -42vh) rotate(-15deg) scale(1.2); }
   100% { opacity: 0; transform: translate(-23vw, -48vh) rotate(-15deg) scale(0.5); }
+}
+
+/* ── Shield animation ─────────────────────────────────────────────────────── */
+.shield-anim {
+  position: fixed;
+  left: calc(50% - 55px);
+  top: calc(50% - 55px);
+  width: 110px;
+  height: 110px;
+  background: var(--gs-600);
+  border: 2px solid var(--gs-400);
+  border-radius: 6px;
+  z-index: 1000;
+  pointer-events: none;
+  animation: shield-appear 0.90s ease-out forwards;
+}
+
+@keyframes shield-appear {
+  0%   { opacity: 0; transform: scale(0.85); }
+  22%  { opacity: 1; transform: scale(1.0); }
+  65%  { opacity: 1; transform: scale(1.25); }
+  100% { opacity: 0; transform: scale(1.25); }
 }

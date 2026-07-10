@@ -384,6 +384,9 @@
     <!-- Health Potion animation -->
     <div v-if="healthPotionAnim" class="health-potion-projectile" aria-hidden="true"></div>
 
+    <!-- Shield animation -->
+    <div v-if="shieldAnim" class="shield-anim" aria-hidden="true"></div>
+
   </main>
 </template>
 
@@ -475,6 +478,7 @@ let _keyPopRunning = false
 const caltropsFlyingAnim = ref(false)
 const vorpalSwordAnim = ref(false)
 const healthPotionAnim = ref(false)
+const shieldAnim = ref(false)
 const _pendingKeyPops = []
 
 // ── Boss / miniboss selection ─────────────────────────────────────────────────
@@ -571,7 +575,7 @@ const selectableClasses = computed(() => {
 })
 
 const availableShopItems = computed(() => {
-  const noShield = currentBoss.value?.id === 'hydra'
+  const noShield = ['hydra', 'gelatinous-cube'].includes(currentBoss.value?.id)
   if (props.mode === 'daily' && dailyConfig.value) {
     return SHOP_ITEMS.filter(s =>
       dailyConfig.value.shopItemIds.includes(s.id) && !(noShield && s.id === 'shield')
@@ -586,7 +590,7 @@ const currentShopItems = computed(() =>
 
 function openShop() {
   if (props.mode !== 'daily') {
-    const pool = currentBoss.value?.id === 'hydra'
+    const pool = ['hydra', 'gelatinous-cube'].includes(currentBoss.value?.id)
       ? SHOP_ITEMS.filter(s => s.id !== 'shield')
       : SHOP_ITEMS
     const shuffled = [...pool].sort(() => Math.random() - 0.5)
@@ -1621,7 +1625,8 @@ function useItem() {
       animatePlayerHeal(1)
     }, 700)
   } else if (item.effect === 'shield') {
-    // Shield the current guess row on all boards
+    shieldAnim.value = true
+    setTimeout(() => { shieldAnim.value = false }, 950)
     const rowToShield = boards.value[0]?.guesses.length ?? 0
     for (const board of boards.value) {
       board.shieldedRows = new Set([...board.shieldedRows, rowToShield])
