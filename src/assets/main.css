@@ -2014,7 +2014,7 @@ body {
 }
 
 @keyframes potion-fly {
-  0%   { opacity: 1; transform: translate(0, 0) rotate(15deg) scale(1); }
-  65%  { opacity: 1; transform: translate(20vw, -42vh) rotate(15deg) scale(1.2); }
-  100% { opacity: 0; transform: translate(23vw, -48vh) rotate(15deg) scale(0.5); }
+  0%   { opacity: 1; transform: translate(0, 0) rotate(-15deg) scale(1); }
+  65%  { opacity: 1; transform: translate(-20vw, -42vh) rotate(-15deg) scale(1.2); }
+  100% { opacity: 0; transform: translate(-23vw, -48vh) rotate(-15deg) scale(0.5); }
 }
