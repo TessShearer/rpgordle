@@ -375,7 +375,10 @@
     <div v-if="caltropsFlyingAnim" class="caltrops-projectile" aria-hidden="true"></div>
 
     <!-- Vorpal Sword strike animation -->
-    <div v-if="vorpalSwordAnim" class="vorpal-sword-projectile" aria-hidden="true">⚔</div>
+    <div v-if="vorpalSwordAnim" class="vorpal-sword-projectile" aria-hidden="true"></div>
+
+    <!-- Health Potion animation -->
+    <div v-if="healthPotionAnim" class="health-potion-projectile" aria-hidden="true"></div>
 
   </main>
 </template>
@@ -467,6 +470,8 @@ const _keyPopQueue = []
 let _keyPopRunning = false
 const caltropsFlyingAnim = ref(false)
 const vorpalSwordAnim = ref(false)
+const healthPotionAnim = ref(false)
+const _pendingKeyPops = []
 
 // ── Boss / miniboss selection ─────────────────────────────────────────────────
 const selectedMiniboss = ref(null)
@@ -913,7 +918,7 @@ async function animatePlayerHeal(amount) {
   for (let i = 0; i < amount; i++) {
     playerHealth.value = Math.min(playerMaxHealth.value, playerHealth.value + 1)
     playerDamageAnim.value = 'heal'
-    await new Promise(r => setTimeout(r, 400))
+    await new Promise(r => setTimeout(r, 800))
     playerDamageAnim.value = null
     if (i < amount - 1) await new Promise(r => setTimeout(r, 60))
   }
@@ -1362,6 +1367,7 @@ function beginEnemyEncounter() {
   } else {
     gameState.value = 'playing'
   }
+  flushPendingKeyPops()
 }
 
 function beginBossFight() {
@@ -1420,9 +1426,9 @@ async function processKeyPopQueue() {
   while (_keyPopQueue.length > 0) {
     const letter = _keyPopQueue.shift()
     poppingKey.value = letter
-    await new Promise(r => setTimeout(r, 480))
+    await new Promise(r => setTimeout(r, 620))
     poppingKey.value = null
-    await new Promise(r => setTimeout(r, 60))
+    await new Promise(r => setTimeout(r, 80))
   }
   _keyPopRunning = false
 }
@@ -1434,7 +1440,7 @@ function applyDangerLetters(isBoss) {
   const picked = new Set()
   while (picked.size < count) picked.add(alpha[Math.floor(Math.random() * 26)])
   dangerLetters.value = [...picked]
-  queueKeyboardPops([...picked])
+  _pendingKeyPops.push(...picked)
 }
 
 function applyFortuneTellerHints() {
@@ -1443,17 +1449,25 @@ function applyFortuneTellerHints() {
   const pool = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').filter(l => !allWordLetters.has(l))
   const shuffled = [...pool].sort(() => Math.random() - 0.5)
   fortuneTellerGreyLetters.value = shuffled.slice(0, 4)
-  queueKeyboardPops(shuffled.slice(0, 4))
+  _pendingKeyPops.push(...shuffled.slice(0, 4))
+}
+
+function flushPendingKeyPops() {
+  const letters = _pendingKeyPops.splice(0)
+  if (letters.length) nextTick(() => queueKeyboardPops(letters))
 }
 
 function finishWordLoad(showModal) {
   gameState.value = 'ready'
   if (showModal) {
     screen.value = 'enemy-intro'
+    // pops deferred to beginEnemyEncounter, after keyboard renders
   } else if (currentEnemy.value?.id === 'annoying-kid') {
     applyAnnoyingKidGuess()
+    flushPendingKeyPops()
   } else {
     gameState.value = 'playing'
+    flushPendingKeyPops()
   }
 }
 
@@ -1490,7 +1504,7 @@ async function loadWord(showModal) {
       const b = makeBoard(i, word)
       if (hasAbility('seer') && word) {
         b.hintLetter = word[Math.floor(Math.random() * word.length)]
-        if (i === 0) queueKeyboardPops([b.hintLetter])
+        if (i === 0) _pendingKeyPops.push(b.hintLetter)
       }
       if (hasAbility('scholar')) b.hintWordType = 'word'
       boards.value.push(b)
@@ -1511,7 +1525,7 @@ async function loadWord(showModal) {
       const b = makeBoard(i, word)
       if (hasAbility('seer')) {
         b.hintLetter = word[Math.floor(Math.random() * word.length)]
-        if (i === 0) queueKeyboardPops([b.hintLetter])
+        if (i === 0) _pendingKeyPops.push(b.hintLetter)
       }
       if (hasAbility('scholar')) {
         try {
@@ -1584,7 +1598,11 @@ function useItem() {
   const item = pendingUseItem.value
   if (!item) return
   if (item.effect === 'heal') {
-    animatePlayerHeal(1)
+    healthPotionAnim.value = true
+    setTimeout(() => {
+      healthPotionAnim.value = false
+      animatePlayerHeal(1)
+    }, 700)
   } else if (item.effect === 'shield') {
     // Shield the current guess row on all boards
     const rowToShield = boards.value[0]?.guesses.length ?? 0
