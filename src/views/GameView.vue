@@ -370,6 +370,13 @@
       </Transition>
 
     </div>
+
+    <!-- Caltrops throw animation -->
+    <div v-if="caltropsFlyingAnim" class="caltrops-projectile" aria-hidden="true"></div>
+
+    <!-- Vorpal Sword strike animation -->
+    <div v-if="vorpalSwordAnim" class="vorpal-sword-projectile" aria-hidden="true">⚔</div>
+
   </main>
 </template>
 
@@ -458,6 +465,8 @@ const animatingHealth = ref(false)
 const poppingKey = ref(null)
 const _keyPopQueue = []
 let _keyPopRunning = false
+const caltropsFlyingAnim = ref(false)
+const vorpalSwordAnim = ref(false)
 
 // ── Boss / miniboss selection ─────────────────────────────────────────────────
 const selectedMiniboss = ref(null)
@@ -926,6 +935,13 @@ async function handleAllBoardsSolved() {
   const hitDamage = vorpalSwordActive.value ? 2 : 1
   vorpalSwordActive.value = false
   lastRegen.value = 0
+
+  if (hitDamage > 1) {
+    vorpalSwordAnim.value = true
+    await new Promise(r => setTimeout(r, 750))
+    vorpalSwordAnim.value = false
+    await new Promise(r => setTimeout(r, 100))
+  }
 
   await animateEnemyDamage(hitDamage)
 
@@ -1590,8 +1606,13 @@ function useItem() {
     const already = new Set(fortuneTellerGreyLetters.value)
     const pool = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').filter(l => !allWordLetters.has(l) && !already.has(l))
     const shuffled = [...pool].sort(() => Math.random() - 0.5)
-    fortuneTellerGreyLetters.value = [...fortuneTellerGreyLetters.value, ...shuffled.slice(0, 4)]
-    queueKeyboardPops(shuffled.slice(0, 4))
+    const newLetters = shuffled.slice(0, 4)
+    caltropsFlyingAnim.value = true
+    setTimeout(() => {
+      caltropsFlyingAnim.value = false
+      fortuneTellerGreyLetters.value = [...fortuneTellerGreyLetters.value, ...newLetters]
+      queueKeyboardPops(newLetters)
+    }, 850)
   } else if (item.effect === 'sneak-attack') {
     // Auto-solve the first unsolved board by inserting its answer directly
     const board = boards.value.find(b => !b.solved)
