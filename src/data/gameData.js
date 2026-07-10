@@ -2,7 +2,7 @@ export const CLASSES = [
   { id: 'peasant', name: 'Peasant', health: 13, description: 'A peasant with no abilities.' },
   { id: 'seer', name: 'Seer', health: 8, description: 'Reveals a letter from each word.' },
   { id: 'knight', name: 'Knight', health: 18, description: 'Knights have extra health' },
-  { id: 'scholar', name: 'Scholar', health: 8, description: 'Can tell you information about the word.' },
+  { id: 'scholar', name: 'Scholar', health: 12, description: 'Can tell you information about the word.' },
   { id: 'treasurer', name: 'Treasurer', health: 10, description: 'Start the game with 2 inventory items' },
   { id: 'assassin', name: 'Assassin', health: 10, description: 'Can sneak attack with enough yellow letters.' },
   { id: 'cleric', name: 'Cleric', health: 4, description: 'Heal to full after every fight.' },
@@ -125,7 +125,7 @@ export const BOSSES = [
     ],
     effect: 'Can survive being split into pieces.',
     announcement: 'Your quest is to defeat the Gelatinous Cube. It is hiding deep in the kingdom and can survive being split to pieces',
-    enhancedAnnouncement: 'You found the boss! Chop him to bits!',
+    enhancedAnnouncement: 'You found the boss! Chop it to bits!',
   },
     {
     id: 'toxic-slime',

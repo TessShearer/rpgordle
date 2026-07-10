@@ -8,7 +8,7 @@
           Seer reveals this word has a{{ /^[aeiou]/i.test(board.hintLetter) ? 'n' : '' }} {{ board.hintLetter }}
         </p>
         <p v-if="hasScholar && board.hintWordType" class="game-meta seer-hint">
-          Scholar lectures on {{ board.hintWordType }}s
+          Scholar lectures on <span :key="board.hintWordType" class="scholar-word-type">{{ board.hintWordType }}s</span>
         </p>
       </div>
     </template>

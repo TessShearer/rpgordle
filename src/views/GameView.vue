@@ -271,6 +271,10 @@
             <div v-if="currentBoss?.id === 'necromancer'" class="graveyard-slot graveyard-slot--strip mt-2">
               <GraveyardDisplay :words="allGuessedWords" />
             </div>
+            <div v-else-if="currentBoss" class="boss-image-strip mt-2">
+              <img v-if="CHARACTER_IMAGES[currentBoss.id]" :src="CHARACTER_IMAGES[currentBoss.id]" :alt="currentBoss.name" class="boss-strip-img" />
+              <div v-else class="art-placeholder art-placeholder--boss-strip">Art of {{ currentBoss.name }}</div>
+            </div>
 
             <!-- Testing box -->
             <div class="testing-box mt-3">
