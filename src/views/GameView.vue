@@ -1415,16 +1415,22 @@ async function startStage(stageNum) {
   }
 }
 
-function queueKeyboardPops(letters) {
+function queueKeyboardPops(letters, beforeEach) {
   if (!letters?.length) return
-  _keyPopQueue.push(...letters)
+  for (const letter of letters) {
+    _keyPopQueue.push({ letter, before: beforeEach ? () => beforeEach(letter) : null })
+  }
   if (!_keyPopRunning) processKeyPopQueue()
 }
 
 async function processKeyPopQueue() {
   _keyPopRunning = true
   while (_keyPopQueue.length > 0) {
-    const letter = _keyPopQueue.shift()
+    const { letter, before } = _keyPopQueue.shift()
+    if (before) {
+      before()
+      await nextTick()
+    }
     poppingKey.value = letter
     await new Promise(r => setTimeout(r, 620))
     poppingKey.value = null
@@ -1439,8 +1445,9 @@ function applyDangerLetters(isBoss) {
   const count = isBoss ? 3 : 1
   const picked = new Set()
   while (picked.size < count) picked.add(alpha[Math.floor(Math.random() * 26)])
-  dangerLetters.value = [...picked]
-  _pendingKeyPops.push(...picked)
+  for (const letter of [...picked]) {
+    _pendingKeyPops.push({ letter, before: () => { dangerLetters.value = [...dangerLetters.value, letter] } })
+  }
 }
 
 function applyFortuneTellerHints() {
@@ -1448,13 +1455,19 @@ function applyFortuneTellerHints() {
   const allWordLetters = new Set(boards.value.flatMap(b => b.secretWord.split('')))
   const pool = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').filter(l => !allWordLetters.has(l))
   const shuffled = [...pool].sort(() => Math.random() - 0.5)
-  fortuneTellerGreyLetters.value = shuffled.slice(0, 4)
-  _pendingKeyPops.push(...shuffled.slice(0, 4))
+  const letters = shuffled.slice(0, 4)
+  for (const letter of letters) {
+    _pendingKeyPops.push({ letter, before: () => { fortuneTellerGreyLetters.value = [...fortuneTellerGreyLetters.value, letter] } })
+  }
 }
 
 function flushPendingKeyPops() {
-  const letters = _pendingKeyPops.splice(0)
-  if (letters.length) nextTick(() => queueKeyboardPops(letters))
+  const items = _pendingKeyPops.splice(0)
+  if (!items.length) return
+  nextTick(() => {
+    _keyPopQueue.push(...items)
+    if (!_keyPopRunning) processKeyPopQueue()
+  })
 }
 
 function finishWordLoad(showModal) {
@@ -1504,7 +1517,7 @@ async function loadWord(showModal) {
       const b = makeBoard(i, word)
       if (hasAbility('seer') && word) {
         b.hintLetter = word[Math.floor(Math.random() * word.length)]
-        if (i === 0) _pendingKeyPops.push(b.hintLetter)
+        if (i === 0) _pendingKeyPops.push({ letter: b.hintLetter, before: null })
       }
       if (hasAbility('scholar')) b.hintWordType = 'word'
       boards.value.push(b)
@@ -1525,7 +1538,7 @@ async function loadWord(showModal) {
       const b = makeBoard(i, word)
       if (hasAbility('seer')) {
         b.hintLetter = word[Math.floor(Math.random() * word.length)]
-        if (i === 0) _pendingKeyPops.push(b.hintLetter)
+        if (i === 0) _pendingKeyPops.push({ letter: b.hintLetter, before: null })
       }
       if (hasAbility('scholar')) {
         try {
@@ -1628,8 +1641,9 @@ function useItem() {
     caltropsFlyingAnim.value = true
     setTimeout(() => {
       caltropsFlyingAnim.value = false
-      fortuneTellerGreyLetters.value = [...fortuneTellerGreyLetters.value, ...newLetters]
-      queueKeyboardPops(newLetters)
+      queueKeyboardPops(newLetters, (l) => {
+        fortuneTellerGreyLetters.value = [...fortuneTellerGreyLetters.value, l]
+      })
     }, 850)
   } else if (item.effect === 'sneak-attack') {
     // Auto-solve the first unsolved board by inserting its answer directly
@@ -1662,8 +1676,10 @@ function revealCrystalHint() {
   const unknown = wordLetters.filter(l => !known.has(l))
   const pool = unknown.length ? unknown : wordLetters
   const shuffled = [...pool].sort(() => Math.random() - 0.5)
-  board.crystalHints = [...board.crystalHints, ...shuffled.slice(0, 2)]
-  queueKeyboardPops(shuffled.slice(0, 2))
+  const toReveal = shuffled.slice(0, 2)
+  queueKeyboardPops(toReveal, (l) => {
+    board.crystalHints = [...board.crystalHints, l]
+  })
 }
 
 async function applyAnnoyingKidGuess() {
