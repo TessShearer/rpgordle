@@ -690,6 +690,80 @@ body {
 .key:hover  { filter: brightness(0.88); }
 .key:active { filter: brightness(0.75); }
 
+.key--pop {
+  position: relative;
+  z-index: 10;
+  animation: key-pop 0.42s ease-out;
+}
+
+@keyframes key-pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(2.1); }
+  100% { transform: scale(1); }
+}
+
+/* ── Health damage / heal animations ─────────────────────────────────────── */
+.portrait-img-col,
+.class-feature-img-col,
+.enemy-section {
+  position: relative;
+}
+
+.health-hit {
+  animation: health-hit-shake 0.44s ease-out;
+}
+
+.health-hit::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 0.4rem;
+  pointer-events: none;
+  z-index: 5;
+  animation: health-hit-overlay 0.44s ease-out forwards;
+}
+
+@keyframes health-hit-shake {
+  0%   { transform: scale(1); }
+  15%  { transform: scale(1.08) translateX(-5px); }
+  35%  { transform: scale(1.07) translateX(5px); }
+  55%  { transform: scale(1.06) translateX(-3px); }
+  75%  { transform: scale(1.04) translateX(2px); }
+  100% { transform: scale(1); }
+}
+
+@keyframes health-hit-overlay {
+  0%   { background: rgba(220, 38, 38, 0); }
+  20%  { background: rgba(220, 38, 38, 0.45); }
+  100% { background: rgba(220, 38, 38, 0); }
+}
+
+.health-heal {
+  animation: health-heal-scale 0.40s ease-out;
+}
+
+.health-heal::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 0.4rem;
+  pointer-events: none;
+  z-index: 5;
+  animation: health-heal-overlay 0.40s ease-out forwards;
+}
+
+@keyframes health-heal-scale {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+
+@keyframes health-heal-overlay {
+  0%   { background: rgba(34, 197, 94, 0); }
+  30%  { background: rgba(34, 197, 94, 0.4); }
+  100% { background: rgba(34, 197, 94, 0); }
+}
+
 /* Journey progress dots */
 .journey-dots {
   display: flex;

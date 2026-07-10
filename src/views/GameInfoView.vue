@@ -1,23 +1,46 @@
 ﻿<template>
   <main class="container py-4">
 
+    <!-- <section class="info-section mb-5">
+      <h2 class="info-heading mb-3">List of drawings I need</h2>
+      <ul>
+        <li>Peasant</li>
+        <li>Seer</li>
+        <li>Knight</li>
+        <li>Scholar</li>
+        <li>Treasurer</li>
+        <li>Assassin</li>
+        <li>Cleric</li>
+        <li>Village Idiot</li>
+        <li>Thief</li>
+        <li>Fortune Teller</li>
+        <li>Changeling</li>
+
+        <li>Peasant</li>
+        <li>Peasant</li>
+        <li>Peasant</li>
+        <li>Peasant</li>
+        <li>Peasant</li>
+        <li>Peasant</li>
+        <li>Peasant</li>
+
+
+      </ul>
+    </section> -->
+
     <!-- ── Game ─────────────────────────────────────────────────────────── -->
     <section class="info-section mb-5">
       <h2 class="info-heading mb-3">Game</h2>
       <p class="info-body mb-4">
-        The game is 1 enemy, a miniboss, then a shop. After the shop you get an item in your inventory that you can use at any time. Then you fight another regular enemy then a boss.
+        The game is 1 enemy, a miniboss, then a shop. After the shop you get an item in your inventory that you can use
+        at any time. Then you fight another regular enemy then a boss.
 
         The boss effects the entire game from the very beginning with its ability, but gets stronger on the boss level.
 
         All enemies have 1 health except for the boss.
       </p>
-      <NoteSection
-        title="Game Notes"
-        :notes="notes.game"
-        :loading="submitting.game"
-        v-model="draft.game"
-        @add="addNote('game')" @delete="deleteNote"
-      />
+      <NoteSection title="Game Notes" :notes="notes.game" :loading="submitting.game" v-model="draft.game"
+        @add="addNote('game')" @delete="deleteNote" />
     </section>
 
     <!-- ── Characters ────────────────────────────────────────────────────── -->
@@ -31,14 +54,8 @@
           <p class="info-stat">HP: {{ cls.health }}</p>
         </div>
       </div>
-      <NoteSection
-        title="Suggest a Character"
-        placeholder="Describe a character idea..."
-        :notes="notes.character"
-        :loading="submitting.character"
-        v-model="draft.character"
-        @add="addNote('character')" @delete="deleteNote"
-      />
+      <NoteSection title="Suggest a Character" placeholder="Describe a character idea..." :notes="notes.character"
+        :loading="submitting.character" v-model="draft.character" @add="addNote('character')" @delete="deleteNote" />
     </section>
 
     <!-- ── Enemies ────────────────────────────────────────────────────────── -->
@@ -52,14 +69,8 @@
           <p class="info-stat">HP: {{ enemy.health }} &middot; Regen: {{ enemy.regen }}</p>
         </div>
       </div>
-      <NoteSection
-        title="Suggest an Enemy"
-        placeholder="Describe an enemy idea..."
-        :notes="notes.enemy"
-        :loading="submitting.enemy"
-        v-model="draft.enemy"
-        @add="addNote('enemy')" @delete="deleteNote"
-      />
+      <NoteSection title="Suggest an Enemy" placeholder="Describe an enemy idea..." :notes="notes.enemy"
+        :loading="submitting.enemy" v-model="draft.enemy" @add="addNote('enemy')" @delete="deleteNote" />
     </section>
 
     <!-- ── Minibosses ───────────────────────────────────────────────────────── -->
@@ -73,14 +84,8 @@
           <p class="info-stat">HP: {{ mb.health }} &middot; Regen: {{ mb.regen }}</p>
         </div>
       </div>
-      <NoteSection
-        title="Suggest a Miniboss"
-        placeholder="Describe a miniboss idea..."
-        :notes="notes.miniboss"
-        :loading="submitting.miniboss"
-        v-model="draft.miniboss"
-        @add="addNote('miniboss')" @delete="deleteNote"
-      />
+      <NoteSection title="Suggest a Miniboss" placeholder="Describe a miniboss idea..." :notes="notes.miniboss"
+        :loading="submitting.miniboss" v-model="draft.miniboss" @add="addNote('miniboss')" @delete="deleteNote" />
     </section>
 
     <!-- ── Bosses ────────────────────────────────────────────────────────────── -->
@@ -94,14 +99,8 @@
           <p class="info-stat">HP: {{ boss.health }}</p>
         </div>
       </div>
-      <NoteSection
-        title="Suggest a Boss"
-        placeholder="Describe a boss idea..."
-        :notes="notes.boss"
-        :loading="submitting.boss"
-        v-model="draft.boss"
-        @add="addNote('boss')" @delete="deleteNote"
-      />
+      <NoteSection title="Suggest a Boss" placeholder="Describe a boss idea..." :notes="notes.boss"
+        :loading="submitting.boss" v-model="draft.boss" @add="addNote('boss')" @delete="deleteNote" />
     </section>
 
     <!-- ── Shop Items ─────────────────────────────────────────────────────── -->
@@ -114,14 +113,8 @@
           <p class="info-desc">{{ item.description }}</p>
         </div>
       </div>
-      <NoteSection
-        title="Suggest a Shop Item"
-        placeholder="Describe a shop item idea..."
-        :notes="notes.shop"
-        :loading="submitting.shop"
-        v-model="draft.shop"
-        @add="addNote('shop')" @delete="deleteNote"
-      />
+      <NoteSection title="Suggest a Shop Item" placeholder="Describe a shop item idea..." :notes="notes.shop"
+        :loading="submitting.shop" v-model="draft.shop" @add="addNote('shop')" @delete="deleteNote" />
     </section>
 
   </main>
@@ -137,10 +130,10 @@ import {
 } from 'firebase/firestore'
 import NoteSection from '@/components/NoteSection.vue'
 
-const draft      = ref({ game: '', character: '', enemy: '', miniboss: '', boss: '', shop: '' })
+const draft = ref({ game: '', character: '', enemy: '', miniboss: '', boss: '', shop: '' })
 const submitting = ref({ game: false, character: false, enemy: false, miniboss: false, boss: false, shop: false })
-const notes      = ref({ game: [], character: [], enemy: [], miniboss: [], boss: [], shop: [] })
-const unsubs     = []
+const notes = ref({ game: [], character: [], enemy: [], miniboss: [], boss: [], shop: [] })
+const unsubs = []
 
 function subscribeNotes() {
   for (const cat of ['game', 'character', 'enemy', 'miniboss', 'boss', 'shop']) {

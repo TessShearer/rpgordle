@@ -107,7 +107,7 @@
           <!-- Mobile-only portraits strip (hidden on desktop) -->
           <div class="mobile-portraits">
             <div class="portrait-slot">
-              <div class="portrait-img-col">
+              <div class="portrait-img-col" :class="{ 'health-hit': playerDamageAnim === 'damage', 'health-heal': playerDamageAnim === 'heal' }">
                 <img v-if="featureArtImage" :src="featureArtImage" :alt="featureArtText" class="portrait-img" />
                 <div v-else class="art-placeholder art-placeholder--portrait">{{ featureArtText }}</div>
                 <p class="portrait-stat">HP: {{ playerHealth }}/{{ playerMaxHealth }}</p>
@@ -118,6 +118,9 @@
                 <template v-if="playerClass === 'changeling' && changelingAbilities.length">
                   <p v-for="label in changelingAbilityLabels" :key="label" class="changeling-ability-line">a {{ label }}!</p>
                 </template>
+                <p v-if="CLASSES.find(c => c.id === playerClass)?.description" class="portrait-enemy-effect">
+                  {{ CLASSES.find(c => c.id === playerClass)?.description }}
+                </p>
               </div>
               <div class="portrait-info-col">
                 <div v-if="inventoryItems.length" class="inventory">
@@ -140,7 +143,7 @@
               </div>
             </div>
             <div v-if="currentEnemy" class="portrait-slot portrait-slot--enemy">
-              <div class="portrait-img-col">
+              <div class="portrait-img-col" :class="{ 'health-hit': enemyHitAnim }">
                 <div class="art-placeholder art-placeholder--portrait" :class="{ 'h-shake': bossShaking }">Art of {{ currentEnemy.name }}</div>
                 <div v-if="currentEnemy.id === 'slumbering-giant'" class="snore-bars" :class="{ 'snore-bars--awake': giantAwake }">
                   <div v-for="i in 4" :key="i" class="snore-bar" :class="{ 'snore-bar--filled': i <= giantSnoreBars }"></div>
@@ -158,7 +161,7 @@
           <!-- Left panel: class character art (desktop only) -->
           <aside class="game-panel game-panel--left">
             <div class="class-feature">
-              <div class="class-feature-img-col">
+              <div class="class-feature-img-col" :class="{ 'health-hit': playerDamageAnim === 'damage', 'health-heal': playerDamageAnim === 'heal' }">
                 <img v-if="featureArtImage" :src="featureArtImage" :alt="featureArtText" class="feature-img" />
                 <div v-else class="art-placeholder art-placeholder--feature">{{ featureArtText }}</div>
                 <p class="feature-label">HP: {{ playerHealth }} / {{ playerMaxHealth }}</p>
@@ -169,6 +172,9 @@
                 <template v-if="playerClass === 'changeling' && changelingAbilities.length">
                   <p v-for="label in changelingAbilityLabels" :key="label" class="changeling-ability-line">Changeling becomes... a {{ label }}!</p>
                 </template>
+                <p v-if="CLASSES.find(c => c.id === playerClass)?.description" class="portrait-enemy-effect">
+                  {{ CLASSES.find(c => c.id === playerClass)?.description }}
+                </p>
               </div>
               <div class="class-feature-info-col">
                 <div v-if="inventoryItems.length" class="inventory">
@@ -247,8 +253,9 @@
             </div>
             <div v-if="gameState === 'playing'" class="keyboard">
               <div v-for="(row, r) in KEY_ROWS" :key="r" class="key-row">
-                <button v-for="key in row" :key="key" class="key" :class="keyClass(key)" @click="handleKey(key)">{{ key
-                  }}</button>
+                <button v-for="key in row" :key="key" class="key"
+                  :class="[keyClass(key), { 'key--pop': poppingKey === key }]"
+                  @click="handleKey(key)">{{ key }}</button>
               </div>
             </div>
 
@@ -275,7 +282,7 @@
 
           <!-- Right panel: current enemy -->
           <aside class="game-panel game-panel--right">
-            <div v-if="currentEnemy" class="enemy-section">
+            <div v-if="currentEnemy" class="enemy-section" :class="{ 'health-hit': enemyHitAnim }">
               <div class="art-placeholder art-placeholder--monster" :class="{ 'h-shake': bossShaking }"
                 @animationend="bossShaking = false">Art of {{ currentEnemy.name }}</div>
               <div v-if="currentEnemy.id === 'slumbering-giant'" class="snore-bars" :class="{ 'snore-bars--awake': giantAwake }">
@@ -334,11 +341,6 @@
                 <button class="btn btn-reset px-4 py-2" @click="cancelUseItem">No</button>
               </div>
             </template>
-            <template v-else-if="modal === 'giant-wakeup'">
-              <div class="art-placeholder art-placeholder--modal-monster my-3">Art of Angry Giant</div>
-              <p class="modal-message">The giant woke up!!</p>
-              <button class="btn btn-press px-5 py-2 mt-3" @click="dismissGiantWakeup">7 Damage!?</button>
-            </template>
             <template v-else-if="modal === 'know-it-all'">
               <Transition name="kit-fade" mode="out-in">
                 <p v-if="knowItAllModalPhase === 'taunt'" key="taunt" class="modal-message kit-message">
@@ -359,7 +361,7 @@
               <p class="modal-message">{{ MODAL_CONTENT[modal].message }}</p>
               <p v-if="modal === 'lost'" class="modal-word">{{ boards.map(b => b.secretWord.toLowerCase()).join(', ') }}</p>
             </template>
-            <button v-if="modal !== 'shop' && modal !== 'use-item' && modal !== 'know-it-all' && modal !== 'giant-wakeup'" class="btn btn-press px-5 py-2 mt-3"
+            <button v-if="modal !== 'shop' && modal !== 'use-item' && modal !== 'know-it-all'" class="btn btn-press px-5 py-2 mt-3"
               @click="handleModalAction">
               {{ MODAL_CONTENT[modal].button }}
             </button>
@@ -450,6 +452,12 @@ const fortuneTellerGreyLetters = ref([])
 const giantSnoreBars = ref(0)
 const giantAwake = ref(false)
 const smokeBombActive = ref(false)
+const playerDamageAnim = ref(null)  // 'damage' | 'heal' | null
+const enemyHitAnim = ref(false)
+const animatingHealth = ref(false)
+const poppingKey = ref(null)
+const _keyPopQueue = []
+let _keyPopRunning = false
 
 // ── Boss / miniboss selection ─────────────────────────────────────────────────
 const selectedMiniboss = ref(null)
@@ -666,7 +674,7 @@ function keyClass(key) {
 
 // ── Input ─────────────────────────────────────────────────────────────────────
 function handleKey(key) {
-  if (gameState.value !== 'playing' || modal.value || validating.value || annoyingKidTyping.value) return
+  if (gameState.value !== 'playing' || modal.value || validating.value || annoyingKidTyping.value || animatingHealth.value) return
   inputError.value = ''
   if (key === '⌫') {
     currentGuess.value = currentGuess.value.slice(0, -1)
@@ -879,23 +887,59 @@ async function doFairyScramble(board) {
   })
 }
 
+async function animatePlayerDamage(amount) {
+  animatingHealth.value = true
+  for (let i = 0; i < amount; i++) {
+    playerHealth.value = Math.max(0, playerHealth.value - 1)
+    playerDamageAnim.value = 'damage'
+    await new Promise(r => setTimeout(r, 440))
+    playerDamageAnim.value = null
+    if (i < amount - 1) await new Promise(r => setTimeout(r, 70))
+  }
+  animatingHealth.value = false
+}
+
+async function animatePlayerHeal(amount) {
+  animatingHealth.value = true
+  for (let i = 0; i < amount; i++) {
+    playerHealth.value = Math.min(playerMaxHealth.value, playerHealth.value + 1)
+    playerDamageAnim.value = 'heal'
+    await new Promise(r => setTimeout(r, 400))
+    playerDamageAnim.value = null
+    if (i < amount - 1) await new Promise(r => setTimeout(r, 60))
+  }
+  animatingHealth.value = false
+}
+
+async function animateEnemyDamage(amount) {
+  for (let i = 0; i < amount; i++) {
+    enemyHealth.value = Math.max(0, enemyHealth.value - 1)
+    enemyHitAnim.value = true
+    await new Promise(r => setTimeout(r, 440))
+    enemyHitAnim.value = false
+    if (i < amount - 1) await new Promise(r => setTimeout(r, 70))
+  }
+}
+
 // Called whenever all boards are solved — applies damage and advances
-function handleAllBoardsSolved() {
+async function handleAllBoardsSolved() {
   const hitDamage = vorpalSwordActive.value ? 2 : 1
   vorpalSwordActive.value = false
   lastRegen.value = 0
-  enemyHealth.value -= hitDamage
-  if (enemyHealth.value > 0) bossShaking.value = true
+
+  await animateEnemyDamage(hitDamage)
 
   if (enemyHealth.value <= 0) {
     recordCurrentRound()
     if (hasAbility('cleric')) {
-      lastRegen.value = playerMaxHealth.value - playerHealth.value
-      playerHealth.value = playerMaxHealth.value
+      const healAmt = playerMaxHealth.value - playerHealth.value
+      lastRegen.value = healAmt
+      if (healAmt > 0) await animatePlayerHeal(healAmt)
     } else {
       const regen = currentEnemy.value.regen
-      lastRegen.value = Math.min(regen, playerMaxHealth.value - playerHealth.value)
-      playerHealth.value = Math.min(playerMaxHealth.value, playerHealth.value + regen)
+      const healAmt = Math.min(regen, playerMaxHealth.value - playerHealth.value)
+      lastRegen.value = healAmt
+      if (healAmt > 0) await animatePlayerHeal(healAmt)
     }
     gameState.value = 'won'
     const isLast = stage.value === JOURNEY_LENGTH - 1
@@ -1055,12 +1099,16 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
         giantSnoreBars.value++
         if (giantSnoreBars.value >= 4) {
           giantAwake.value = true
-          playerHealth.value -= 7
-          modal.value = 'giant-wakeup'
+          await animatePlayerDamage(7)
+          if (playerHealth.value <= 0) {
+            recordCurrentRound()
+            gameState.value = 'lost'
+            gameResult.value = 'lost'
+            setTimeout(() => { screen.value = 'stats' }, 1200)
+          }
         }
       } else {
-        // Giant is awake: 2 damage per wrong guess
-        playerHealth.value -= 2
+        await animatePlayerDamage(2)
         if (playerHealth.value <= 0) {
           recordCurrentRound()
           gameState.value = 'lost'
@@ -1089,7 +1137,7 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
           }
         }
 
-        playerHealth.value -= (doubleDamage ? 2 : 1) + necroPenalty
+        await animatePlayerDamage((doubleDamage ? 2 : 1) + necroPenalty)
         if (playerHealth.value <= 0) {
           recordCurrentRound()
           gameState.value = 'lost'
@@ -1345,6 +1393,24 @@ async function startStage(stageNum) {
   }
 }
 
+function queueKeyboardPops(letters) {
+  if (!letters?.length) return
+  _keyPopQueue.push(...letters)
+  if (!_keyPopRunning) processKeyPopQueue()
+}
+
+async function processKeyPopQueue() {
+  _keyPopRunning = true
+  while (_keyPopQueue.length > 0) {
+    const letter = _keyPopQueue.shift()
+    poppingKey.value = letter
+    await new Promise(r => setTimeout(r, 480))
+    poppingKey.value = null
+    await new Promise(r => setTimeout(r, 60))
+  }
+  _keyPopRunning = false
+}
+
 function applyDangerLetters(isBoss) {
   if (currentBoss.value?.id !== 'toxic-slime') return
   const alpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -1352,6 +1418,7 @@ function applyDangerLetters(isBoss) {
   const picked = new Set()
   while (picked.size < count) picked.add(alpha[Math.floor(Math.random() * 26)])
   dangerLetters.value = [...picked]
+  queueKeyboardPops([...picked])
 }
 
 function applyFortuneTellerHints() {
@@ -1360,6 +1427,7 @@ function applyFortuneTellerHints() {
   const pool = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').filter(l => !allWordLetters.has(l))
   const shuffled = [...pool].sort(() => Math.random() - 0.5)
   fortuneTellerGreyLetters.value = shuffled.slice(0, 4)
+  queueKeyboardPops(shuffled.slice(0, 4))
 }
 
 function finishWordLoad(showModal) {
@@ -1404,7 +1472,10 @@ async function loadWord(showModal) {
       const fallbackKey = isBoss ? `boss-${bossWordIndex.value}` : `stage-${stage.value}`
       const word = (dailyConfig.value.words[wordKey] ?? dailyConfig.value.words[fallbackKey] ?? '').toUpperCase()
       const b = makeBoard(i, word)
-      if (hasAbility('seer') && word) b.hintLetter = word[Math.floor(Math.random() * word.length)]
+      if (hasAbility('seer') && word) {
+        b.hintLetter = word[Math.floor(Math.random() * word.length)]
+        if (i === 0) queueKeyboardPops([b.hintLetter])
+      }
       if (hasAbility('scholar')) b.hintWordType = 'word'
       boards.value.push(b)
     }
@@ -1424,6 +1495,7 @@ async function loadWord(showModal) {
       const b = makeBoard(i, word)
       if (hasAbility('seer')) {
         b.hintLetter = word[Math.floor(Math.random() * word.length)]
+        if (i === 0) queueKeyboardPops([b.hintLetter])
       }
       if (hasAbility('scholar')) {
         try {
@@ -1492,21 +1564,11 @@ function triggerSneakAttack() {
   if (boards.value.every(b => b.solved)) handleAllBoardsSolved()
 }
 
-function dismissGiantWakeup() {
-  modal.value = null
-  if (playerHealth.value <= 0) {
-    recordCurrentRound()
-    gameState.value = 'lost'
-    gameResult.value = 'lost'
-    setTimeout(() => { screen.value = 'stats' }, 1200)
-  }
-}
-
 function useItem() {
   const item = pendingUseItem.value
   if (!item) return
   if (item.effect === 'heal') {
-    playerHealth.value = Math.min(playerMaxHealth.value, playerHealth.value + 1)
+    animatePlayerHeal(1)
   } else if (item.effect === 'shield') {
     // Shield the current guess row on all boards
     const rowToShield = boards.value[0]?.guesses.length ?? 0
@@ -1529,6 +1591,7 @@ function useItem() {
     const pool = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').filter(l => !allWordLetters.has(l) && !already.has(l))
     const shuffled = [...pool].sort(() => Math.random() - 0.5)
     fortuneTellerGreyLetters.value = [...fortuneTellerGreyLetters.value, ...shuffled.slice(0, 4)]
+    queueKeyboardPops(shuffled.slice(0, 4))
   } else if (item.effect === 'sneak-attack') {
     // Auto-solve the first unsolved board by inserting its answer directly
     const board = boards.value.find(b => !b.solved)
@@ -1561,6 +1624,7 @@ function revealCrystalHint() {
   const pool = unknown.length ? unknown : wordLetters
   const shuffled = [...pool].sort(() => Math.random() - 0.5)
   board.crystalHints = [...board.crystalHints, ...shuffled.slice(0, 2)]
+  queueKeyboardPops(shuffled.slice(0, 2))
 }
 
 async function applyAnnoyingKidGuess() {
