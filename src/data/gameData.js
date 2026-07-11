@@ -170,7 +170,7 @@ export const BOSSES = [
       { boardCount: 4, wordLength: 5 },
       { boardCount: 6, wordLength: 5 },
     ],
-    effect: 'The Hydra grews more heads as you cut them off',
+    effect: 'The Hydra grows more heads as you cut them off',
     announcement: 'Your quest is to defeath the Hydra by cutting off its head(s?)',
     enhancedAnnouncement: 'The Hydra grew more heads and returned! Give it another go.',
   },

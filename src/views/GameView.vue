@@ -654,11 +654,13 @@ const keyboardStatuses = computed(() => {
     })
   }
 
-  // Seer hint from first board
+  // Seer hint from all boards
   if (hasAbility('seer')) {
-    const seerLetter = boards.value[0]?.hintLetter
-    if (seerLetter && base[seerLetter] !== 'correct') {
-      if (!base[seerLetter] || base[seerLetter] === 'absent') base[seerLetter] = 'present'
+    for (const board of boards.value) {
+      const seerLetter = board.hintLetter
+      if (seerLetter && base[seerLetter] !== 'correct') {
+        if (!base[seerLetter] || base[seerLetter] === 'absent') base[seerLetter] = 'present'
+      }
     }
   }
 
@@ -1182,16 +1184,17 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
 
       // These run on any wrong guess regardless of smoke bomb
       if (hasAbility('assassin') && sneakAttackAvailable.value) {
-        const guessEval = evaluateGuess(submitted, firstActive.secretWord)
-        const yellowCount = guessEval.filter(c => c.status === 'present').length
-        if (yellowCount >= 3) {
+        const maxYellow = Math.max(...activeBoards.map((board, bi) =>
+          evaluateGuess(boardSubmissions[bi], board.secretWord).filter(c => c.status === 'present').length
+        ))
+        if (maxYellow >= 3) {
           sneakAttackAvailable.value = false
           inventory.value = [...inventory.value, 'sneak-attack']
         }
       }
       if (currentEnemy.value?.id === 'know-it-all') {
-        const active = boards.value[0]
-        if (active && !active.solved && active.guesses.length === 3) {
+        const active = boards.value.find(b => !b.solved)
+        if (active && active.guesses.length === 3) {
           showKnowItAllModal(active.secretWord)
         }
       }
@@ -1539,7 +1542,7 @@ async function loadWord(showModal) {
       const b = makeBoard(i, word)
       if (hasAbility('seer') && word) {
         b.hintLetter = word[Math.floor(Math.random() * word.length)]
-        if (i === 0) _pendingKeyPops.push({ letter: b.hintLetter, before: null })
+        _pendingKeyPops.push({ letter: b.hintLetter, before: null })
       }
       if (hasAbility('scholar')) b.hintWordType = (typeof wordEntry === 'object' ? wordEntry.partOfSpeech : null) || ''
       boards.value.push(b)
@@ -1560,7 +1563,7 @@ async function loadWord(showModal) {
       const b = makeBoard(i, word)
       if (hasAbility('seer')) {
         b.hintLetter = word[Math.floor(Math.random() * word.length)]
-        if (i === 0) _pendingKeyPops.push({ letter: b.hintLetter, before: null })
+        _pendingKeyPops.push({ letter: b.hintLetter, before: null })
       }
       if (hasAbility('scholar')) {
         try {
@@ -1654,9 +1657,21 @@ function useItem() {
   } else if (item.effect === 'crossbow') {
     crossbowAnim.value = true
     setTimeout(() => { crossbowAnim.value = false }, 700)
-    const board = boards.value.find(b => !b.solved) ?? boards.value[0]
-    const first = board?.secretWord[0]
-    if (first) currentGuess.value = first + currentGuess.value.slice(1)
+    const unsolvedBoards = boards.value.filter(b => !b.solved)
+    if (unsolvedBoards.length > 0) {
+      const firstLetter = unsolvedBoards[0].secretWord[0]
+      if (firstLetter) currentGuess.value = firstLetter + currentGuess.value.slice(1)
+      // For every other unsolved board, add its first letter as a crystal hint
+      for (let i = 1; i < unsolvedBoards.length; i++) {
+        const board = unsolvedBoards[i]
+        const letter = board.secretWord[0]
+        if (letter && !board.crystalHints.includes(letter)) {
+          queueKeyboardPops([letter], (l) => {
+            board.crystalHints = [...board.crystalHints, l]
+          })
+        }
+      }
+    }
   } else if (item.effect === 'vorpal-sword') {
     vorpalSwordActive.value = true
   } else if (item.effect === 'smoke-bomb') {
@@ -1695,19 +1710,27 @@ function useItem() {
 }
 
 function revealCrystalHint() {
-  const board = boards.value.find(b => !b.solved) ?? boards.value[0]
-  if (!board) return
+  const unsolvedBoards = boards.value.filter(b => !b.solved)
+  if (!unsolvedBoards.length) return
   const unionStatuses = getUnionLetterStatuses()
-  const known = new Set(Object.keys(unionStatuses))
-  if (board.hintLetter) known.add(board.hintLetter)
-  board.crystalHints.forEach(l => known.add(l))
-  const wordLetters = [...new Set(board.secretWord.split(''))]
-  const unknown = wordLetters.filter(l => !known.has(l))
-  const pool = unknown.length ? unknown : wordLetters
-  const shuffled = [...pool].sort(() => Math.random() - 0.5)
-  const toReveal = shuffled.slice(0, 2)
-  queueKeyboardPops(toReveal, (l) => {
-    board.crystalHints = [...board.crystalHints, l]
+  // Reveal 1 letter per unsolved board, avoiding duplicates across boards
+  const pickedLetters = new Set()
+  const letterBoardPairs = []
+  for (const board of unsolvedBoards) {
+    const known = new Set([...Object.keys(unionStatuses), ...pickedLetters])
+    if (board.hintLetter) known.add(board.hintLetter)
+    board.crystalHints.forEach(l => known.add(l))
+    const wordLetters = [...new Set(board.secretWord.split(''))]
+    const unknown = wordLetters.filter(l => !known.has(l))
+    const pool = (unknown.length ? unknown : wordLetters).filter(l => !pickedLetters.has(l))
+    if (!pool.length) continue
+    const letter = pool[Math.floor(Math.random() * pool.length)]
+    letterBoardPairs.push({ board, letter })
+    pickedLetters.add(letter)
+  }
+  queueKeyboardPops(letterBoardPairs.map(p => p.letter), (l) => {
+    const pair = letterBoardPairs.find(p => p.letter === l)
+    if (pair) pair.board.crystalHints = [...pair.board.crystalHints, l]
   })
 }
 
