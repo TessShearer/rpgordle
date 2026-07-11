@@ -25,6 +25,7 @@
 
       <!-- ── Boss Select (free play) ──────────────────────────────────── -->
       <BossSelect v-else-if="screen === 'boss-select'" :bosses="BOSSES" :selected-boss-id="selectedBoss"
+        :show-randomize="mode !== 'daily'"
         @select="selectedBoss = $event" @confirm="confirmBossSelect" />
 
       <!-- ── Miniboss Test Select ──────────────────────────────────────── -->
