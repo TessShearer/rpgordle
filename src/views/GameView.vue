@@ -153,6 +153,7 @@
                   <span v-for="n in currentEnemy.health" :key="n" class="health-pip"
                     :class="{ 'health-pip--lost': n > enemyHealth }"></span>
                 </div>
+                <p v-if="currentEnemy.regen > 0" class="portrait-enemy-effect">Regen {{ currentEnemy.regen }} health on kill</p>
                 <p v-if="currentEnemy.effect" class="portrait-enemy-effect">{{ currentEnemy.effect }}</p>
               </div>
             </div>
@@ -297,6 +298,7 @@
                 <span v-for="n in currentEnemy.health" :key="n" class="health-pip"
                   :class="{ 'health-pip--lost': n > enemyHealth }"></span>
               </div>
+              <p v-if="currentEnemy.regen > 0" class="monster-text">Regen {{ currentEnemy.regen }} health on kill</p>
               <p class="monster-text">{{ currentEnemy.effect }}</p>
             </div>
           </aside>
@@ -1066,6 +1068,7 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
       const data = await res.json()
       if (!data.valid) {
         boardShaking.value = true
+        inputError.value = 'Not a valid word'
         currentGuess.value = ''
         return
       }
@@ -1080,6 +1083,13 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
   const boardSubmissions = activeBoards.map(board => buildEffectiveGuess(board))
 
   const alreadyGuessed = allGuessedWords.value.includes(submitted)
+
+  // Block repeated guesses — except against the Necromancer where repeating is an intentional mechanic
+  if (alreadyGuessed && !isCorrectAnswer && currentBoss.value?.id !== 'necromancer') {
+    boardShaking.value = true
+    inputError.value = 'Word already guessed'
+    return
+  }
 
   // Necromancer: animate repeated words rising up as zombies before submitting
   if (currentBoss.value?.id === 'necromancer' && alreadyGuessed && !isCorrectAnswer) {
@@ -1643,7 +1653,7 @@ function useItem() {
     healthPotionAnim.value = true
     setTimeout(() => {
       healthPotionAnim.value = false
-      animatePlayerHeal(1)
+      animatePlayerHeal(3)
     }, 700)
   } else if (item.effect === 'shield') {
     shieldAnim.value = true

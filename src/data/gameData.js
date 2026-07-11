@@ -1,44 +1,44 @@
 export const CLASSES = [
-  { id: 'peasant', name: 'Peasant', health: 13, description: 'A peasant with no abilities.' },
-  { id: 'seer', name: 'Seer', health: 8, description: 'Reveals a letter from each word.' },
+  { id: 'peasant', name: 'Peasant', health: 14, description: 'A peasant with no abilities.' },
+  { id: 'seer', name: 'Seer', health: 10, description: 'Reveals a letter from each word.' },
   { id: 'knight', name: 'Knight', health: 18, description: 'Knights have extra health' },
-  { id: 'scholar', name: 'Scholar', health: 12, description: 'Can tell you information about the word.' },
+  { id: 'scholar', name: 'Scholar', health: 13, description: 'Can tell you information about the word.' },
   { id: 'treasurer', name: 'Treasurer', health: 10, description: 'Start the game with 2 inventory items' },
-  { id: 'assassin', name: 'Assassin', health: 10, description: 'Can sneak attack with enough yellow letters.' },
-  { id: 'cleric', name: 'Cleric', health: 4, description: 'Heal to full after every fight.' },
-  { id: 'village-idiot', name: 'Village Idiot', health: 12, description: 'Any string of letters is a valid guess, not just real words.' },
-  { id: 'thief', name: 'The Thief', health: 11, description: 'Take 2 items from the shop instead of 1.' },
-  { id: 'fortune-teller', name: 'Fortune Teller', health: 10, description: 'Reveal some letters that are not in the word.' },
+  { id: 'assassin', name: 'Assassin', health: 8, description: 'Can sneak attack with enough yellow letters.' },
+  { id: 'cleric', name: 'Cleric', health: 6, description: 'Heal to full after every fight.' },
+  { id: 'village-idiot', name: 'Village Idiot', health: 13, description: 'Any string of letters is a valid guess, not just real words.' },
+  { id: 'thief', name: 'The Thief', health: 12, description: 'Take 2 items from the shop instead of 1.' },
+  { id: 'fortune-teller', name: 'Fortune Teller', health: 12, description: 'Reveal some letters that are not in the word.' },
   { id: 'changeling', name: 'The Changeling', health: 10, description: 'Gain the ability of a random character, and gain another later on.' },
 ]
 
 export const ENEMIES = [
-  { id: 'useless-goblin', name: 'Goblin', regen: 1, health: 1, effect: '' },
-  { id: 'cave-spider', name: 'Cave Spider', regen: 1, health: 1, effect: '' },
-  { id: 'imp', name: 'Imp', regen: 1, health: 1, effect: '' },
-  { id: 'zombie', name: 'Zombie', regen: 1, health: 1, effect: '' },
-  { id: 'orc', name: 'Orc', regen: 1, health: 1, effect: '' },
-  { id: 'skeleton', name: 'Skeleton', regen: 1, health: 1, effect: '' },
-  { id: 'dire-wolf', name: 'Dire Wolf', regen: 1, health: 1, effect: '' },
-  { id: 'bandit', name: 'Bandit', regen: 1, health: 1, effect: '' },
+  { id: 'useless-goblin', name: 'Goblin', regen: 2, health: 1, effect: '' },
+  { id: 'cave-spider', name: 'Cave Spider', regen: 2, health: 1, effect: '' },
+  { id: 'imp', name: 'Imp', regen: 2, health: 1, effect: '' },
+  { id: 'zombie', name: 'Zombie', regen: 2, health: 1, effect: '' },
+  { id: 'orc', name: 'Orc', regen: 2, health: 1, effect: '' },
+  { id: 'skeleton', name: 'Skeleton', regen: 2, health: 1, effect: '' },
+  { id: 'dire-wolf', name: 'Dire Wolf', regen: 2, health: 1, effect: '' },
+  { id: 'bandit', name: 'Bandit', regen: 2, health: 1, effect: '' },
 
 ]
 
 export const MINIBOSSES = [
-  { id: 'annoying-kid', name: 'Annoying Kid', regen: 1, health: 1, effect: 'He will make your first guess for you' },
-  { id: 'tricksy-fairy', name: 'Tricksy Fairy', regen: 1, health: 1, effect: 'If your guess is not correct, she will scramble it before submitting.' },
-  { id: 'cerberus', name: 'Cerberus', regen: 1, health: 1, boardCount: 3, wordLength: 5, effect: 'Should a dog have three heads?' },
-  { id: 'mirror-spirit', name: 'Mirror Spirit', regen: 2, health: 1, wordLength: 5, boardCount: 1, effect: 'The answer (and all your guesses) must be the same forwards and backwards!' },
-  { id: 'know-it-all', name: 'Know It All', regen: 2, health: 1, wordLength: 5, boardCount: 1, effect: 'The answer is a word he does not think you will know.' },
-  { id: 'slumbering-giant', name: 'Slumbering Giant', regen: 2, health: 1, wordLength: 5, boardCount: 1, effect: 'You won\'t take any damage from a wrong guess...unless you wake her up.' },
-  { id: 'hydra-miniboss', name: 'Hydra', regen: 0, health: 1, wordLength: 5, boardCount: 1, effect: 'Cut off its head!' },
+  { id: 'annoying-kid', name: 'Annoying Kid', regen: 3, health: 1, effect: 'He will make your first guess for you' },
+  { id: 'tricksy-fairy', name: 'Tricksy Fairy', regen: 3, health: 1, effect: 'If your guess is not correct, she will scramble it before submitting.' },
+  { id: 'cerberus', name: 'Cerberus', regen: 3, health: 1, boardCount: 3, wordLength: 5, effect: 'Should a dog have three heads?' },
+  { id: 'mirror-spirit', name: 'Mirror Spirit', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'The answer (and all your guesses) must be the same forwards and backwards!' },
+  { id: 'know-it-all', name: 'Know It All', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'The answer is a word he does not think you will know.' },
+  { id: 'slumbering-giant', name: 'Slumbering Giant', regen: 4, health: 1, wordLength: 5, boardCount: 1, effect: 'You won\'t take any damage from a wrong guess...unless you wake her up.' },
+  { id: 'hydra-miniboss', name: 'Hydra', regen: 0, health: 2, wordLength: 5, boardCount: 1, effect: 'Cut off its head!' },
 ]
 
 export const SHOP_ITEMS = [
   {
     id: 'health-potion',
     name: 'Health Potion',
-    description: 'Restores 1 HP when used.',
+    description: 'Restores 3 HP when used.',
     effect: 'heal',
     cost: 2,
   },
