@@ -231,7 +231,6 @@
                   :is-boss-fight="isBossFight"
                   :has-seer="hasAbility('seer')"
                   :has-scholar="hasAbility('scholar')"
-                  :shadow-obscured-col="shadowObscuredCol"
                   :board-shaking="boardShaking"
                   :zombie-rising="zombieRising"
                   :compact="false"
@@ -492,7 +491,6 @@ const vorpalSwordAnim = ref(false)
 const healthPotionAnim = ref(false)
 const shieldAnim = ref(false)
 const crossbowAnim = ref(false)
-const shadowObscuredCol = ref(null)
 const _pendingKeyPops = []
 
 // ── Boss / miniboss selection ─────────────────────────────────────────────────
@@ -540,7 +538,6 @@ function makeBoard(id, secretWord) {
     hintWordType: '',
     frozenSlots: {},
     crossbowSlots: {},
-    obscuredGuessPositions: [],
     shieldedRows: new Set(),
     crystalHints: [],
     solved: false,
@@ -582,13 +579,11 @@ function getUnionLetterStatuses() {
   const priority = { correct: 3, present: 2, absent: 1 }
   const map = {}
   for (const board of boards.value) {
-    board.guesses.forEach((guess, gi) => {
-      const obscuredCol = board.obscuredGuessPositions[gi] ?? null
-      evaluateGuess(guess, board.secretWord).forEach(({ letter, status }, col) => {
-        if (col === obscuredCol) return
+    for (const guess of board.guesses) {
+      for (const { letter, status } of evaluateGuess(guess, board.secretWord)) {
         if (!map[letter] || priority[status] > priority[map[letter]]) map[letter] = status
-      })
-    })
+      }
+    }
   }
   return map
 }
@@ -1145,9 +1140,6 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
   for (let bi = 0; bi < activeBoards.length; bi++) {
     const board = activeBoards[bi]
     const boardSubmitted = boardSubmissions[bi]
-    const guessRowIndex = board.guesses.length
-    const rowShielded = board.shieldedRows.has(guessRowIndex)
-    board.obscuredGuessPositions = [...board.obscuredGuessPositions, rowShielded ? null : shadowObscuredCol.value]
     board.guesses = [...board.guesses, boardSubmitted]
 
     if (boardSubmitted === board.secretWord) {
@@ -1167,16 +1159,6 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
   // Clear temporary crossbow slots — they only last for one guess
   for (const board of boards.value) {
     if (Object.keys(board.crossbowSlots).length) board.crossbowSlots = {}
-  }
-
-  // Shadow Sorcerer: after first guess clear it; in boss fight re-randomize each guess
-  if (currentBoss.value?.id === 'shadow-sorcerer') {
-    if (isBossFight.value) {
-      const len = boards.value[0]?.secretWord.length ?? 5
-      shadowObscuredCol.value = Math.floor(Math.random() * len)
-    } else {
-      shadowObscuredCol.value = null
-    }
   }
 
   const allSolved = boards.value.every(b => b.solved)
@@ -1286,7 +1268,6 @@ function handleModalAction() {
     lastRegen.value = 0
     selectedBoss.value = null
     selectedMiniboss.value = null
-    shadowObscuredCol.value = null
     bossWordIndex.value = 0
     sneakAttackAvailable.value = false
     shopPicksRemaining.value = 1
@@ -1328,7 +1309,6 @@ function restartJourney() {
   lastRegen.value = 0
   selectedBoss.value = null
   selectedMiniboss.value = null
-  shadowObscuredCol.value = null
   bossWordIndex.value = 0
   sneakAttackAvailable.value = false
   shopPicksRemaining.value = 1
@@ -1552,12 +1532,6 @@ function flushPendingKeyPops() {
 }
 
 function finishWordLoad(showModal) {
-  if (currentBoss.value?.id === 'shadow-sorcerer' && boards.value.length > 0) {
-    const len = boards.value[0].secretWord.length
-    shadowObscuredCol.value = Math.floor(Math.random() * len)
-  } else {
-    shadowObscuredCol.value = null
-  }
   gameState.value = 'ready'
   if (showModal) {
     screen.value = 'enemy-intro'
@@ -1727,7 +1701,6 @@ function useItem() {
       const letter = board.secretWord[0]
       if (letter) board.crossbowSlots = { 0: letter }
     }
-    if (shadowObscuredCol.value === 0) shadowObscuredCol.value = null
   } else if (item.effect === 'vorpal-sword') {
     vorpalSwordActive.value = true
   } else if (item.effect === 'smoke-bomb') {

@@ -44,6 +44,7 @@ const props = defineProps({
   isBossFight: { type: Boolean, default: false },
   hasSeer: { type: Boolean, default: false },
   hasScholar: { type: Boolean, default: false },
+  shadowObscuredCol: { type: Number, default: null },
   boardShaking:    { type: Boolean, default: false },
   boardScrambling: { type: Boolean, default: false },
   zombieRising:    { type: Boolean, default: false },
@@ -75,11 +76,6 @@ defineExpose({ getInputRowRects })
 
 const wordLength = computed(() => props.board.secretWord.length || 5)
 
-const obscuredCols = computed(() => {
-  if (props.boss?.id !== 'shadow-sorcerer') return []
-  const center = Math.floor((wordLength.value - 1) / 2)
-  return props.isBossFight ? [center, center + 1] : [center]
-})
 
 const effectiveGuessArr = computed(() => {
   const result = []
@@ -119,10 +115,16 @@ const boardRows = computed(() => {
 })
 
 function isObscured(row, col) {
-  if (!obscuredCols.value.includes(col)) return false
   if (props.board.solved) return false
   if (props.board.shieldedRows.has(row)) return false
-  return true
+  if (row < props.board.guesses.length) {
+    return props.board.obscuredGuessPositions?.[row] === col &&
+           props.board.obscuredGuessPositions[row] !== null
+  }
+  if (row === props.board.guesses.length) {
+    return props.shadowObscuredCol !== null && props.shadowObscuredCol === col
+  }
+  return false
 }
 
 function tileChar(row, col) {

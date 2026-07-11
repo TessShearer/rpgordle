@@ -657,7 +657,11 @@ body {
 }
 
 .tile--filled    { border-color: var(--gs-600); }
-.tile--obscured  { background: #111; border-color: #111; color: transparent; cursor: default; }
+.tile--obscured  { background: #111; border-color: #111; color: transparent; cursor: default; animation: fade-to-black 0.5s ease forwards; }
+@keyframes fade-to-black {
+  from { background: var(--gs-200); border-color: var(--gs-400); }
+  to   { background: #111; border-color: #111; }
+}
 .tile--correct { border-color: #538d4e; color: #538d4e; background: rgba(83,141,78,0.25); box-shadow: 0 0 8px 3px rgba(83,141,78,0.28); }
 .tile--present { border-color: #b59f3b; color: #b59f3b; background: rgba(181,159,59,0.25); box-shadow: 0 0 8px 3px rgba(181,159,59,0.28); }
 .tile--absent  { border-color: var(--gs-400); color: #adadad; background: rgba(0,0,0,0.03); }

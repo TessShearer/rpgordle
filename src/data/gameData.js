@@ -108,9 +108,9 @@ export const BOSSES = [
     health: 3,
     regen: 0,
     wordLength: 5,
-    effect: 'The centermost column is obscured',
-    announcement: 'Your quest is to defeat the Shadow Sorcerer, who has cast a shadow over the center letter of your words.',
-    enhancedAnnouncement: 'You found the boss! Now TWO columns are shrouded from your sight.',
+    effect: 'A random letter on your first guess fades to shadow',
+    announcement: 'Your quest is to defeat the Shadow Sorcerer, who veils a random letter on your first guess each round.',
+    enhancedAnnouncement: 'You found the boss! Now every guess has a shadowed letter — and it shifts each time.',
   },
   {
     id: 'gelatinous-cube',
