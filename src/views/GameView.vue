@@ -80,6 +80,12 @@
           <p class="stats-health">
             {{ gameResult === 'won' ? `Remaining health: ${playerHealth}` : 'Defeated!' }}
           </p>
+          <p v-if="lostWords.length" class="stats-lost-words">
+            The answer{{ lostWords.length > 1 ? 's were' : ' was' }}:
+            <span v-for="(word, wi) in lostWords" :key="wi">
+              <span class="stats-lost-word">{{ word.toLowerCase() }}</span><span v-if="wi < lostWords.length - 1">, </span>
+            </span>
+          </p>
         </div>
 
         <div class="stats-actions">
@@ -510,6 +516,13 @@ const gameLog = ref([])
 const gameResult = ref(null)
 const copied = ref(false)
 
+const lostWords = computed(() => {
+  if (gameResult.value !== 'lost') return []
+  const lastEntry = gameLog.value[gameLog.value.length - 1]
+  if (!lastEntry) return []
+  return lastEntry.boards.filter(b => !b.solved).map(b => b.secretWord)
+})
+
 // ── Know It All modal ─────────────────────────────────────────────────────────
 const knowItAllDefinition = ref('')
 const knowItAllModalPhase = ref('taunt')
@@ -524,6 +537,7 @@ function makeBoard(id, secretWord) {
     hintLetter: '',
     hintWordType: '',
     frozenSlots: {},
+    crossbowSlots: {},
     shieldedRows: new Set(),
     crystalHints: [],
     solved: false,
@@ -531,13 +545,14 @@ function makeBoard(id, secretWord) {
 }
 
 function buildEffectiveGuess(board) {
-  const frozen = board.frozenSlots
   const len = board.secretWord.length
   const result = []
   let userIdx = 0
   for (let i = 0; i < len; i++) {
-    if (frozen[i] !== undefined) {
-      result.push(frozen[i])
+    if (board.frozenSlots[i] !== undefined) {
+      result.push(board.frozenSlots[i])
+    } else if (board.crossbowSlots[i] !== undefined) {
+      result.push(board.crossbowSlots[i])
     } else {
       result.push(currentGuess.value[userIdx] ?? '')
       userIdx++
@@ -621,8 +636,11 @@ const nonFrozenCount = computed(() => {
   const active = boards.value.filter(b => !b.solved)
   if (!active.length) return wordLength.value
   return Math.max(...active.map(board => {
-    const frozen = Object.keys(board.frozenSlots).filter(k => Number(k) < wordLength.value).length
-    return wordLength.value - frozen
+    const allFrozen = new Set([
+      ...Object.keys(board.frozenSlots).map(Number),
+      ...Object.keys(board.crossbowSlots).map(Number),
+    ].filter(k => k < wordLength.value))
+    return wordLength.value - allFrozen.size
   }))
 })
 
@@ -835,6 +853,11 @@ function generateStatsText() {
   lines.push(gameResult.value === 'won'
     ? `Remaining health: ${playerHealth.value}`
     : 'Defeated!')
+
+  if (lostWords.value.length) {
+    const wordList = lostWords.value.map(w => w.toLowerCase()).join(', ')
+    lines.push(`The answer${lostWords.value.length > 1 ? 's were' : ' was'}: ${wordList}`)
+  }
 
   return lines.join('\n')
 }
@@ -1131,6 +1154,11 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
       })
       board.frozenSlots = newFrozen
     }
+  }
+
+  // Clear temporary crossbow slots — they only last for one guess
+  for (const board of boards.value) {
+    if (Object.keys(board.crossbowSlots).length) board.crossbowSlots = {}
   }
 
   const allSolved = boards.value.every(b => b.solved)
@@ -1527,6 +1555,7 @@ async function loadWord(showModal) {
   fortuneTellerGreyLetters.value = []
   giantSnoreBars.value = 0
   smokeBombActive.value = false
+  allGuessedWords.value = []
   giantAwake.value = false
   // Unused sneak attack disappears when a new word begins
   inventory.value = inventory.value.filter(id => id !== 'sneak-attack')
@@ -1668,19 +1697,9 @@ function useItem() {
     crossbowAnim.value = true
     setTimeout(() => { crossbowAnim.value = false }, 700)
     const unsolvedBoards = boards.value.filter(b => !b.solved)
-    if (unsolvedBoards.length > 0) {
-      const firstLetter = unsolvedBoards[0].secretWord[0]
-      if (firstLetter) currentGuess.value = firstLetter + currentGuess.value.slice(1)
-      // For every other unsolved board, add its first letter as a crystal hint
-      for (let i = 1; i < unsolvedBoards.length; i++) {
-        const board = unsolvedBoards[i]
-        const letter = board.secretWord[0]
-        if (letter && !board.crystalHints.includes(letter)) {
-          queueKeyboardPops([letter], (l) => {
-            board.crystalHints = [...board.crystalHints, l]
-          })
-        }
-      }
+    for (const board of unsolvedBoards) {
+      const letter = board.secretWord[0]
+      if (letter) board.crossbowSlots = { 0: letter }
     }
   } else if (item.effect === 'vorpal-sword') {
     vorpalSwordActive.value = true

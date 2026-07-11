@@ -82,12 +82,13 @@ const obscuredCols = computed(() => {
 })
 
 const effectiveGuessArr = computed(() => {
-  const frozen = props.board.frozenSlots
   const result = []
   let userIdx = 0
   for (let i = 0; i < wordLength.value; i++) {
-    if (frozen[i] !== undefined) {
-      result.push(frozen[i])
+    if (props.board.frozenSlots[i] !== undefined) {
+      result.push(props.board.frozenSlots[i])
+    } else if (props.board.crossbowSlots?.[i] !== undefined) {
+      result.push(props.board.crossbowSlots[i])
     } else {
       result.push(props.currentGuess[userIdx] ?? '')
       userIdx++
@@ -141,7 +142,7 @@ function tileClass(row, col) {
   if (row === props.board.guesses.length && props.gameState === 'playing' && !props.board.solved) {
     if (props.zombieRising && effectiveGuessArr.value[col]) return 'tile--filled tile--zombie'
     if (props.boardScrambling && effectiveGuessArr.value[col]) return 'tile--filled tile--scrambling'
-    if (props.board.frozenSlots[col] !== undefined) return 'tile--frozen'
+    if (props.board.frozenSlots[col] !== undefined || props.board.crossbowSlots?.[col] !== undefined) return 'tile--frozen'
     return effectiveGuessArr.value[col] ? 'tile--filled' : 'tile--empty'
   }
   return 'tile--empty'

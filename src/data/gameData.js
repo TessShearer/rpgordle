@@ -9,6 +9,7 @@ export const CLASSES = [
   { id: 'village-idiot', name: 'Village Idiot', health: 13, description: 'Any string of letters is a valid guess, not just real words.' },
   { id: 'thief', name: 'The Thief', health: 12, description: 'Take 2 items from the shop instead of 1.' },
   { id: 'fortune-teller', name: 'Fortune Teller', health: 12, description: 'Reveal some letters that are not in the word.' },
+    { id: 'archer', name: 'Archer', health: 13, description: 'Shoot the gameboard to reveal a green letter.' },
   { id: 'changeling', name: 'The Changeling', health: 10, description: 'Gain the ability of a random character, and gain another later on.' },
 ]
 
@@ -66,7 +67,7 @@ export const SHOP_ITEMS = [
   {
     id: 'vorpalSword',
     name: 'Vorpal Sword',
-    description: 'When used, your next hit deals an extra damage.',
+    description: 'When used, your next hit against the boss deals an extra damage.',
     effect: 'vorpal-sword',
     cost: 2,
   },
