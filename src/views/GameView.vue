@@ -1361,13 +1361,21 @@ function beginJourney() {
   screen.value = 'playing'
   allGuessedWords.value = []
   if (playerClass.value === 'treasurer') {
-    const pool = availableShopItems.value
-    const shuffled = [...pool].sort(() => Math.random() - 0.5)
-    shuffled.slice(0, 2).forEach(item => inventory.value.push(item.id))
+    if (props.mode === 'daily' && dailyConfig.value?.treasurerItemIds?.length) {
+      dailyConfig.value.treasurerItemIds.forEach(id => inventory.value.push(id))
+    } else {
+      const pool = availableShopItems.value
+      const shuffled = [...pool].sort(() => Math.random() - 0.5)
+      shuffled.slice(0, 2).forEach(item => inventory.value.push(item.id))
+    }
   }
   if (playerClass.value === 'changeling') {
     changelingAbilities.value = []
-    grantChangelingAbility()
+    if (props.mode === 'daily' && dailyConfig.value?.changelingAbilities?.[0]) {
+      changelingAbilities.value = [dailyConfig.value.changelingAbilities[0]]
+    } else {
+      grantChangelingAbility()
+    }
   }
   startStage(0)
 }
@@ -1525,13 +1533,15 @@ async function loadWord(showModal) {
     for (let i = 0; i < boardCount; i++) {
       const wordKey = isBoss ? `boss-${bossWordIndex.value}-board-${i}` : `stage-${stage.value}-board-${i}`
       const fallbackKey = isBoss ? `boss-${bossWordIndex.value}` : `stage-${stage.value}`
-      const word = (dailyConfig.value.words[wordKey] ?? dailyConfig.value.words[fallbackKey] ?? '').toUpperCase()
+      const wordEntry = dailyConfig.value.words[wordKey] ?? dailyConfig.value.words[fallbackKey] ?? ''
+      // Support both old string format and new { word, partOfSpeech } object format
+      const word = (typeof wordEntry === 'object' ? wordEntry.word : wordEntry).toUpperCase() || ''
       const b = makeBoard(i, word)
       if (hasAbility('seer') && word) {
         b.hintLetter = word[Math.floor(Math.random() * word.length)]
         if (i === 0) _pendingKeyPops.push({ letter: b.hintLetter, before: null })
       }
-      if (hasAbility('scholar')) b.hintWordType = 'word'
+      if (hasAbility('scholar')) b.hintWordType = (typeof wordEntry === 'object' ? wordEntry.partOfSpeech : null) || ''
       boards.value.push(b)
     }
     applyDangerLetters(isBoss)
@@ -1555,9 +1565,9 @@ async function loadWord(showModal) {
       if (hasAbility('scholar')) {
         try {
           const data = await fetchWordData(wordLower)
-          b.hintWordType = data?.partOfSpeech || 'word'
+          b.hintWordType = data?.partOfSpeech || ''
         } catch {
-          b.hintWordType = 'word'
+          b.hintWordType = ''
         }
       }
       boards.value.push(b)
@@ -1583,7 +1593,11 @@ function buyItem(item) {
   shopPicksRemaining.value -= 1
   if (shopPicksRemaining.value <= 0) {
     if (playerClass.value === 'changeling' && changelingAbilities.value.length < 2) {
-      grantChangelingAbility()
+      if (props.mode === 'daily' && dailyConfig.value?.changelingAbilities?.[1]) {
+        changelingAbilities.value = [...changelingAbilities.value, dailyConfig.value.changelingAbilities[1]]
+      } else {
+        grantChangelingAbility()
+      }
     }
     modal.value = null
     startStage(stage.value + 1)

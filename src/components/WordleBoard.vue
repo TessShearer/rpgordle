@@ -7,8 +7,9 @@
         <p v-if="hasSeer && board.hintLetter" class="game-meta seer-hint">
           Seer reveals this word has a{{ /^[aeiou]/i.test(board.hintLetter) ? 'n' : '' }} {{ board.hintLetter }}
         </p>
-        <p v-if="hasScholar && board.hintWordType" class="game-meta seer-hint">
-          Scholar lectures on <span :key="board.hintWordType" class="scholar-word-type">{{ board.hintWordType }}s</span>
+        <p v-if="hasScholar" class="game-meta seer-hint">
+          <template v-if="board.hintWordType">Scholar lectures on <span :key="board.hintWordType" class="scholar-word-type">{{ board.hintWordType }}s</span></template>
+          <template v-else>The scholar isn't helpful today</template>
         </p>
       </div>
     </template>

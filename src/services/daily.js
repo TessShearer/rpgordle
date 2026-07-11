@@ -3,7 +3,7 @@ import { doc, getDoc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firest
 import {
   CLASSES, ENEMIES, MINIBOSSES, BOSSES, SHOP_ITEMS, STAGE_SEQUENCE,
 } from '@/data/gameData.js'
-import { fetchGameWord } from '@/services/words.js'
+import { fetchGameWord, fetchWordData } from '@/services/words.js'
 
 export function getTodayKey() {
   const d    = new Date()
@@ -25,9 +25,11 @@ function pickRandom(arr, count) {
   return count ? shuffled.slice(0, count) : shuffled[0]
 }
 
+// Returns { word: 'CASTLE', partOfSpeech: 'noun' } — partOfSpeech may be null if not in Firestore
 async function fetchWord(length = 5, extra = {}) {
-  const word = await fetchGameWord({ minLength: length, maxLength: length, ...extra })
-  return word.toUpperCase()
+  const wordLower = await fetchGameWord({ minLength: length, maxLength: length, ...extra })
+  const data = await fetchWordData(wordLower).catch(() => null)
+  return { word: wordLower.toUpperCase(), partOfSpeech: data?.partOfSpeech ?? null }
 }
 
 async function getRecentDailies(dateKey) {
@@ -35,6 +37,8 @@ async function getRecentDailies(dateKey) {
   const snaps = await Promise.all(keys.map(k => getDoc(doc(db, 'dailies', k))))
   return snaps.filter(s => s.exists()).map(s => s.data())
 }
+
+const CHANGELING_POOL = ['seer', 'scholar', 'assassin', 'cleric', 'village-idiot', 'thief']
 
 async function generateDaily(dateKey) {
   const recents = await getRecentDailies(dateKey)
@@ -51,6 +55,12 @@ async function generateDaily(dateKey) {
 
   const shopPool = boss.id === 'hydra' ? SHOP_ITEMS.filter(s => s.id !== 'shield') : SHOP_ITEMS
   const shopItemIds = pickRandom(shopPool, 3).map(s => s.id)
+
+  // Pre-generate Changeling abilities so all players get the same two
+  const changelingAbilities = pickRandom([...CHANGELING_POOL], 2).map(id => id)
+
+  // Pre-generate Treasurer starting items so all players get the same two
+  const treasurerItemIds = pickRandom([...shopPool], 2).map(s => s.id)
 
   const stageEnemies = {}
   for (let i = 0; i < STAGE_SEQUENCE.length; i++) {
@@ -101,6 +111,8 @@ async function generateDaily(dateKey) {
     bossId: boss.id,
     stageEnemies,
     shopItemIds,
+    changelingAbilities,
+    treasurerItemIds,
     words,
     createdAt: serverTimestamp(),
   }

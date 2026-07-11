@@ -19,10 +19,12 @@ exports.handler = async (event) => {
     }
 
     try {
-      const r = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`)
-      return ok({ word, valid: r.status === 200 })
+      const r = await fetch(`https://api.datamuse.com/words?sp=${word}&max=1`)
+      const results = await r.json()
+      const valid = Array.isArray(results) && results.length > 0 && results[0].word === word
+      return ok({ word, valid })
     } catch {
-      return ok({ word, valid: false })
+      return ok({ word, valid: true })
     }
   }
 
