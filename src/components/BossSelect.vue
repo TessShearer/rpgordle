@@ -21,6 +21,9 @@
           </div>
         </div>
       </div>
+      <div v-if="showRandomize" class="text-center mt-3">
+        <button class="btn btn-reset px-4 py-2" @click="randomize">Random Boss</button>
+      </div>
     </div>
     <Transition name="slide-in">
       <div v-if="selectedBossId" class="class-select-aside">
@@ -33,9 +36,16 @@
 </template>
 
 <script setup>
-defineProps({
+const props = defineProps({
   bosses:         { type: Array,  required: true },
   selectedBossId: { type: String, default: null },
+  showRandomize:  { type: Boolean, default: false },
 })
-defineEmits(['select', 'confirm'])
+const emit = defineEmits(['select', 'confirm'])
+
+function randomize() {
+  const item = props.bosses[Math.floor(Math.random() * props.bosses.length)]
+  emit('select', item.id)
+  emit('confirm', item.id)
+}
 </script>

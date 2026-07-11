@@ -18,6 +18,9 @@
           </div>
         </div>
       </div>
+      <div v-if="showRandomize" class="text-center mt-3">
+        <button class="btn btn-reset px-4 py-2" @click="randomize">Random Character</button>
+      </div>
     </div>
     <Transition name="slide-in">
       <div v-if="selectedClassId" class="class-select-aside">
@@ -32,9 +35,16 @@
 <script setup>
 import { CHARACTER_IMAGES } from '@/assets/characterImages.js'
 
-defineProps({
+const props = defineProps({
   classes: { type: Array, required: true },
   selectedClassId: { type: String, default: null },
+  showRandomize: { type: Boolean, default: false },
 })
-defineEmits(['select', 'confirm'])
+const emit = defineEmits(['select', 'confirm'])
+
+function randomize() {
+  const item = props.classes[Math.floor(Math.random() * props.classes.length)]
+  emit('select', item.id)
+  emit('confirm', item.id)
+}
 </script>

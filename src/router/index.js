@@ -14,6 +14,12 @@ const routes = [
     props: { mode: 'freeplay' },
   },
   {
+    path: '/testing',
+    name: 'testing',
+    component: () => import('@/views/GameView.vue'),
+    props: { mode: 'testing' },
+  },
+  {
     path: '/game-info',
     name: 'game-info',
     component: () => import('@/views/GameInfoView.vue'),

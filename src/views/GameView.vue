@@ -20,6 +20,7 @@
 
       <!-- ── Class Select ───────────────────────────────────────────────── -->
       <ClassSelect v-else-if="screen === 'class-select'" :classes="selectableClasses" :selected-class-id="selectedClass"
+        :show-randomize="mode !== 'daily'"
         @select="selectedClass = $event" @confirm="selectClass($event)" />
 
       <!-- ── Boss Select (free play) ──────────────────────────────────── -->
@@ -27,7 +28,7 @@
         @select="selectedBoss = $event" @confirm="confirmBossSelect" />
 
       <!-- ── Miniboss Test Select ──────────────────────────────────────── -->
-      <div v-else-if="screen === 'miniboss-select'" class="miniboss-test-wrapper">
+      <div v-else-if="screen === 'miniboss-select' && mode === 'testing'" class="miniboss-test-wrapper">
         <p class="miniboss-test-warning">ONLY FOR TESTING — CANNOT CHOOSE MINIBOSS IN FINAL VERSION</p>
         <BossSelect :bosses="MINIBOSSES" :selected-boss-id="selectedMiniboss"
           @select="selectedMiniboss = $event" @confirm="confirmMinibossSelect" />
@@ -285,7 +286,7 @@
             </div>
 
             <!-- Testing box -->
-            <div class="testing-box mt-3">
+            <div v-if="mode === 'testing'" class="testing-box mt-3">
               <span class="testing-label">for testing</span>
               <p class="testing-reveal-label">reveal answer</p>
               <p v-for="b in boards" :key="b.id" class="debug-answer mb-1">{{ b.secretWord.toLowerCase() }}</p>
@@ -1386,9 +1387,12 @@ function selectClass(cls) {
   if (props.mode === 'daily' && dailyConfig.value) {
     currentBoss.value = BOSSES.find(b => b.id === dailyConfig.value.bossId)
     screen.value = 'boss-intro'
-  } else {
+  } else if (props.mode === 'testing') {
     selectedBoss.value = null
     screen.value = 'miniboss-select'
+  } else {
+    selectedBoss.value = null
+    screen.value = 'boss-select'
   }
 }
 
