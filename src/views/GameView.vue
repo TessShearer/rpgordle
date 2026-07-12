@@ -1044,6 +1044,14 @@ async function handleAllBoardsSolved() {
     } else if (isMiniboss) {
       wonDamage.value = 0
       wonMessage.value = true
+      if (playerClass.value === 'changeling' && changelingAbilities.value.length < 2) {
+        if (props.mode === 'daily' && dailyConfig.value?.changelingAbilities?.[1]) {
+          changelingAbilities.value = [...changelingAbilities.value, dailyConfig.value.changelingAbilities[1]]
+        } else {
+          grantChangelingAbility()
+        }
+        applyChangelingSecondAbilityBonus()
+      }
       shopPicksRemaining.value = hasAbility('thief') ? 2 : 1
       shopTotalPicks.value = shopPicksRemaining.value
       setTimeout(() => {
@@ -1452,8 +1460,7 @@ function testAddItem(item) {
   inventory.value.push(item.id)
 }
 
-// Abilities the changeling can inherit (excludes stat-only and starting-bonus classes)
-const CHANGELING_POOL = ['seer', 'scholar', 'assassin', 'cleric', 'village-idiot', 'thief']
+const CHANGELING_POOL = ['seer', 'scholar', 'assassin', 'cleric', 'village-idiot', 'thief', 'knight', 'treasurer', 'archer']
 
 function hasAbility(id) {
   return playerClass.value === id ||
@@ -1465,6 +1472,24 @@ function grantChangelingAbility() {
   if (!available.length) return
   const picked = available[Math.floor(Math.random() * available.length)]
   changelingAbilities.value = [...changelingAbilities.value, picked]
+}
+
+function applyChangelingSecondAbilityBonus() {
+  const latest = changelingAbilities.value[changelingAbilities.value.length - 1]
+  if (latest === 'knight') {
+    playerMaxHealth.value += 3
+    playerHealth.value = Math.min(playerHealth.value + 3, playerMaxHealth.value)
+    inventory.value.push('shield')
+  } else if (latest === 'treasurer') {
+    const pool = props.mode === 'daily' && dailyConfig.value?.shopItemIds
+      ? SHOP_ITEMS.filter(s => dailyConfig.value.shopItemIds.includes(s.id))
+      : SHOP_ITEMS
+    const shuffled = [...pool].sort(() => Math.random() - 0.5)
+    shuffled.slice(0, 2).forEach(item => inventory.value.push(item.id))
+  } else if (latest === 'archer') {
+    inventory.value.push('bow-and-arrow')
+    inventory.value.push('bow-and-arrow')
+  }
 }
 
 function beginJourney() {
@@ -1717,13 +1742,6 @@ function buyItem(item) {
   inventory.value.push(item.id)
   shopPicksRemaining.value -= 1
   if (shopPicksRemaining.value <= 0) {
-    if (playerClass.value === 'changeling' && changelingAbilities.value.length < 2) {
-      if (props.mode === 'daily' && dailyConfig.value?.changelingAbilities?.[1]) {
-        changelingAbilities.value = [...changelingAbilities.value, dailyConfig.value.changelingAbilities[1]]
-      } else {
-        grantChangelingAbility()
-      }
-    }
     modal.value = null
     startStage(stage.value + 1)
   }
