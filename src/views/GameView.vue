@@ -51,52 +51,6 @@
       <BossFightIntro v-else-if="screen === 'boss-fight-intro'" ref="bossFightIntroRef" :boss="currentBoss"
         @begin="beginBossFight" />
 
-      <!-- ── Stats Screen ───────────────────────────────────────────────── -->
-      <div v-else-if="screen === 'stats'" class="stats-screen">
-        <h2 class="stats-title">{{ gameResult === 'won' ? '⚔️ Quest Complete!' : '💀 Quest Failed' }}</h2>
-
-        <div class="stats-body">
-          <p class="stats-label">Played as:</p>
-          <p class="stats-class-name">{{ CLASSES.find(c => c.id === playerClass)?.name }}</p>
-
-          <template v-for="(entry, ei) in gameLog" :key="ei">
-            <div v-if="!entry.isBoss" class="stats-encounter">
-              <p class="stats-encounter-name">
-                {{ entry.name }}: {{ totalGuessCount(entry) }} {{ totalGuessCount(entry) === 1 ? 'guess' : 'guesses' }}
-              </p>
-            </div>
-          </template>
-
-          <template v-if="gameLog.some(e => e.isBoss)">
-            <template v-for="(entry, ei) in gameLog.filter(e => e.isBoss)" :key="ei">
-              <div class="stats-encounter">
-                <p class="stats-encounter-name">
-                  {{ entry.name }}{{ gameLog.filter(e => e.isBoss).length > 1 ? ` (Round ${entry.roundIndex + 1})` : '' }}:
-                  {{ totalGuessCount(entry) }} {{ totalGuessCount(entry) === 1 ? 'guess' : 'guesses' }}
-                </p>
-              </div>
-            </template>
-          </template>
-
-          <p class="stats-health">
-            {{ gameResult === 'won' ? `Remaining health: ${playerHealth}` : 'Defeated!' }}
-          </p>
-          <p v-if="lostWords.length" class="stats-lost-words">
-            The answer{{ lostWords.length > 1 ? 's were' : ' was' }}:
-            <span v-for="(word, wi) in lostWords" :key="wi">
-              <span class="stats-lost-word">{{ word.toLowerCase() }}</span><span v-if="wi < lostWords.length - 1">, </span>
-            </span>
-          </p>
-        </div>
-
-        <div class="stats-actions">
-          <button class="btn btn-press px-5 py-2" @click="copyStats">
-            {{ copied ? '✓ Copied!' : 'Copy to Clipboard' }}
-          </button>
-          <button class="btn btn-reset px-5 py-2 mt-2" @click="restartJourney">Play Again</button>
-        </div>
-      </div>
-
       <!-- ── Game ───────────────────────────────────────────────────────── -->
       <template v-else>
 
@@ -266,7 +220,7 @@
             <p v-if="inputError" class="text-danger text-center small mb-2">{{ inputError }}</p>
 
             <!-- Submit + Keyboard -->
-            <div v-if="gameState === 'playing'" class="submit-row mb-2">
+            <div v-if="gameState === 'playing' && mode !== 'testing'" class="submit-row mb-2">
               <button class="btn btn-press px-4 py-1" @click="handleKey('ENTER')">Submit</button>
               <button v-if="inventory.includes('sneak-attack')" class="btn btn-sneak-attack px-4 py-1" @click="triggerSneakAttack">
                 <span class="sneak-attack-text">Sneak Attack!</span>
@@ -283,6 +237,10 @@
             <button class="btn btn-reset btn-restart-fixed" @click="restartJourney">
               Start over
             </button>
+
+            <div v-if="currentBoss && !isBossFight" class="mt-3 text-center">
+              <p class="monster-text mb-0"><strong>{{ currentBoss.name }}:</strong> {{ currentBoss.effect }}</p>
+            </div>
 
             <div v-if="currentBoss?.id === 'necromancer'" class="graveyard-slot graveyard-slot--strip mt-2">
               <GraveyardDisplay :words="allGuessedWords" />
@@ -333,7 +291,7 @@
       <!-- Modal (sits above all screens) -->
       <Transition name="modal">
         <div v-if="modal" class="modal-overlay">
-          <div class="modal-card" :class="{ 'modal-card--wide': modal === 'shop' || modal === 'test-shop' }">
+          <div class="modal-card" :class="{ 'modal-card--wide': modal === 'shop' || modal === 'test-shop' || modal === 'stats' }">
             <template v-if="modal === 'boss-announcement'">
               <div class="art-placeholder art-placeholder--modal-monster my-3">Art of {{ currentBoss.name }}</div>
               <p class="modal-message">{{ currentBoss.announcement }}</p>
@@ -404,11 +362,56 @@
               </div>
               <button class="btn btn-reset px-5 py-2 mt-3" @click="modal = null">Close</button>
             </template>
+            <template v-else-if="modal === 'defeat'">
+              <p class="modal-message">You were defeated!</p>
+              <p class="modal-submessage">
+                The answer{{ lostWords.length > 1 ? 's were' : ' was' }}:
+                <span v-for="(word, wi) in lostWords" :key="wi">
+                  <strong>{{ word.toLowerCase() }}</strong><span v-if="wi < lostWords.length - 1">, </span>
+                </span>
+              </p>
+              <div class="modal-actions mt-3">
+                <button class="btn btn-press px-5 py-2" @click="modal = 'stats'">View Stats</button>
+                <button class="btn btn-reset px-5 py-2 mt-2" @click="restartJourney">Try Again</button>
+              </div>
+            </template>
+            <template v-else-if="modal === 'stats'">
+              <h2 class="stats-title">{{ gameResult === 'won' ? 'Quest Complete!' : 'Quest Failed' }}</h2>
+              <div class="stats-body">
+                <p class="stats-label">Played as:</p>
+                <p class="stats-class-name">{{ CLASSES.find(c => c.id === playerClass)?.name }}</p>
+                <template v-for="entry in gameLog" :key="entry.name + entry.roundIndex">
+                  <div v-if="!entry.isBoss" class="stats-encounter">
+                    <p class="stats-encounter-name">
+                      {{ entry.name }}: {{ totalGuessCount(entry) }} {{ totalGuessCount(entry) === 1 ? 'guess' : 'guesses' }}
+                    </p>
+                  </div>
+                </template>
+                <template v-if="gameLog.some(e => e.isBoss)">
+                  <template v-for="entry in gameLog.filter(e => e.isBoss)" :key="entry.name + entry.roundIndex">
+                    <div class="stats-encounter">
+                      <p class="stats-encounter-name">
+                        {{ entry.name }}{{ gameLog.filter(e => e.isBoss).length > 1 ? ` (Round ${entry.roundIndex + 1})` : '' }}:
+                        {{ totalGuessCount(entry) }} {{ totalGuessCount(entry) === 1 ? 'guess' : 'guesses' }}
+                      </p>
+                    </div>
+                  </template>
+                </template>
+                <p class="stats-health">
+                  {{ gameResult === 'won' ? `Remaining health: ${playerHealth}` : 'Defeated!' }}
+                </p>
+              </div>
+              <div class="modal-actions mt-3">
+                <button class="btn btn-press px-5 py-2" @click="copyStats">
+                  {{ copied ? '✓ Copied!' : 'Copy to Clipboard' }}
+                </button>
+                <button class="btn btn-reset px-5 py-2 mt-2" @click="restartJourney">Play Again</button>
+              </div>
+            </template>
             <template v-else>
               <p class="modal-message">{{ MODAL_CONTENT[modal].message }}</p>
-              <p v-if="modal === 'lost'" class="modal-word">{{ boards.map(b => b.secretWord.toLowerCase()).join(', ') }}</p>
             </template>
-            <button v-if="modal !== 'shop' && modal !== 'use-item' && modal !== 'know-it-all' && modal !== 'test-shop'" class="btn btn-press px-5 py-2 mt-3"
+            <button v-if="modal !== 'shop' && modal !== 'use-item' && modal !== 'know-it-all' && modal !== 'test-shop' && modal !== 'defeat' && modal !== 'stats'" class="btn btn-press px-5 py-2 mt-3"
               @click="handleModalAction">
               {{ MODAL_CONTENT[modal].button }}
             </button>
@@ -893,11 +896,6 @@ function generateStatsText() {
     ? `Remaining health: ${playerHealth.value}`
     : 'Defeated!')
 
-  if (lostWords.value.length) {
-    const wordList = lostWords.value.map(w => w.toLowerCase()).join(', ')
-    lines.push(`The answer${lostWords.value.length > 1 ? 's were' : ' was'}: ${wordList}`)
-  }
-
   return lines.join('\n')
 }
 
@@ -1049,7 +1047,7 @@ async function handleAllBoardsSolved() {
       wonMessage.value = true
       setTimeout(() => {
         wonMessage.value = false
-        screen.value = 'stats'
+        modal.value = 'stats'
       }, 1800)
     } else if (isMiniboss) {
       wonDamage.value = 0
@@ -1229,7 +1227,7 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
             recordCurrentRound()
             gameState.value = 'lost'
             gameResult.value = 'lost'
-            setTimeout(() => { screen.value = 'stats' }, 1200)
+            setTimeout(() => { modal.value = 'defeat' }, 1200)
           }
         }
       } else {
@@ -1238,7 +1236,7 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
           recordCurrentRound()
           gameState.value = 'lost'
           gameResult.value = 'lost'
-          setTimeout(() => { screen.value = 'stats' }, 1200)
+          setTimeout(() => { modal.value = 'defeat' }, 1200)
         }
       }
     } else {
@@ -1267,7 +1265,7 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
           recordCurrentRound()
           gameState.value = 'lost'
           gameResult.value = 'lost'
-          setTimeout(() => { screen.value = 'stats' }, 1200)
+          setTimeout(() => { modal.value = 'defeat' }, 1200)
           return
         }
       }

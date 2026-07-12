@@ -531,6 +531,10 @@ body {
     width: 100%;
     text-align: center;
   }
+
+  .class-options {
+    max-width: 100%;
+  }
 }
 
 .game-meta {
@@ -2116,7 +2120,7 @@ body {
 /* ── Caltrops throw animation ─────────────────────────────────────────────── */
 .caltrops-projectile {
   position: fixed;
-  top: 74%;
+  top: 55%;
   left: 0;
   width: 54px;
   height: 54px;
