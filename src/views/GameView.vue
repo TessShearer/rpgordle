@@ -63,7 +63,7 @@
           <button class="btn btn-press px-4" @click="startStage(stage)">Try Again</button>
         </div>
 
-        <div v-else class="game-layout">
+        <div v-else class="game-layout" :class="{ 'bow-targeting-active': bowTargeting }">
 
           <!-- Mobile-only portraits strip (hidden on desktop) -->
           <div class="mobile-portraits">
@@ -161,6 +161,12 @@
               </div>
             </div>
 
+            <!-- Bow targeting message -->
+            <div v-if="bowTargeting" class="bow-target-msg">
+              <span>Pick a target!</span>
+              <button class="btn btn-reset btn-sm ms-3" @click="bowTargeting = false">Cancel</button>
+            </div>
+
             <!-- Board(s) -->
             <div class="boards-container" :class="{ 'boards-container--multi': boards.length > 1 }">
               <template v-for="board in boards" :key="board.id">
@@ -181,7 +187,9 @@
                   :board-shaking="boardShaking"
                   :zombie-rising="zombieRising"
                   :compact="false"
+                  :bow-targeting="bowTargeting && !board.solved"
                   @shake-end="boardShaking = false"
+                  @bow-target="useBowAtCol($event)"
                 />
               </template>
             </div>
@@ -199,7 +207,7 @@
             <p v-if="inputError" class="text-danger text-center small mb-2">{{ inputError }}</p>
 
             <!-- Submit + Keyboard -->
-            <div v-if="gameState === 'playing' && mode !== 'testing'" class="submit-row mb-2">
+            <div v-if="gameState === 'playing'" class="submit-row mb-2">
               <button class="btn btn-press px-4 py-1" @click="handleKey('ENTER')">Submit</button>
               <button v-if="inventory.includes('sneak-attack')" class="btn btn-sneak-attack px-4 py-1" @click="triggerSneakAttack">
                 <span class="sneak-attack-text">Sneak Attack!</span>
@@ -221,10 +229,7 @@
               <p class="monster-text mb-0"><strong>The realm has been attacked by the {{ currentBoss.name }}:</strong> {{ currentBoss.effect }}</p>
             </div>
 
-            <div v-if="currentBoss?.id === 'necromancer'" class="graveyard-slot graveyard-slot--strip mt-2">
-              <GraveyardDisplay :words="allGuessedWords" />
-            </div>
-            <div v-else-if="currentBoss" class="boss-strip-area mt-2">
+            <div v-if="currentBoss" class="boss-strip-area mt-2">
               <div class="boss-strip-inventory">
                 <p class="boss-strip-inv-label">Inventory</p>
                 <div class="boss-strip-inv-list">
@@ -235,7 +240,10 @@
                   <button v-if="mode === 'testing'" class="btn-test-add-item boss-strip-add-btn" title="Add item" @click="modal = 'test-shop'">+</button>
                 </div>
               </div>
-              <div class="boss-image-strip">
+              <div v-if="currentBoss?.id === 'necromancer'" class="boss-image-strip">
+                <GraveyardDisplay :words="allGuessedWords" />
+              </div>
+              <div v-else class="boss-image-strip">
                 <img v-if="CHARACTER_IMAGES[currentBoss.id]" :src="CHARACTER_IMAGES[currentBoss.id]" :alt="currentBoss.name" class="boss-strip-img" />
                 <div v-else class="art-placeholder art-placeholder--boss-strip">Art of {{ currentBoss.name }}</div>
               </div>
@@ -336,7 +344,7 @@
               <p class="modal-message">Testing — Add Items</p>
               <div class="shop-items">
                 <div v-for="item in SHOP_ITEMS" :key="item.id" class="shop-item"
-                  @click="inventory.push(item.id)">
+                  @click="testAddItem(item)">
                   <div class="shop-item-inner">
                     <div class="shop-item-front">
                       <div class="art-placeholder art-placeholder--item">{{ item.name }}</div>
@@ -518,6 +526,7 @@ const vorpalSwordAnim = ref(false)
 const healthPotionAnim = ref(false)
 const shieldAnim = ref(false)
 const crossbowAnim = ref(false)
+const bowTargeting = ref(false)
 const shadowObscuredCol = ref(null)
 const _pendingKeyPops = []
 
@@ -1344,6 +1353,7 @@ function restartJourney() {
   boards.value = []
   allGuessedWords.value = []
   vorpalSwordActive.value = false
+  bowTargeting.value = false
   wonMessage.value = false
   wonDamage.value = 0
   lastRegen.value = 0
@@ -1435,6 +1445,9 @@ function testHeal() {
 function testDamage() {
   playerHealth.value = Math.max(0, playerHealth.value - 1)
 }
+function testAddItem(item) {
+  inventory.value.push(item.id)
+}
 
 // Abilities the changeling can inherit (excludes stat-only and starting-bonus classes)
 const CHANGELING_POOL = ['seer', 'scholar', 'assassin', 'cleric', 'village-idiot', 'thief']
@@ -1457,6 +1470,10 @@ function beginJourney() {
   if (playerClass.value === 'knight') {
     inventory.value.push('shield')
   }
+  if (playerClass.value === 'archer') {
+    inventory.value.push('bow-and-arrow')
+    inventory.value.push('bow-and-arrow')
+  }
   if (playerClass.value === 'treasurer') {
     if (props.mode === 'daily' && dailyConfig.value?.treasurerItemIds?.length) {
       dailyConfig.value.treasurerItemIds.forEach(id => inventory.value.push(id))
@@ -1474,6 +1491,7 @@ function beginJourney() {
       grantChangelingAbility()
     }
   }
+
   startStage(0)
 }
 
@@ -1715,6 +1733,11 @@ function confirmUseItem(item) {
     useItem()
     return
   }
+  if (item.effect === 'bow-and-arrow') {
+    if (gameState.value !== 'playing') return
+    bowTargeting.value = true
+    return
+  }
   pendingUseItem.value = item
   modal.value = 'use-item'
 }
@@ -1722,6 +1745,18 @@ function confirmUseItem(item) {
 function cancelUseItem() {
   pendingUseItem.value = null
   modal.value = null
+}
+
+function useBowAtCol(col) {
+  for (const board of boards.value) {
+    if (!board.solved && board.frozenSlots[col] === undefined) {
+      board.frozenSlots = { ...board.frozenSlots, [col]: board.secretWord[col] }
+    }
+  }
+  if (shadowObscuredCol.value === col) shadowObscuredCol.value = null
+  bowTargeting.value = false
+  const idx = inventory.value.indexOf('bow-and-arrow')
+  if (idx !== -1) inventory.value.splice(idx, 1)
 }
 
 function triggerSneakAttack() {

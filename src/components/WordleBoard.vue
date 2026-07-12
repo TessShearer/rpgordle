@@ -22,11 +22,15 @@
         <div
           v-for="col in wordLength" :key="col"
           class="tile"
-          :class="tileClass(row - 1, col - 1)"
+          :class="[tileClass(row - 1, col - 1), { 'tile--targeting': bowTargeting && isInputRow(row - 1) && !isFrozenCol(col - 1) }]"
           :style="tileStyle(row - 1, col - 1)"
           :ref="(el) => setTileRef(row - 1, col - 1, el)"
+          @click="bowTargeting && isInputRow(row - 1) && !isFrozenCol(col - 1) && $emit('bow-target', col - 1)"
         >
           {{ tileChar(row - 1, col - 1) }}
+          <div v-if="bowTargeting && isInputRow(row - 1) && !isFrozenCol(col - 1)" class="crosshair-overlay">
+            <div class="crosshair-ring"></div>
+          </div>
         </div>
       </template>
     </div>
@@ -49,9 +53,10 @@ const props = defineProps({
   boardScrambling: { type: Boolean, default: false },
   zombieRising:    { type: Boolean, default: false },
   compact:         { type: Boolean, default: false },
+  bowTargeting:    { type: Boolean, default: false },
 })
 
-defineEmits(['shake-end'])
+defineEmits(['shake-end', 'bow-target'])
 
 // Keyed by [row][col] — plain object, no reactivity needed
 const tileRefs = {}
@@ -75,7 +80,6 @@ function getInputRowRects() {
 defineExpose({ getInputRowRects })
 
 const wordLength = computed(() => props.board.secretWord.length || 5)
-
 
 const effectiveGuessArr = computed(() => {
   const result = []
@@ -113,6 +117,14 @@ const boardRows = computed(() => {
   if (props.compact && props.board.solved) return 1
   return props.board.guesses.length + (props.gameState === 'playing' && !props.board.solved ? 1 : 0)
 })
+
+function isInputRow(row) {
+  return row === props.board.guesses.length && props.gameState === 'playing' && !props.board.solved
+}
+
+function isFrozenCol(col) {
+  return props.board.frozenSlots[col] !== undefined || props.board.crossbowSlots?.[col] !== undefined
+}
 
 function isObscured(row, col) {
   if (props.board.solved) return false

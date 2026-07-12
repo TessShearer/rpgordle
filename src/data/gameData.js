@@ -4,7 +4,7 @@ export const CLASSES = [
   { id: 'knight', name: 'Knight', health: 16, description: 'Knights have extra health and a shield' },
   { id: 'scholar', name: 'Scholar', health: 13, description: 'Can tell you information about the word.' },
   { id: 'treasurer', name: 'Treasurer', health: 10, description: 'Start the game with 2 inventory items' },
-  { id: 'assassin', name: 'Assassin', health: 8, description: 'Can sneak attack with enough yellow letters.' },
+  { id: 'assassin', name: 'Assassin', health: 8, description: 'Can sneak attack with 3 yellow letters.' },
   { id: 'cleric', name: 'Cleric', health: 6, description: 'Heal to full after every fight.' },
   { id: 'village-idiot', name: 'Village Idiot', health: 13, description: 'Any string of letters is a valid guess, not just real words.' },
   { id: 'thief', name: 'The Thief', health: 12, description: 'Take 2 items from the shop instead of 1.' },
@@ -85,6 +85,13 @@ export const SHOP_ITEMS = [
     effect: 'smoke-bomb',
     cost: 2,
   },
+      {
+    id: 'vampiric-dagger',
+    name: 'Vampiric Dagger',
+    description: 'When used, you begin to heal +1 for each correct guess',
+    effect: 'vampiric-dagger',
+    cost: 2,
+  },
 ]
 
 export const SPECIAL_ITEMS = [
@@ -93,6 +100,12 @@ export const SPECIAL_ITEMS = [
     name: 'Sneak Attack',
     description: 'Auto-solves this word for free. Use it or lose it.',
     effect: 'sneak-attack',
+  },
+  {
+    id: 'bow-and-arrow',
+    name: 'Bow & Arrow',
+    description: 'Reveal any one letter in the current word.',
+    effect: 'bow-and-arrow',
   },
 ]
 
