@@ -218,7 +218,7 @@
             </button>
 
             <div v-if="currentBoss && !isBossFight" class="mt-3 text-center">
-              <p class="monster-text mb-0"><strong>{{ currentBoss.name }}:</strong> {{ currentBoss.effect }}</p>
+              <p class="monster-text mb-0"><strong>The realm has been attacked by the {{ currentBoss.name }}:</strong> {{ currentBoss.effect }}</p>
             </div>
 
             <div v-if="currentBoss?.id === 'necromancer'" class="graveyard-slot graveyard-slot--strip mt-2">
@@ -307,14 +307,13 @@
               <p class="modal-message">Use {{ pendingUseItem.name }}?</p>
               <p class="modal-submessage">{{ pendingUseItem.description }}</p>
               <div class="modal-actions mt-3">
-                <button class="btn btn-press px-4 py-2"
-                  :disabled="pendingUseItem.effect === 'vorpal-sword' && !isBossFight"
-                  :class="{ 'btn--disabled': pendingUseItem.effect === 'vorpal-sword' && !isBossFight }"
+                <button v-if="!(pendingUseItem.effect === 'vorpal-sword' && !isBossFight)"
+                  class="btn btn-press px-4 py-2" @click="useItem">Yes</button>
+                <button class="btn btn-reset px-4 py-2"
                   style="white-space: normal; max-width: 160px; line-height: 1.2;"
-                  @click="useItem">
-                  {{ pendingUseItem.effect === 'vorpal-sword' && !isBossFight ? 'Wait until boss fight to use' : 'Yes' }}
+                  @click="cancelUseItem">
+                  {{ pendingUseItem.effect === 'vorpal-sword' && !isBossFight ? 'Wait until boss fight to use' : 'No' }}
                 </button>
-                <button class="btn btn-reset px-4 py-2" @click="cancelUseItem">No</button>
               </div>
             </template>
             <template v-else-if="modal === 'know-it-all'">
@@ -628,7 +627,7 @@ const selectableClasses = computed(() => {
 })
 
 const availableShopItems = computed(() => {
-  const noShield = ['hydra', 'gelatinous-cube'].includes(currentBoss.value?.id)
+  const noShield = ['hydra', 'toxic-slime'].includes(currentBoss.value?.id)
   if (props.mode === 'daily' && dailyConfig.value) {
     return SHOP_ITEMS.filter(s =>
       dailyConfig.value.shopItemIds.includes(s.id) && !(noShield && s.id === 'shield')
@@ -643,7 +642,7 @@ const currentShopItems = computed(() =>
 
 function openShop() {
   if (props.mode !== 'daily') {
-    const pool = ['hydra', 'gelatinous-cube'].includes(currentBoss.value?.id)
+    const pool = ['hydra', 'toxic-slime'].includes(currentBoss.value?.id)
       ? SHOP_ITEMS.filter(s => s.id !== 'shield')
       : SHOP_ITEMS
     const shuffled = [...pool].sort(() => Math.random() - 0.5)
@@ -1237,7 +1236,7 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
         const guessRow = firstActive.guesses.length - 1
         const isShielded = firstActive.shieldedRows.has(guessRow)
         const doubleDamage = !isShielded
-          && currentBoss.value?.id === 'toxic-slime'
+          && currentBoss.value?.id === 'gelatinous-cube'
           && dangerLetters.value.length > 0
           && dangerLetters.value.some(l => submitted.includes(l))
 
@@ -1455,6 +1454,9 @@ function grantChangelingAbility() {
 function beginJourney() {
   screen.value = 'playing'
   allGuessedWords.value = []
+  if (playerClass.value === 'knight') {
+    inventory.value.push('shield')
+  }
   if (playerClass.value === 'treasurer') {
     if (props.mode === 'daily' && dailyConfig.value?.treasurerItemIds?.length) {
       dailyConfig.value.treasurerItemIds.forEach(id => inventory.value.push(id))

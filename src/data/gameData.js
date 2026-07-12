@@ -1,7 +1,7 @@
 export const CLASSES = [
   { id: 'peasant', name: 'Peasant', health: 14, description: 'A peasant with no abilities.' },
   { id: 'seer', name: 'Seer', health: 10, description: 'Reveals a letter from each word.' },
-  { id: 'knight', name: 'Knight', health: 18, description: 'Knights have extra health' },
+  { id: 'knight', name: 'Knight', health: 16, description: 'Knights have extra health and a shield' },
   { id: 'scholar', name: 'Scholar', health: 13, description: 'Can tell you information about the word.' },
   { id: 'treasurer', name: 'Treasurer', health: 10, description: 'Start the game with 2 inventory items' },
   { id: 'assassin', name: 'Assassin', health: 8, description: 'Can sneak attack with enough yellow letters.' },
@@ -32,7 +32,7 @@ export const MINIBOSSES = [
   { id: 'mirror-spirit', name: 'Mirror Spirit', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'The answer (and all your guesses) must be the same forwards and backwards!' },
   { id: 'know-it-all', name: 'Know It All', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'The answer is a word he does not think you will know.' },
   { id: 'slumbering-giant', name: 'Slumbering Giant', regen: 4, health: 1, wordLength: 5, boardCount: 1, effect: 'You won\'t take any damage from a wrong guess...unless you wake her up.' },
-  { id: 'hydra-miniboss', name: 'Hydra', regen: 0, health: 2, wordLength: 5, boardCount: 1, effect: 'Cut off its head!' },
+  { id: 'hydra-miniboss', name: 'Hydra', regen: 4, health: 2, wordLength: 5, boardCount: 1, effect: 'Cut off its head!' },
 ]
 
 export const SHOP_ITEMS = [
@@ -67,7 +67,7 @@ export const SHOP_ITEMS = [
   {
     id: 'vorpalSword',
     name: 'Vorpal Sword',
-    description: 'When used, your next hit against the boss deals an extra damage.',
+    description: 'Use against the boss for your next hit to deal an extra damage.',
     effect: 'vorpal-sword',
     cost: 2,
   },
@@ -115,6 +115,17 @@ export const BOSSES = [
   {
     id: 'gelatinous-cube',
     name: 'Gelatinous Cube',
+    health: 2,
+    regen: 0,
+    wordLength: 5,
+    boardCount: 1,
+    effect: 'Each round a letter is slimed for double damage.',
+    announcement: 'Your quest is to defeat the Gelatinous Cube. It will cover letters in toxic goo — guessing with a slimed letter will deal extra damage.',
+    enhancedAnnouncement: 'You found the boss! Now THREE letters are slimed for double damage.',
+  },
+  {
+    id: 'toxic-slime',
+    name: 'Giant Slime',
     health: 3,
     regen: 0,
     wordLength: 8,
@@ -125,19 +136,8 @@ export const BOSSES = [
       { boardCount: 4, wordLength: 3 },
     ],
     effect: 'Can survive being split into pieces.',
-    announcement: 'Your quest is to defeat the Gelatinous Cube. It is hiding deep in the kingdom and can survive being split to pieces',
+    announcement: 'Your quest is to defeat the Giant Slime. It is hiding deep in the kingdom and can survive being split to pieces.',
     enhancedAnnouncement: 'You found the boss! Chop it to bits!',
-  },
-    {
-    id: 'toxic-slime',
-    name: 'Toxic Slime',
-    health: 2,
-    regen: 0,
-    wordLength: 5,
-    boardCount: 1,
-    effect: 'Each round a letter is slimed for double damage.',
-    announcement: 'Your quest is to defeat the Toxic Slime. It will cover letters in toxic goo, and guessing with that letter will deal extra damage.',
-    enhancedAnnouncement: 'You found the boss! Now THREE letters are slimed for double damage.',
   },
   {
     id: 'abominable-snowman',
@@ -172,7 +172,7 @@ export const BOSSES = [
       { boardCount: 6, wordLength: 5 },
     ],
     effect: 'The Hydra grows more heads as you cut them off',
-    announcement: 'Your quest is to defeath the Hydra by cutting off its head(s?)',
+    announcement: 'Your quest is to defeat the Hydra by cutting off its head(s?)',
     enhancedAnnouncement: 'The Hydra grew more heads and returned! Give it another go.',
   },
 ]
