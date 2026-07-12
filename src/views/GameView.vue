@@ -81,9 +81,11 @@
                     :class="{ 'health-pip--lost': n > playerHealth }"></span>
                 </div>
                 <template v-if="playerClass === 'changeling' && changelingAbilities.length">
-                  <p v-for="label in changelingAbilityLabels" :key="label" class="changeling-ability-line">a {{ label }}!</p>
+                  <p v-for="ability in changelingAbilities" :key="ability" class="portrait-enemy-effect">
+                    {{ CLASSES.find(c => c.id === ability)?.description }}
+                  </p>
                 </template>
-                <p v-if="CLASSES.find(c => c.id === playerClass)?.description" class="portrait-enemy-effect">
+                <p v-else-if="CLASSES.find(c => c.id === playerClass)?.description" class="portrait-enemy-effect">
                   {{ CLASSES.find(c => c.id === playerClass)?.description }}
                 </p>
               </div>
@@ -121,9 +123,11 @@
                     :class="{ 'health-pip--lost': n > playerHealth }"></span>
                 </div>
                 <template v-if="playerClass === 'changeling' && changelingAbilities.length">
-                  <p v-for="label in changelingAbilityLabels" :key="label" class="changeling-ability-line">Changeling becomes... a {{ label }}!</p>
+                  <p v-for="ability in changelingAbilities" :key="ability" class="portrait-enemy-effect">
+                    {{ CLASSES.find(c => c.id === ability)?.description }}
+                  </p>
                 </template>
-                <p v-if="CLASSES.find(c => c.id === playerClass)?.description" class="portrait-enemy-effect">
+                <p v-else-if="CLASSES.find(c => c.id === playerClass)?.description" class="portrait-enemy-effect">
                   {{ CLASSES.find(c => c.id === playerClass)?.description }}
                 </p>
                 <div v-if="inventoryItems.length || mode === 'testing'" class="inventory mt-2">
@@ -282,7 +286,7 @@
       <!-- Modal (sits above all screens) -->
       <Transition name="modal">
         <div v-if="modal" class="modal-overlay">
-          <div class="modal-card" :class="{ 'modal-card--wide': modal === 'shop' || modal === 'test-shop' || modal === 'stats' }">
+          <div class="modal-card" :class="{ 'modal-card--wide': modal === 'shop' || modal === 'test-shop' || modal === 'stats' || modal === 'changeling-test-pick' }">
             <template v-if="modal === 'boss-announcement'">
               <div class="art-placeholder art-placeholder--modal-monster my-3">Art of {{ currentBoss.name }}</div>
               <p class="modal-message">{{ currentBoss.announcement }}</p>
@@ -404,10 +408,45 @@
                 <button class="btn btn-reset px-5 py-2 mt-2" @click="restartJourney">Play Again</button>
               </div>
             </template>
+            <template v-else-if="modal === 'changeling-test-pick'">
+              <p class="modal-message">The changeling {{ changelingRevealIsSecond ? 'also ' : '' }}becomes...</p>
+              <p class="modal-submessage">Choose</p>
+              <div class="changeling-pick-grid">
+                <div v-for="cls in CLASSES.filter(c => c.id !== 'changeling')" :key="cls.id"
+                  class="changeling-pick-item"
+                  @click="pickChangelingAbility(cls.id)">
+                  <p class="changeling-pick-name">{{ cls.name }}</p>
+                  <p class="changeling-pick-desc">{{ cls.description }}</p>
+                </div>
+              </div>
+            </template>
+            <template v-else-if="modal === 'changeling-reveal'">
+              <div class="changeling-reveal" @click="advanceChangelingReveal">
+                <Transition name="reveal-fade" mode="out-in">
+                  <div :key="changelingRevealPhase" class="reveal-phase">
+                    <template v-if="changelingRevealPhase === 0">
+                      <img v-if="CHARACTER_IMAGES[changelingRevealFromId]" :src="CHARACTER_IMAGES[changelingRevealFromId]" class="reveal-img" :alt="CLASSES.find(c => c.id === changelingRevealFromId)?.name" />
+                      <div v-else class="art-placeholder art-placeholder--reveal">{{ CLASSES.find(c => c.id === changelingRevealFromId)?.name ?? 'Changeling' }}</div>
+                      <p class="reveal-caption">{{ changelingRevealIsSecond ? 'The changeling also becomes...' : 'The changeling becomes...' }}</p>
+                    </template>
+                    <template v-else-if="changelingRevealPhase === 1">
+                      <img v-if="CHARACTER_IMAGES['changeling-smoke']" :src="CHARACTER_IMAGES['changeling-smoke']" class="reveal-img" alt="Purple smoke" />
+                      <div v-else class="art-placeholder art-placeholder--reveal reveal-smoke">ooh smoke n sparkles</div>
+                    </template>
+                    <template v-else>
+                      <img v-if="CHARACTER_IMAGES[changelingRevealToId]" :src="CHARACTER_IMAGES[changelingRevealToId]" class="reveal-img" :alt="CLASSES.find(c => c.id === changelingRevealToId)?.name" />
+                      <div v-else class="art-placeholder art-placeholder--reveal">{{ CLASSES.find(c => c.id === changelingRevealToId)?.name }}</div>
+                      <p class="reveal-caption reveal-caption--name">{{ /^[aeiou]/i.test(CLASSES.find(c => c.id === changelingRevealToId)?.name ?? '') ? 'An' : 'A' }} {{ CLASSES.find(c => c.id === changelingRevealToId)?.name }}!</p>
+                      <button class="btn btn-press px-5 py-2 mt-2" @click.stop="advanceChangelingReveal">Continue</button>
+                    </template>
+                  </div>
+                </Transition>
+              </div>
+            </template>
             <template v-else>
               <p class="modal-message">{{ MODAL_CONTENT[modal].message }}</p>
             </template>
-            <button v-if="modal !== 'shop' && modal !== 'use-item' && modal !== 'know-it-all' && modal !== 'test-shop' && modal !== 'defeat' && modal !== 'stats'" class="btn btn-press px-5 py-2 mt-3"
+            <button v-if="modal !== 'shop' && modal !== 'use-item' && modal !== 'know-it-all' && modal !== 'test-shop' && modal !== 'defeat' && modal !== 'stats' && modal !== 'changeling-reveal' && modal !== 'changeling-test-pick'" class="btn btn-press px-5 py-2 mt-3"
               @click="handleModalAction">
               {{ MODAL_CONTENT[modal].button }}
             </button>
@@ -515,6 +554,12 @@ const giantSnoreBars = ref(0)
 const giantAwake = ref(false)
 const smokeBombActive = ref(false)
 const vampiricDaggerActive = ref(false)
+const changelingRevealPhase = ref(0)
+const changelingRevealFromId = ref(null)
+const changelingRevealToId = ref(null)
+const changelingRevealIsSecond = ref(false)
+const changelingRevealCallback = ref(null)
+let _changelingRevealTimers = []
 const playerDamageAnim = ref(null)  // 'damage' | 'heal' | null
 const enemyHitAnim = ref(false)
 const animatingHealth = ref(false)
@@ -685,6 +730,11 @@ const nonFrozenCount = computed(() => {
 })
 
 const featureArtText = computed(() => {
+  if (playerClass.value === 'changeling' && changelingAbilities.value.length > 0) {
+    const latest = changelingAbilities.value[changelingAbilities.value.length - 1]
+    const cls = CLASSES.find(c => c.id === latest)
+    return cls ? `Art of ${cls.name}` : 'Art of Changeling'
+  }
   const cls = CLASSES.find(c => c.id === playerClass.value)
   return cls ? `Art of ${cls.name}` : 'Art of Peasant'
 })
@@ -695,7 +745,13 @@ const shopPrompt = computed(() => {
   return 'Choose one item to purchase.'
 })
 
-const featureArtImage = computed(() => CHARACTER_IMAGES[playerClass.value] ?? null)
+const featureArtImage = computed(() => {
+  if (playerClass.value === 'changeling' && changelingAbilities.value.length > 0) {
+    const latest = changelingAbilities.value[changelingAbilities.value.length - 1]
+    return CHARACTER_IMAGES[latest] ?? null
+  }
+  return CHARACTER_IMAGES[playerClass.value] ?? null
+})
 
 // Union letter statuses across all boards, skipping obscured columns, with class/crystal hints layered on top
 const keyboardStatuses = computed(() => {
@@ -1044,7 +1100,8 @@ async function handleAllBoardsSolved() {
     } else if (isMiniboss) {
       wonDamage.value = 0
       wonMessage.value = true
-      if (playerClass.value === 'changeling' && changelingAbilities.value.length < 2) {
+      const needsSecondAbility = playerClass.value === 'changeling' && changelingAbilities.value.length < 2
+      if (needsSecondAbility && props.mode !== 'testing') {
         if (props.mode === 'daily' && dailyConfig.value?.changelingAbilities?.[1]) {
           changelingAbilities.value = [...changelingAbilities.value, dailyConfig.value.changelingAbilities[1]]
         } else {
@@ -1056,7 +1113,17 @@ async function handleAllBoardsSolved() {
       shopTotalPicks.value = shopPicksRemaining.value
       setTimeout(() => {
         wonMessage.value = false
-        openShop()
+        if (needsSecondAbility && props.mode === 'testing') {
+          showChangelingTestPick(true, () => {
+            shopPicksRemaining.value = hasAbility('thief') ? 2 : 1
+            shopTotalPicks.value = shopPicksRemaining.value
+            openShop()
+          })
+        } else if (needsSecondAbility) {
+          showChangelingReveal(changelingAbilities.value[0], changelingAbilities.value[1], true, () => openShop())
+        } else {
+          openShop()
+        }
       }, 1800)
     } else {
       wonDamage.value = 0
@@ -1306,6 +1373,10 @@ function handleModalAction() {
     startStage(0)
   } else if (modal.value === 'know-it-all') {
     dismissKnowItAllModal()
+  } else if (modal.value === 'changeling-reveal') {
+    advanceChangelingReveal()
+  } else if (modal.value === 'changeling-test-pick') {
+    // handled by pickChangelingAbility clicks
   } else {
     screen.value = 'intro'
     playerClass.value = null
@@ -1492,6 +1563,59 @@ function applyChangelingSecondAbilityBonus() {
   }
 }
 
+function showChangelingReveal(fromId, toId, isSecond, callback) {
+  _changelingRevealTimers.forEach(t => clearTimeout(t))
+  _changelingRevealTimers = []
+  changelingRevealFromId.value = fromId
+  changelingRevealToId.value = toId
+  changelingRevealIsSecond.value = isSecond
+  changelingRevealPhase.value = 0
+  changelingRevealCallback.value = callback
+  modal.value = 'changeling-reveal'
+  _changelingRevealTimers.push(setTimeout(() => {
+    if (modal.value !== 'changeling-reveal') return
+    changelingRevealPhase.value = 1
+    _changelingRevealTimers.push(setTimeout(() => {
+      if (modal.value !== 'changeling-reveal') return
+      changelingRevealPhase.value = 2
+    }, 1000))
+  }, 1500))
+}
+
+function advanceChangelingReveal() {
+  _changelingRevealTimers.forEach(t => clearTimeout(t))
+  _changelingRevealTimers = []
+  if (changelingRevealPhase.value < 2) {
+    changelingRevealPhase.value++
+    if (changelingRevealPhase.value === 1) {
+      _changelingRevealTimers.push(setTimeout(() => {
+        if (modal.value !== 'changeling-reveal') return
+        changelingRevealPhase.value = 2
+      }, 800))
+    }
+  } else {
+    modal.value = null
+    const cb = changelingRevealCallback.value
+    changelingRevealCallback.value = null
+    if (cb) cb()
+  }
+}
+
+function showChangelingTestPick(isSecond, callback) {
+  changelingRevealIsSecond.value = isSecond
+  changelingRevealCallback.value = callback
+  modal.value = 'changeling-test-pick'
+}
+
+function pickChangelingAbility(classId) {
+  changelingAbilities.value = [classId]
+  applyChangelingSecondAbilityBonus()
+  modal.value = null
+  const cb = changelingRevealCallback.value
+  changelingRevealCallback.value = null
+  if (cb) cb()
+}
+
 function beginJourney() {
   screen.value = 'playing'
   allGuessedWords.value = []
@@ -1513,11 +1637,18 @@ function beginJourney() {
   }
   if (playerClass.value === 'changeling') {
     changelingAbilities.value = []
+    if (props.mode === 'testing') {
+      showChangelingTestPick(false, () => startStage(0))
+      return
+    }
     if (props.mode === 'daily' && dailyConfig.value?.changelingAbilities?.[0]) {
       changelingAbilities.value = [dailyConfig.value.changelingAbilities[0]]
     } else {
       grantChangelingAbility()
     }
+    applyChangelingSecondAbilityBonus()
+    showChangelingReveal('changeling', changelingAbilities.value[0], false, () => startStage(0))
+    return
   }
 
   startStage(0)
