@@ -87,28 +87,6 @@
                   {{ CLASSES.find(c => c.id === playerClass)?.description }}
                 </p>
               </div>
-              <div class="portrait-info-col">
-                <div v-if="inventoryItems.length || mode === 'testing'" class="inventory">
-                  <div class="inventory-title-row">
-                    <p class="portrait-hint-label">Inventory</p>
-                    <button v-if="mode === 'testing'" class="btn-test-add-item" title="Add item" @click="modal = 'test-shop'">+</button>
-                  </div>
-                  <div class="inventory-list">
-                    <div v-for="(item, i) in inventoryItems" :key="i" class="inventory-item"
-                      @click="confirmUseItem(item)">
-                      <div class="inventory-item-inner">
-                        <div class="inventory-item-front">
-                          <div class="art-placeholder art-placeholder--inv">{{ item.name }}</div>
-                          <p class="inventory-item-name">{{ item.name }}</p>
-                        </div>
-                        <div class="inventory-item-back">
-                          <p class="inventory-item-desc">{{ item.description }}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
             <div v-if="currentEnemy" class="portrait-slot portrait-slot--enemy">
               <div class="portrait-img-col" :class="{ 'health-hit': enemyHitAnim }">
@@ -151,14 +129,14 @@
                 <div v-if="inventoryItems.length || mode === 'testing'" class="inventory mt-2">
                   <div class="inventory-title-row">
                     <p class="feature-label">Inventory</p>
-                    <button v-if="mode === 'testing'" class="btn-test-add-item" title="Add item" @click="modal = 'test-shop'">+</button>
                   </div>
                   <div class="inventory-list">
                     <div v-for="(item, i) in inventoryItems" :key="i" class="inventory-item"
                       @click="confirmUseItem(item)">
                       <div class="inventory-item-inner">
                         <div class="inventory-item-front">
-                          <div class="art-placeholder art-placeholder--inv">{{ item.name }}</div>
+                          <img v-if="ITEM_IMAGES[item.id]" :src="ITEM_IMAGES[item.id]" :alt="item.name" class="inv-img" />
+                          <div v-else class="art-placeholder art-placeholder--inv">{{ item.name }}</div>
                           <p class="inventory-item-name">{{ item.name }}</p>
                         </div>
                         <div class="inventory-item-back">
@@ -166,6 +144,7 @@
                         </div>
                       </div>
                     </div>
+                    <button v-if="mode === 'testing'" class="btn-test-add-item" title="Add item" @click="modal = 'test-shop'">+</button>
                   </div>
                 </div>
               </div>
@@ -249,7 +228,11 @@
               <div class="boss-strip-inventory">
                 <p class="boss-strip-inv-label">Inventory</p>
                 <div class="boss-strip-inv-list">
-                  <span v-for="(item, i) in inventoryItems" :key="i" class="boss-strip-inv-item">{{ item.name }}</span>
+                  <div v-for="(item, i) in inventoryItems" :key="i" class="boss-strip-inv-item" @click="confirmUseItem(item)">
+                    <img v-if="ITEM_IMAGES[item.id]" :src="ITEM_IMAGES[item.id]" :alt="item.name" class="boss-inv-img" />
+                    <div v-else class="art-placeholder art-placeholder--boss-inv">{{ item.name }}</div>
+                  </div>
+                  <button v-if="mode === 'testing'" class="btn-test-add-item boss-strip-add-btn" title="Add item" @click="modal = 'test-shop'">+</button>
                 </div>
               </div>
               <div class="boss-image-strip">
@@ -324,7 +307,13 @@
               <p class="modal-message">Use {{ pendingUseItem.name }}?</p>
               <p class="modal-submessage">{{ pendingUseItem.description }}</p>
               <div class="modal-actions mt-3">
-                <button class="btn btn-press px-4 py-2" @click="useItem">Yes</button>
+                <button class="btn btn-press px-4 py-2"
+                  :disabled="pendingUseItem.effect === 'vorpal-sword' && !isBossFight"
+                  :class="{ 'btn--disabled': pendingUseItem.effect === 'vorpal-sword' && !isBossFight }"
+                  style="white-space: normal; max-width: 160px; line-height: 1.2;"
+                  @click="useItem">
+                  {{ pendingUseItem.effect === 'vorpal-sword' && !isBossFight ? 'Wait until boss fight to use' : 'Yes' }}
+                </button>
                 <button class="btn btn-reset px-4 py-2" @click="cancelUseItem">No</button>
               </div>
             </template>
@@ -450,6 +439,7 @@ import EnemyIntro from '@/components/EnemyIntro.vue'
 import WordleBoard from '@/components/WordleBoard.vue'
 import GraveyardDisplay from '@/components/GraveyardDisplay.vue'
 import { CHARACTER_IMAGES } from '@/assets/characterImages.js'
+import { ITEM_IMAGES } from '@/assets/itemImages.js'
 import { fetchOrCreateDaily } from '@/services/daily.js'
 import { fetchGameWord, fetchWordData } from '@/services/words.js'
 

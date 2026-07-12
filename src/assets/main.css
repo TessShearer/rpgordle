@@ -80,6 +80,13 @@ body {
   transform: scale(0.97);
 }
 
+.btn--disabled,
+.btn--disabled:hover {
+  background-color: var(--gs-300) !important;
+  color: var(--gs-500) !important;
+  cursor: not-allowed;
+}
+
 .btn-reset {
   background-color: transparent;
   color: var(--gs-600);
@@ -826,6 +833,8 @@ body {
 
 .modal-card--wide {
   max-width: 480px;
+  max-height: 80vh;
+  overflow-y: auto;
 }
 
 .modal-message {
@@ -849,6 +858,7 @@ body {
 
 .shop-items {
   display: flex;
+  flex-wrap: wrap;
   gap: 1rem;
   justify-content: center;
   margin-top: 1.25rem;
@@ -966,6 +976,33 @@ body {
 
 .inventory-item-back {
   display: none;
+}
+
+.art-placeholder--boss-inv {
+  width: 22px;
+  height: 22px;
+  font-size: 0.35rem;
+}
+
+.boss-strip-add-btn {
+  width: 22px;
+  height: 22px;
+  font-size: 0.8rem;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.inv-img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+}
+
+.boss-inv-img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  display: block;
 }
 
 .art-placeholder--inv {
@@ -1912,12 +1949,21 @@ body {
 
 .boss-strip-inv-list {
   display: flex;
-  flex-direction: column;
-  gap: 0.05rem;
-  overflow: hidden;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 0.2rem;
+  padding: 0.15rem;
+  overflow-y: auto;
+  align-content: flex-start;
 }
 
 .boss-strip-inv-item {
+  width: 22px;
+  height: 22px;
+  cursor: pointer;
+  border-radius: 3px;
+  overflow: hidden;
+  flex-shrink: 0;
   font-size: 0.5rem;
   color: var(--gs-700);
   white-space: nowrap;
@@ -2098,6 +2144,7 @@ body {
   width: 1.4rem;
   height: 1.4rem;
   border-radius: 50%;
+  align-self: center;
   border: 2px solid #e74c3c;
   background: transparent;
   color: #e74c3c;
