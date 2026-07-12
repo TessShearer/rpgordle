@@ -508,7 +508,7 @@ body {
   margin-top: 0.5rem;
 }
 .changeling-pick-item {
-  border: 1px solid var(--bs-border-color, #dee2e6);
+  border: 1px solid var(--gs-600);
   border-radius: 0.375rem;
   padding: 0.5rem 0.6rem;
   cursor: pointer;
@@ -516,8 +516,8 @@ body {
   transition: background 0.15s, border-color 0.15s;
 }
 .changeling-pick-item:hover {
-  background: var(--bs-secondary-bg, #e9ecef);
-  border-color: var(--bs-secondary-color, #6c757d);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--gs-400);
 }
 .changeling-pick-name {
   font-weight: 600;
@@ -526,7 +526,7 @@ body {
 }
 .changeling-pick-desc {
   font-size: 0.7rem;
-  color: var(--bs-secondary-color, #6c757d);
+  color: var(--gs-400);
   margin: 0;
 }
 
@@ -569,7 +569,7 @@ body {
 .reveal-caption {
   text-align: center;
   font-size: 0.95rem;
-  color: var(--gs-500, #6c757d);
+  color: var(--gs-400);
   font-style: italic;
   margin: 0;
 }
@@ -966,13 +966,18 @@ body {
 }
 
 .modal-card {
-  background: #fff;
-  border-radius: 0.75rem;
-  padding: 2.5rem 2rem;
+  background: #1e1a1a;
+  clip-path: polygon(
+    0% 24px, 50% 0%, 100% 24px,
+    100% calc(100% - 24px), 50% 100%, 0% calc(100% - 24px)
+  );
+  filter: drop-shadow(0 0 1px rgba(180, 150, 90, 0.4)) drop-shadow(0 6px 20px rgba(0, 0, 0, 0.7));
+  border-radius: 0;
+  padding: calc(2.5rem + 24px) 2rem calc(2.5rem + 24px);
   text-align: center;
   max-width: 320px;
   width: 90%;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  color: var(--gs-100);
 }
 
 .modal-card--wide {
@@ -984,7 +989,7 @@ body {
 .modal-message {
   font-size: 1.3rem;
   font-weight: 700;
-  color: var(--gs-900);
+  color: var(--gs-100);
   margin-bottom: 1.5rem;
 }
 
@@ -1073,7 +1078,7 @@ body {
   font-size: 0.8rem;
   font-weight: 600;
   text-align: center;
-  color: var(--gs-900);
+  color: var(--gs-100);
   margin: 0;
 }
 
@@ -1180,7 +1185,7 @@ body {
 
 .modal-submessage {
   font-size: 0.95rem;
-  color: var(--gs-600);
+  color: var(--gs-400);
   margin: 0;
 }
 
@@ -1500,7 +1505,7 @@ body {
   font-size: 1.6rem;
   font-weight: 700;
   letter-spacing: 0.1em;
-  color: var(--gs-900);
+  color: var(--gs-100);
   margin-bottom: 1.25rem;
   text-transform: uppercase;
 }
@@ -1911,12 +1916,12 @@ body {
   text-align: center;
   font-size: 1.4rem;
   font-weight: 700;
-  color: var(--gs-900);
+  color: var(--gs-100);
 }
 
 .stats-body {
-  background: var(--gs-050);
-  border: 1px solid var(--gs-300);
+  background: #282020;
+  border: 1px solid var(--gs-700);
   border-radius: 8px;
   padding: 1.25rem 1.5rem;
   display: flex;
@@ -1928,7 +1933,7 @@ body {
 
 .stats-label {
   font-size: 0.8rem;
-  color: var(--gs-500);
+  color: var(--gs-400);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   margin: 0;
@@ -1937,7 +1942,7 @@ body {
 .stats-class-name {
   font-size: 1.3rem;
   font-weight: 700;
-  color: var(--gs-900);
+  color: var(--gs-100);
   margin: 0 0 0.6rem;
 }
 
@@ -1947,7 +1952,7 @@ body {
 
 .stats-encounter-name {
   font-weight: 600;
-  color: var(--gs-800);
+  color: var(--gs-200);
   margin: 0 0 0.15rem;
   font-size: 0.95rem;
 }
@@ -1956,7 +1961,7 @@ body {
   font-size: 1rem;
   letter-spacing: 0.05em;
   margin: 0.1rem 0;
-  color: var(--gs-900);
+  color: var(--gs-100);
 }
 
 .stats-board-divider {
@@ -1967,7 +1972,7 @@ body {
 
 .stats-answer {
   font-size: 0.8rem;
-  color: var(--gs-500);
+  color: var(--gs-400);
   font-style: italic;
   margin: 0.1rem 0 0;
 }
@@ -1975,30 +1980,30 @@ body {
 .stats-section-label {
   font-weight: 700;
   font-size: 0.95rem;
-  color: var(--gs-800);
+  color: var(--gs-200);
   margin: 0.8rem 0 0.1rem;
   padding-top: 0.8rem;
-  border-top: 1px solid var(--gs-200);
+  border-top: 1px solid var(--gs-700);
 }
 
 .stats-health {
   font-size: 0.95rem;
   font-weight: 600;
-  color: var(--gs-700);
+  color: var(--gs-400);
   margin: 0.8rem 0 0;
   padding-top: 0.8rem;
-  border-top: 1px solid var(--gs-200);
+  border-top: 1px solid var(--gs-700);
 }
 
 .stats-lost-words {
   font-size: 0.9rem;
-  color: var(--gs-600);
+  color: var(--gs-400);
   margin: 0.4rem 0 0;
 }
 
 .stats-lost-word {
   font-weight: 700;
-  color: var(--gs-800);
+  color: var(--gs-200);
   text-transform: lowercase;
 }
 
@@ -2023,7 +2028,7 @@ body {
 
 .kit-definition {
   font-style: italic;
-  color: var(--gs-600);
+  color: var(--gs-400);
 }
 
 .kit-dismiss:disabled {
