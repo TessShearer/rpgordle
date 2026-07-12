@@ -30,12 +30,11 @@
 
       <!-- ── Miniboss Test Select ──────────────────────────────────────── -->
       <div v-else-if="screen === 'miniboss-select' && mode === 'testing'" class="miniboss-test-wrapper">
-        <p class="miniboss-test-warning">ONLY FOR TESTING — CANNOT CHOOSE MINIBOSS IN FINAL VERSION</p>
         <BossSelect :bosses="MINIBOSSES" :selected-boss-id="selectedMiniboss"
           @select="selectedMiniboss = $event" @confirm="confirmMinibossSelect" />
         <div class="text-center mt-2">
           <button class="btn btn-reset btn-sm" @click="selectedMiniboss = null; screen = 'boss-select'">
-            Skip (random miniboss)
+            Random Miniboss
           </button>
         </div>
       </div>
@@ -116,6 +115,10 @@
           <div class="mobile-portraits">
             <div class="portrait-slot">
               <div class="portrait-img-col" :class="{ 'health-hit': playerDamageAnim === 'damage', 'health-heal': playerDamageAnim === 'heal' }">
+                <div v-if="mode === 'testing'" class="test-health-btns">
+                  <button class="btn-test-health btn-test-heal" @click="testHeal">Heal</button>
+                  <button class="btn-test-health btn-test-damage" @click="testDamage">Damage</button>
+                </div>
                 <img v-if="featureArtImage" :src="featureArtImage" :alt="featureArtText" class="portrait-img" />
                 <div v-else class="art-placeholder art-placeholder--portrait">{{ featureArtText }}</div>
                 <p class="portrait-stat">HP: {{ playerHealth }}/{{ playerMaxHealth }}</p>
@@ -131,8 +134,11 @@
                 </p>
               </div>
               <div class="portrait-info-col">
-                <div v-if="inventoryItems.length" class="inventory">
-                  <p class="portrait-hint-label">Inventory</p>
+                <div v-if="inventoryItems.length || mode === 'testing'" class="inventory">
+                  <div class="inventory-title-row">
+                    <p class="portrait-hint-label">Inventory</p>
+                    <button v-if="mode === 'testing'" class="btn-test-add-item" title="Add item" @click="modal = 'test-shop'">+</button>
+                  </div>
                   <div class="inventory-list">
                     <div v-for="(item, i) in inventoryItems" :key="i" class="inventory-item"
                       @click="confirmUseItem(item)">
@@ -161,7 +167,7 @@
                   <span v-for="n in currentEnemy.health" :key="n" class="health-pip"
                     :class="{ 'health-pip--lost': n > enemyHealth }"></span>
                 </div>
-                <p v-if="currentEnemy.regen > 0" class="portrait-enemy-effect">Regen {{ currentEnemy.regen }} health on kill</p>
+                <p v-if="currentEnemy.regen > 0" class="portrait-enemy-effect">Player heals {{ currentEnemy.regen }} health on kill</p>
                 <p v-if="currentEnemy.effect" class="portrait-enemy-effect">{{ currentEnemy.effect }}</p>
               </div>
             </div>
@@ -171,6 +177,10 @@
           <aside class="game-panel game-panel--left">
             <div class="class-feature">
               <div class="class-feature-img-col" :class="{ 'health-hit': playerDamageAnim === 'damage', 'health-heal': playerDamageAnim === 'heal' }">
+                <div v-if="mode === 'testing'" class="test-health-btns">
+                  <button class="btn-test-health btn-test-heal" @click="testHeal">Heal</button>
+                  <button class="btn-test-health btn-test-damage" @click="testDamage">Damage</button>
+                </div>
                 <img v-if="featureArtImage" :src="featureArtImage" :alt="featureArtText" class="feature-img" />
                 <div v-else class="art-placeholder art-placeholder--feature">{{ featureArtText }}</div>
                 <p class="feature-label">HP: {{ playerHealth }} / {{ playerMaxHealth }}</p>
@@ -184,10 +194,11 @@
                 <p v-if="CLASSES.find(c => c.id === playerClass)?.description" class="portrait-enemy-effect">
                   {{ CLASSES.find(c => c.id === playerClass)?.description }}
                 </p>
-              </div>
-              <div class="class-feature-info-col">
-                <div v-if="inventoryItems.length" class="inventory">
-                  <p class="feature-label">Inventory</p>
+                <div v-if="inventoryItems.length || mode === 'testing'" class="inventory mt-2">
+                  <div class="inventory-title-row">
+                    <p class="feature-label">Inventory</p>
+                    <button v-if="mode === 'testing'" class="btn-test-add-item" title="Add item" @click="modal = 'test-shop'">+</button>
+                  </div>
                   <div class="inventory-list">
                     <div v-for="(item, i) in inventoryItems" :key="i" class="inventory-item"
                       @click="confirmUseItem(item)">
@@ -273,17 +284,20 @@
               Start over
             </button>
 
-            <div class="mt-3">
-              <p class="enemy-name text-center">{{ currentBoss.name }} attacked the kingdom!</p>
-              <p class="monster-text text-center">{{ currentBoss.effect }}</p>
-            </div>
-
             <div v-if="currentBoss?.id === 'necromancer'" class="graveyard-slot graveyard-slot--strip mt-2">
               <GraveyardDisplay :words="allGuessedWords" />
             </div>
-            <div v-else-if="currentBoss" class="boss-image-strip mt-2">
-              <img v-if="CHARACTER_IMAGES[currentBoss.id]" :src="CHARACTER_IMAGES[currentBoss.id]" :alt="currentBoss.name" class="boss-strip-img" />
-              <div v-else class="art-placeholder art-placeholder--boss-strip">Art of {{ currentBoss.name }}</div>
+            <div v-else-if="currentBoss" class="boss-strip-area mt-2">
+              <div class="boss-strip-inventory">
+                <p class="boss-strip-inv-label">Inventory</p>
+                <div class="boss-strip-inv-list">
+                  <span v-for="(item, i) in inventoryItems" :key="i" class="boss-strip-inv-item">{{ item.name }}</span>
+                </div>
+              </div>
+              <div class="boss-image-strip">
+                <img v-if="CHARACTER_IMAGES[currentBoss.id]" :src="CHARACTER_IMAGES[currentBoss.id]" :alt="currentBoss.name" class="boss-strip-img" />
+                <div v-else class="art-placeholder art-placeholder--boss-strip">Art of {{ currentBoss.name }}</div>
+              </div>
             </div>
 
             <!-- Testing box -->
@@ -319,7 +333,7 @@
       <!-- Modal (sits above all screens) -->
       <Transition name="modal">
         <div v-if="modal" class="modal-overlay">
-          <div class="modal-card" :class="{ 'modal-card--wide': modal === 'shop' }">
+          <div class="modal-card" :class="{ 'modal-card--wide': modal === 'shop' || modal === 'test-shop' }">
             <template v-if="modal === 'boss-announcement'">
               <div class="art-placeholder art-placeholder--modal-monster my-3">Art of {{ currentBoss.name }}</div>
               <p class="modal-message">{{ currentBoss.announcement }}</p>
@@ -372,11 +386,29 @@
                 {{ knowItAllCanDismiss ? 'Got it' : '...' }}
               </button>
             </template>
+            <template v-else-if="modal === 'test-shop'">
+              <p class="modal-message">Testing — Add Items</p>
+              <div class="shop-items">
+                <div v-for="item in SHOP_ITEMS" :key="item.id" class="shop-item"
+                  @click="inventory.push(item.id)">
+                  <div class="shop-item-inner">
+                    <div class="shop-item-front">
+                      <div class="art-placeholder art-placeholder--item">{{ item.name }}</div>
+                      <p class="shop-item-name">{{ item.name }}</p>
+                    </div>
+                    <div class="shop-item-back">
+                      <p class="shop-item-desc">{{ item.description }}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <button class="btn btn-reset px-5 py-2 mt-3" @click="modal = null">Close</button>
+            </template>
             <template v-else>
               <p class="modal-message">{{ MODAL_CONTENT[modal].message }}</p>
               <p v-if="modal === 'lost'" class="modal-word">{{ boards.map(b => b.secretWord.toLowerCase()).join(', ') }}</p>
             </template>
-            <button v-if="modal !== 'shop' && modal !== 'use-item' && modal !== 'know-it-all'" class="btn btn-press px-5 py-2 mt-3"
+            <button v-if="modal !== 'shop' && modal !== 'use-item' && modal !== 'know-it-all' && modal !== 'test-shop'" class="btn btn-press px-5 py-2 mt-3"
               @click="handleModalAction">
               {{ MODAL_CONTENT[modal].button }}
             </button>
@@ -1406,6 +1438,15 @@ function confirmBossSelect(bossId) {
 function confirmMinibossSelect(minibossId) {
   selectedMiniboss.value = minibossId
   screen.value = 'boss-select'
+}
+
+// ── Testing helpers ───────────────────────────────────────────────────────────
+function testHeal() {
+  if (playerHealth.value >= playerMaxHealth.value) playerMaxHealth.value++
+  playerHealth.value++
+}
+function testDamage() {
+  playerHealth.value = Math.max(0, playerHealth.value - 1)
 }
 
 // Abilities the changeling can inherit (excludes stat-only and starting-bonus classes)
