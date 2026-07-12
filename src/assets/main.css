@@ -60,31 +60,84 @@ body {
   line-height: 1;
 }
 
-/* Buttons */
+/* ── Ribbon buttons ──────────────────────────────────────────────────────────
+   --rb-s: fold-tab width   --rb-d: fold depth   --rb-c: notch cutout
+   Em units so the shape scales with the button font-size.
+   padding !important overrides Bootstrap spacing utilities (px-N, py-N)
+   since the ribbon shape depends on zero top-padding and exact bottom-padding. */
 .btn-press {
-  background-color: var(--gs-800);
-  color: var(--gs-050);
-  border: none;
-  border-radius: 0.4rem;
-  font-size: 1.1rem;
-  font-weight: 600;
-  transition: background-color 0.15s ease, transform 0.1s ease;
+  --rb-s: 0.62em;
+  --rb-d: 0.42em;
+  --rb-c: 0.5em;
+
+  display: inline-block;
+  padding: 0 calc(var(--rb-s) + 0.85em) var(--rb-d) !important;
+  line-height: 1.85;
+  background:
+    conic-gradient(at left  var(--rb-s) bottom var(--rb-d),
+      #0000 25%, #000b 0 37.5%, #0005 0) 0   / 50% 100% no-repeat,
+    conic-gradient(at right var(--rb-s) bottom var(--rb-d),
+      #0005 62.5%, #000b 0 75%, #0000 0) 100% / 50% 100% no-repeat,
+    linear-gradient(to bottom,
+      rgba(0,0,0,0.42) 0%,
+      rgba(255,255,255,0.07) 48%,
+      rgba(0,0,0,0.32) 100%);
+  clip-path: polygon(
+    0 var(--rb-d),
+    var(--rb-s) var(--rb-d),
+    var(--rb-s) 0,
+    calc(100% - var(--rb-s)) 0,
+    calc(100% - var(--rb-s)) var(--rb-d),
+    100% var(--rb-d),
+    calc(100% - var(--rb-c)) calc(50% + var(--rb-d) / 2),
+    100% 100%,
+    calc(100% - var(--rb-s) - var(--rb-d)) 100%,
+    calc(100% - var(--rb-s) - var(--rb-d)) calc(100% - var(--rb-d)),
+    calc(var(--rb-s) + var(--rb-d)) calc(100% - var(--rb-d)),
+    calc(var(--rb-s) + var(--rb-d)) 100%,
+    0 100%,
+    var(--rb-c) calc(50% + var(--rb-d) / 2)
+  );
+  background-color: #6e1111;
+  color: #e9c645;
+  border: none !important;
+  border-radius: 0 !important;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: inherit;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+  filter: drop-shadow(0 0 1px rgba(184, 138, 0, 0.55))
+          drop-shadow(0 3px 7px rgba(0, 0, 0, 0.5));
+  transition: background-color 0.14s ease, color 0.14s ease,
+              filter 0.14s ease, transform 0.1s ease;
 }
 
 .btn-press:hover {
-  background-color: var(--gs-900);
-  color: #ffffff;
+  background-color: #8c1616;
+  color: #ffd84a;
+  filter: drop-shadow(0 0 2px rgba(220, 170, 0, 0.7))
+          drop-shadow(0 4px 9px rgba(0, 0, 0, 0.5));
 }
 
 .btn-press:active {
   transform: scale(0.97);
+  background-color: #590e0e;
+  filter: drop-shadow(0 0 1px rgba(150, 100, 0, 0.4))
+          drop-shadow(0 1px 4px rgba(0, 0, 0, 0.45));
 }
 
 .btn--disabled,
 .btn--disabled:hover {
-  background-color: var(--gs-300) !important;
-  color: var(--gs-500) !important;
+  background-color: #555 !important;
+  color: #999 !important;
+  filter: grayscale(0.5) brightness(0.75) !important;
   cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-press { transition: none; }
 }
 
 .btn-reset {
