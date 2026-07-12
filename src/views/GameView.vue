@@ -514,6 +514,7 @@ const fortuneTellerGreyLetters = ref([])
 const giantSnoreBars = ref(0)
 const giantAwake = ref(false)
 const smokeBombActive = ref(false)
+const vampiricDaggerActive = ref(false)
 const playerDamageAnim = ref(null)  // 'damage' | 'heal' | null
 const enemyHitAnim = ref(false)
 const animatingHealth = ref(false)
@@ -1025,16 +1026,10 @@ async function handleAllBoardsSolved() {
 
   if (enemyHealth.value <= 0) {
     recordCurrentRound()
-    if (hasAbility('cleric')) {
-      const healAmt = playerMaxHealth.value - playerHealth.value
-      lastRegen.value = healAmt
-      if (healAmt > 0) await animatePlayerHeal(healAmt)
-    } else {
-      const regen = currentEnemy.value.regen
-      const healAmt = Math.min(regen, playerMaxHealth.value - playerHealth.value)
-      lastRegen.value = healAmt
-      if (healAmt > 0) await animatePlayerHeal(healAmt)
-    }
+    const regen = currentEnemy.value.regen
+    const healAmt = Math.min(regen, playerMaxHealth.value - playerHealth.value)
+    lastRegen.value = healAmt
+    if (healAmt > 0) await animatePlayerHeal(healAmt)
     gameState.value = 'won'
     const isLast = stage.value === JOURNEY_LENGTH - 1
     const isMiniboss = MINIBOSSES.some(m => m.id === currentEnemy.value?.id)
@@ -1171,6 +1166,7 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
 
   // Apply guess to each active board
   let anyBoardSolvedThisGuess = false
+  let boardsSolvedThisGuess = 0
   for (let bi = 0; bi < activeBoards.length; bi++) {
     const board = activeBoards[bi]
     const boardSubmitted = boardSubmissions[bi]
@@ -1182,6 +1178,7 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
     if (boardSubmitted === board.secretWord) {
       board.solved = true
       anyBoardSolvedThisGuess = true
+      boardsSolvedThisGuess++
     } else if (currentBoss.value?.id === 'abominable-snowman') {
       // Freeze new green positions
       const guessEval = evaluateGuess(boardSubmitted, board.secretWord)
@@ -1209,6 +1206,14 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
   }
 
   const allSolved = boards.value.every(b => b.solved)
+
+  if (anyBoardSolvedThisGuess) {
+    if (vampiricDaggerActive.value) await animatePlayerHeal(boardsSolvedThisGuess)
+    if (hasAbility('cleric')) {
+      const healAmt = playerMaxHealth.value - playerHealth.value
+      if (healAmt > 0) await animatePlayerHeal(healAmt)
+    }
+  }
 
   if (allSolved) {
     handleAllBoardsSolved()
@@ -1323,6 +1328,7 @@ function handleModalAction() {
     fortuneTellerGreyLetters.value = []
     giantSnoreBars.value = 0
   smokeBombActive.value = false
+  vampiricDaggerActive.value = false
     giantAwake.value = false
     gameLog.value = []
     gameResult.value = null
@@ -1364,6 +1370,7 @@ function restartJourney() {
   fortuneTellerGreyLetters.value = []
   giantSnoreBars.value = 0
   smokeBombActive.value = false
+  vampiricDaggerActive.value = false
   giantAwake.value = false
   gameLog.value = []
   gameResult.value = null
@@ -1570,7 +1577,7 @@ async function processKeyPopQueue() {
 }
 
 function applyDangerLetters(isBoss) {
-  if (currentBoss.value?.id !== 'toxic-slime') return
+  if (currentBoss.value?.id !== 'gelatinous-cube') return
   const alpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
   const count = isBoss ? 3 : 1
   const picked = new Set()
@@ -1630,6 +1637,7 @@ async function loadWord(showModal) {
   fortuneTellerGreyLetters.value = []
   giantSnoreBars.value = 0
   smokeBombActive.value = false
+  vampiricDaggerActive.value = false
   allGuessedWords.value = []
   giantAwake.value = false
   // Unused sneak attack disappears when a new word begins
@@ -1803,6 +1811,8 @@ function useItem() {
     vorpalSwordActive.value = true
   } else if (item.effect === 'smoke-bomb') {
     smokeBombActive.value = true
+  } else if (item.effect === 'vampiric-dagger') {
+    vampiricDaggerActive.value = true
   } else if (item.effect === 'caltrops') {
     const allWordLetters = new Set(boards.value.flatMap(b => b.secretWord.split('')))
     const already = new Set(fortuneTellerGreyLetters.value)
