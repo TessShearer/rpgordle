@@ -500,7 +500,6 @@ const pendingUseItem = ref(null)
 const allGuessedWords = ref([])
 
 // ── Class abilities ───────────────────────────────────────────────────────────
-const sneakAttackAvailable = ref(false)
 const vorpalSwordActive = ref(false)
 const boardShaking = ref(false)
 const bossShaking = ref(false)
@@ -1269,12 +1268,11 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
       }
 
       // These run on any wrong guess regardless of smoke bomb
-      if (hasAbility('assassin') && sneakAttackAvailable.value) {
-        const maxYellow = Math.max(...activeBoards.map((board, bi) =>
-          evaluateGuess(boardSubmissions[bi], board.secretWord).filter(c => c.status === 'present').length
-        ))
-        if (maxYellow >= 3) {
-          sneakAttackAvailable.value = false
+      if (hasAbility('assassin') && !inventory.value.includes('sneak-attack')) {
+        const anyQualifies = activeBoards.some((board, bi) =>
+          evaluateGuess(boardSubmissions[bi], board.secretWord).filter(c => c.status === 'present').length >= 3
+        )
+        if (anyQualifies) {
           inventory.value = [...inventory.value, 'sneak-attack']
         }
       }
@@ -1318,7 +1316,6 @@ function handleModalAction() {
     selectedMiniboss.value = null
     shadowObscuredCol.value = null
     bossWordIndex.value = 0
-    sneakAttackAvailable.value = false
     shopPicksRemaining.value = 1
     shopTotalPicks.value = 1
     freeplayShopItems.value = []
@@ -1361,7 +1358,6 @@ function restartJourney() {
   selectedMiniboss.value = null
   shadowObscuredCol.value = null
   bossWordIndex.value = 0
-  sneakAttackAvailable.value = false
   shopPicksRemaining.value = 1
   freeplayShopItems.value = []
   validating.value = false
@@ -1513,7 +1509,6 @@ function beginBossFight() {
 // ── Game lifecycle ────────────────────────────────────────────────────────────
 async function startStage(stageNum) {
   stage.value = stageNum
-  sneakAttackAvailable.value = hasAbility('assassin')
   if (isBossFight.value) {
     currentEnemy.value = currentBoss.value
     enemyHealth.value = currentBoss.value.health
@@ -1763,10 +1758,15 @@ function triggerSneakAttack() {
   if (gameState.value !== 'playing') return
   const idx = inventory.value.indexOf('sneak-attack')
   if (idx === -1) return
-  const board = boards.value.find(b => !b.solved)
-  if (board) {
-    board.guesses = [...board.guesses, board.secretWord]
-    board.solved = true
+  for (const board of boards.value) {
+    if (board.solved) continue
+    const lastGuess = board.guesses[board.guesses.length - 1]
+    if (!lastGuess) continue
+    const yellows = evaluateGuess(lastGuess, board.secretWord).filter(c => c.status === 'present').length
+    if (yellows >= 3) {
+      board.guesses = [...board.guesses, board.secretWord]
+      board.solved = true
+    }
   }
   inventory.value.splice(idx, 1)
   if (boards.value.every(b => b.solved)) handleAllBoardsSolved()

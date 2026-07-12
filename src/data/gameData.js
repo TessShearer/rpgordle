@@ -103,7 +103,7 @@ export const SPECIAL_ITEMS = [
   },
   {
     id: 'bow-and-arrow',
-    name: 'Bow & Arrow',
+    name: 'Arrow',
     description: 'Reveal any one letter in the current word.',
     effect: 'bow-and-arrow',
   },
