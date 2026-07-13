@@ -2638,8 +2638,8 @@ body {
 }
 
 .decoheading {
-	display: flex;
 	all: unset;
+	display: flex;
 	font-family: "Viaoda Libre";
 	text-align: center;
 	border-top: 1px solid var(--border);
