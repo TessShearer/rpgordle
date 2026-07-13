@@ -1,22 +1,6 @@
 ﻿<template>
   <main class="container py-4">
 
-    <section class="info-section mb-5">
-      <h2 class="info-heading mb-3">List of drawings I need</h2>
-      <ul>
-        <li>All characters</li>
-        <li>All enemies</li>
-        <li>All shop items</li>
-        <li>All minibosses</li>
-        <li>for the slumbering giant we need one of him sleeping and one of him awake and pissed off</li>
-        <li>All bosses</li>
-        <li>for the hydra we need 1 with one head, 2 heads, and 4 heads</li>
-        <li>for the gelatinous cube we need 1 big slime, 2 smaller slimes, and 4 smallest slimes</li>
-        <li>a graveyard (image needs to be long vertically and have some clear space on the top half for me to put a
-          word bank)</li>
-
-      </ul>
-    </section>
 
     <!-- ── Game ─────────────────────────────────────────────────────────── -->
     <section class="info-section mb-5">

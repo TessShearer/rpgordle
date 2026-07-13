@@ -43,10 +43,6 @@
       <BossIntro v-else-if="screen === 'boss-intro'" ref="bossIntroRef" :boss="currentBoss" :player-class="playerClass"
         @begin="beginJourney" />
 
-      <!-- ── Enemy Intro ───────────────────────────────────────────────── -->
-      <EnemyIntro v-else-if="screen === 'enemy-intro'" ref="enemyIntroRef" :enemy="currentEnemy"
-        @begin="beginEnemyEncounter" />
-
       <!-- ── Boss Fight Intro ──────────────────────────────────────────── -->
       <BossFightIntro v-else-if="screen === 'boss-fight-intro'" ref="bossFightIntroRef" :boss="currentBoss"
         @begin="beginBossFight" />
@@ -443,10 +439,29 @@
                 </Transition>
               </div>
             </template>
+            <template v-else-if="modal === 'enemy-intro'">
+              <p class="modal-message">{{ enemyIntroHeadline }}</p>
+              <div class="art-placeholder art-placeholder--modal-monster my-2">Art of {{ currentEnemy.name }}</div>
+              <div class="enemy-intro-stats mt-1" style="align-items:center">
+                <div class="enemy-stat-row">
+                  <span class="enemy-stat-label">HP</span>
+                  <span class="enemy-stat-value">{{ currentEnemy.health }}</span>
+                </div>
+                <div v-if="currentEnemy.effect && currentEnemy.effect !== 'No effect'" class="enemy-stat-row">
+                  <span class="enemy-stat-label">Ability</span>
+                  <span class="enemy-stat-value">{{ currentEnemy.effect }}</span>
+                </div>
+                <div v-if="currentEnemy.regen > 0" class="enemy-stat-row">
+                  <span class="enemy-stat-label">Heal on kill</span>
+                  <span class="enemy-stat-value">{{ currentEnemy.regen }}</span>
+                </div>
+              </div>
+              <button class="btn btn-press px-5 py-2 mt-3" @click="beginEnemyEncounter">Fight!</button>
+            </template>
             <template v-else>
               <p class="modal-message">{{ MODAL_CONTENT[modal].message }}</p>
             </template>
-            <button v-if="modal !== 'shop' && modal !== 'use-item' && modal !== 'know-it-all' && modal !== 'test-shop' && modal !== 'defeat' && modal !== 'stats' && modal !== 'changeling-reveal' && modal !== 'changeling-test-pick'" class="btn btn-press px-5 py-2 mt-3"
+            <button v-if="modal !== 'shop' && modal !== 'use-item' && modal !== 'know-it-all' && modal !== 'test-shop' && modal !== 'defeat' && modal !== 'stats' && modal !== 'changeling-reveal' && modal !== 'changeling-test-pick' && modal !== 'enemy-intro'" class="btn btn-press px-5 py-2 mt-3"
               @click="handleModalAction">
               {{ MODAL_CONTENT[modal].button }}
             </button>
@@ -481,7 +496,6 @@ import BossIntro from '@/components/BossIntro.vue'
 import BossFightIntro from '@/components/BossFightIntro.vue'
 import ClassSelect from '@/components/ClassSelect.vue'
 import BossSelect from '@/components/BossSelect.vue'
-import EnemyIntro from '@/components/EnemyIntro.vue'
 import WordleBoard from '@/components/WordleBoard.vue'
 import GraveyardDisplay from '@/components/GraveyardDisplay.vue'
 import { CHARACTER_IMAGES } from '@/assets/characterImages.js'
@@ -515,7 +529,6 @@ const changelingAbilities = ref([])
 const selectedClass = ref(null)
 const bossIntroRef = ref(null)
 const bossFightIntroRef = ref(null)
-const enemyIntroRef = ref(null)
 const wonMessage = ref(false)
 const wonDamage = ref(0)
 
@@ -707,6 +720,12 @@ function openShop() {
 
 const isBossFight = computed(() => stage.value >= STAGE_SEQUENCE.length)
 
+const enemyIntroHeadline = computed(() => {
+  if (!currentEnemy.value) return ''
+  const article = /^[aeiou]/i.test(currentEnemy.value.name) ? 'An' : 'A'
+  return `${article} ${currentEnemy.value.name} blocks your path!`
+})
+
 const obscuredCols = computed(() => {
   if (currentBoss.value?.id !== 'shadow-sorcerer') return []
   const center = Math.floor((wordLength.value - 1) / 2)
@@ -890,11 +909,8 @@ function onKeyDown(e) {
     }
     return
   }
-  if (screen.value === 'enemy-intro') {
-    if (e.key === 'Enter') {
-      if (enemyIntroRef.value?.allVisible) beginEnemyEncounter()
-      else enemyIntroRef.value?.skip()
-    }
+  if (modal.value === 'enemy-intro') {
+    if (e.key === 'Enter') beginEnemyEncounter()
     return
   }
   if (/^[1-9]$/.test(e.key) && gameState.value === 'playing' && !modal.value && !validating.value) {
@@ -1655,7 +1671,7 @@ function beginJourney() {
 }
 
 function beginEnemyEncounter() {
-  screen.value = 'playing'
+  modal.value = null
   if (currentEnemy.value?.id === 'annoying-kid') {
     applyAnnoyingKidGuess()
   } else {
@@ -1772,7 +1788,8 @@ function finishWordLoad(showModal) {
   }
   gameState.value = 'ready'
   if (showModal) {
-    screen.value = 'enemy-intro'
+    screen.value = 'playing'
+    modal.value = 'enemy-intro'
     // pops deferred to beginEnemyEncounter, after keyboard renders
   } else if (currentEnemy.value?.id === 'annoying-kid') {
     applyAnnoyingKidGuess()
