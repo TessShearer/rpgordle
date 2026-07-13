@@ -1,6 +1,18 @@
 ﻿<template>
   <main class="container py-4">
-
+    <div class="decocard py-5 my-5">
+      <div class="decocorner decotop decoleft"></div>
+      <div class="decocorner decotop decoright"></div>
+      <div class="decocorner decobottom decoleft"></div>
+      <div class="decocorner decobottom decoright"></div>
+      
+      <h3 class="decoheading">
+        <span class="decoleft"></span>
+        <span class="decoright"></span>
+        <span class="mt-5">TEXT</span>
+      </h3>
+    </div>
+    
 
     <!-- ── Game ─────────────────────────────────────────────────────────── -->
     <section class="info-section mb-5">
@@ -17,7 +29,7 @@
         @add="addNote('game')" @delete="deleteNote" />
     </section>
 
-    
+
     <!-- ── Needed from Brynn ─────────────────────────────────────────────── -->
     <section class="info-section mb-5">
       <h2 class="info-heading mb-3">Needed from Brynn</h2>

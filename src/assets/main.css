@@ -2545,3 +2545,160 @@ body {
   75%  { opacity: 1; transform: translate(18vw, -52vh) rotate(-40deg) scale(0.9); }
   100% { opacity: 0; transform: translate(20vw, -58vh) rotate(-40deg) scale(0.7); }
 }
+
+.decocard {
+	display: flex;
+	flex-direction: column;
+	--border: hsl(40, 65%, 80%);
+	background: var(--background);
+	width: 20rem;
+	height: 30rem;
+	border: 1px solid var(--border);
+	position: relative;
+	padding: 1rem;
+
+	.decocorner {
+		width: 0.5rem;
+		height: 0.5rem;
+		border: 1px solid var(--border);
+		position: absolute;
+
+		&::after,
+		&::before {
+			content: "";
+			position: absolute;
+		}
+
+		&::after {
+			width: 2rem;
+			height: calc(1rem - 1px);
+		}
+
+		&::before {
+			width: calc(1rem - 1px);
+			height: 2rem;
+		}
+
+		&.decoleft {
+			left: -0.5rem;
+
+			&::after {
+				left: calc(-2px + 1rem);
+				border-left: 1px solid var(--border);
+			}
+
+			&::before {
+				left: -1px;
+				border-left: 1px solid var(--border);
+			}
+		}
+
+		&.decoright {
+			right: -0.5rem;
+
+			&::after {
+				right: calc(-2px + 1rem);
+				border-right: 1px solid var(--border);
+			}
+
+			&::before {
+				right: -1px;
+				border-right: 1px solid var(--border);
+			}
+		}
+
+		&.decotop {
+			top: -0.5rem;
+
+			&::after {
+				top: -1px;
+				border-top: 1px solid var(--border);
+			}
+
+			&::before {
+				top: calc(-2px + 1rem);
+				border-top: 1px solid var(--border);
+			}
+		}
+
+		&.decobottom {
+			bottom: -0.5rem;
+
+			&::after {
+				bottom: -1px;
+				border-bottom: 1px solid var(--border);
+			}
+
+			&::before {
+				bottom: calc(-2px + 1rem);
+				border-bottom: 1px solid var(--border);
+			}
+		}
+	}
+}
+
+.decoheading {
+	display: flex;
+	all: unset;
+	font-family: "Viaoda Libre";
+	text-align: center;
+	border-top: 1px solid var(--border);
+	border-bottom: 1px solid var(--border);
+	height: 2rem;
+	padding: 0 1rem;
+	position: relative;
+	--border: hsl(40, 66%, 47%);
+  color: hsl(40, 66%, 47%);
+	margin: 0 2rem;
+
+	cursor: pointer;
+
+	.decoleft,
+	.decoright {
+		position: absolute;
+		width: 1.45rem;
+		height: 1.45rem;
+		border-bottom: 1px solid var(--border);
+		border-left: 1px solid var(--border);
+    top: 5px;
+
+		&::before {
+			content: "";
+			width: 0.75rem;
+			height: 0.75rem;
+			border: 1px solid var(--border);
+			position: absolute;
+			top: calc(1rem + 1px);
+			left: calc(-0.4rem);
+		}
+
+		&::after {
+			content: "";
+			width: 0.5rem;
+			height: 0.5rem;
+			background: var(--border);
+			position: absolute;
+			top: calc(1rem - 1px);
+			left: calc(-0rem - 1px);
+		}
+	}
+
+	.decoleft {
+		left: -0.75rem;
+		transform: rotate(45deg);
+	}
+
+	.decoright {
+		right: -0.75rem;
+		transform: rotate(-135deg);
+	}
+
+	&:hover {
+		background: var(--button-hover);
+
+		.decoleft,
+		.decoright {
+			background: var(--button-hover);
+		}
+	}
+}
