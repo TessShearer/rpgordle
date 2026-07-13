@@ -17,6 +17,21 @@
         @add="addNote('game')" @delete="deleteNote" />
     </section>
 
+    
+    <!-- ── Needed from Brynn ─────────────────────────────────────────────── -->
+    <section class="info-section mb-5">
+      <h2 class="info-heading mb-3">Needed from Brynn</h2>
+      <NoteSection title="Needed from Brynn" placeholder="Add a note for Brynn..." :notes="notes.brynn"
+        :loading="submitting.brynn" v-model="draft.brynn" @add="addNote('brynn')" @delete="deleteNote" />
+    </section>
+
+    <!-- ── Needed from Carter ────────────────────────────────────────────── -->
+    <section class="info-section">
+      <h2 class="info-heading mb-3">Needed from Carter</h2>
+      <NoteSection title="Needed from Carter" placeholder="Add a note for Carter..." :notes="notes.carter"
+        :loading="submitting.carter" v-model="draft.carter" @add="addNote('carter')" @delete="deleteNote" />
+    </section>
+
     <!-- ── Characters ────────────────────────────────────────────────────── -->
     <section class="info-section mb-5">
       <h2 class="info-heading mb-3">Characters</h2>
@@ -91,19 +106,6 @@
         :loading="submitting.shop" v-model="draft.shop" @add="addNote('shop')" @delete="deleteNote" />
     </section>
 
-    <!-- ── Needed from Brynn ─────────────────────────────────────────────── -->
-    <section class="info-section mb-5">
-      <h2 class="info-heading mb-3">Needed from Brynn</h2>
-      <NoteSection title="Needed from Brynn" placeholder="Add a note for Brynn..." :notes="notes.brynn"
-        :loading="submitting.brynn" v-model="draft.brynn" @add="addNote('brynn')" @delete="deleteNote" />
-    </section>
-
-    <!-- ── Needed from Carter ────────────────────────────────────────────── -->
-    <section class="info-section">
-      <h2 class="info-heading mb-3">Needed from Carter</h2>
-      <NoteSection title="Needed from Carter" placeholder="Add a note for Carter..." :notes="notes.carter"
-        :loading="submitting.carter" v-model="draft.carter" @add="addNote('carter')" @delete="deleteNote" />
-    </section>
 
   </main>
 </template>
