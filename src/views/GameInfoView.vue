@@ -78,7 +78,7 @@
     </section>
 
     <!-- ── Shop Items ─────────────────────────────────────────────────────── -->
-    <section class="info-section">
+    <section class="info-section mb-5">
       <h2 class="info-heading mb-3">Shop Items</h2>
       <div class="info-grid mb-4">
         <div v-for="item in SHOP_ITEMS" :key="item.id" class="info-card">
@@ -89,6 +89,20 @@
       </div>
       <NoteSection title="Suggest a Shop Item" placeholder="Describe a shop item idea..." :notes="notes.shop"
         :loading="submitting.shop" v-model="draft.shop" @add="addNote('shop')" @delete="deleteNote" />
+    </section>
+
+    <!-- ── Needed from Brynn ─────────────────────────────────────────────── -->
+    <section class="info-section mb-5">
+      <h2 class="info-heading mb-3">Needed from Brynn</h2>
+      <NoteSection title="Needed from Brynn" placeholder="Add a note for Brynn..." :notes="notes.brynn"
+        :loading="submitting.brynn" v-model="draft.brynn" @add="addNote('brynn')" @delete="deleteNote" />
+    </section>
+
+    <!-- ── Needed from Carter ────────────────────────────────────────────── -->
+    <section class="info-section">
+      <h2 class="info-heading mb-3">Needed from Carter</h2>
+      <NoteSection title="Needed from Carter" placeholder="Add a note for Carter..." :notes="notes.carter"
+        :loading="submitting.carter" v-model="draft.carter" @add="addNote('carter')" @delete="deleteNote" />
     </section>
 
   </main>
@@ -104,13 +118,13 @@ import {
 } from 'firebase/firestore'
 import NoteSection from '@/components/NoteSection.vue'
 
-const draft = ref({ game: '', character: '', enemy: '', miniboss: '', boss: '', shop: '' })
-const submitting = ref({ game: false, character: false, enemy: false, miniboss: false, boss: false, shop: false })
-const notes = ref({ game: [], character: [], enemy: [], miniboss: [], boss: [], shop: [] })
+const draft = ref({ game: '', character: '', enemy: '', miniboss: '', boss: '', shop: '', brynn: '', carter: '' })
+const submitting = ref({ game: false, character: false, enemy: false, miniboss: false, boss: false, shop: false, brynn: false, carter: false })
+const notes = ref({ game: [], character: [], enemy: [], miniboss: [], boss: [], shop: [], brynn: [], carter: [] })
 const unsubs = []
 
 function subscribeNotes() {
-  for (const cat of ['game', 'character', 'enemy', 'miniboss', 'boss', 'shop']) {
+  for (const cat of ['game', 'character', 'enemy', 'miniboss', 'boss', 'shop', 'brynn', 'carter']) {
     const q = query(collection(db, 'notes'), where('type', '==', cat))
     unsubs.push(onSnapshot(q,
       snap => {

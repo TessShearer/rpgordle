@@ -5,7 +5,7 @@ export const CLASSES = [
   { id: 'scholar', name: 'Scholar', health: 13, description: 'Can tell you information about the word.' },
   { id: 'treasurer', name: 'Treasurer', health: 10, description: 'Start the game with 2 inventory items' },
   { id: 'assassin', name: 'Assassin', health: 8, description: 'Can sneak attack with 3 yellow letters.' },
-  { id: 'cleric', name: 'Cleric', health: 6, description: 'Heal to full after every fight.' },
+  { id: 'cleric', name: 'Cleric', health: 6, description: 'Heal to full after every correct guess.' },
   { id: 'village-idiot', name: 'Village Idiot', health: 13, description: 'Any string of letters is a valid guess, not just real words.' },
   { id: 'thief', name: 'The Thief', health: 12, description: 'Take 2 items from the shop instead of 1.' },
   { id: 'fortune-teller', name: 'Fortune Teller', health: 12, description: 'Reveal some letters that are not in the word.' },
