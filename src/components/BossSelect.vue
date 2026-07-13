@@ -20,9 +20,16 @@
             <p class="class-desc">{{ boss.effect }}</p>
           </div>
         </div>
-      </div>
-      <div v-if="showRandomize" class="text-center mt-3">
-        <button class="btn btn-reset px-4 py-2" @click="randomize">Random Boss</button>
+        <div v-if="showRandomize" class="class-option" :style="{ animationDelay: `${bosses.length * 0.1}s` }" @click="randomize">
+          <div class="art-with-shadow">
+            <div class="art-placeholder art-placeholder--class art-placeholder--random">?</div>
+            <div class="class-option-shadow"></div>
+          </div>
+          <div class="class-text">
+            <p class="class-name">Random {{ label }}</p>
+            <p class="class-desc">Choose a random option</p>
+          </div>
+        </div>
       </div>
     </div>
     <Transition name="slide-in">
@@ -40,6 +47,7 @@ const props = defineProps({
   bosses:         { type: Array,  required: true },
   selectedBossId: { type: String, default: null },
   showRandomize:  { type: Boolean, default: false },
+  label:          { type: String, default: 'Boss' },
 })
 const emit = defineEmits(['select', 'confirm'])
 

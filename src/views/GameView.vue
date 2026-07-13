@@ -30,13 +30,8 @@
 
       <!-- ── Miniboss Test Select ──────────────────────────────────────── -->
       <div v-else-if="screen === 'miniboss-select' && mode === 'testing'" class="miniboss-test-wrapper">
-        <BossSelect :bosses="MINIBOSSES" :selected-boss-id="selectedMiniboss"
+        <BossSelect :bosses="MINIBOSSES" :selected-boss-id="selectedMiniboss" :show-randomize="true" label="Miniboss"
           @select="selectedMiniboss = $event" @confirm="confirmMinibossSelect" />
-        <div class="text-center mt-2">
-          <button class="btn btn-reset btn-sm" @click="selectedMiniboss = null; screen = 'boss-select'">
-            Random Miniboss
-          </button>
-        </div>
       </div>
 
       <!-- ── Boss Intro ────────────────────────────────────────────────── -->
@@ -1735,6 +1730,8 @@ function queueKeyboardPops(letters, beforeEach) {
 async function processKeyPopQueue() {
   _keyPopRunning = true
   while (_keyPopQueue.length > 0) {
+    // Hold until any modal clears — animations shouldn't run behind an overlay
+    while (modal.value) await new Promise(r => setTimeout(r, 50))
     const { letter, before } = _keyPopQueue.shift()
     if (before) {
       before()

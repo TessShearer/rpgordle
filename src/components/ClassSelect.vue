@@ -17,9 +17,16 @@
             <p class="class-desc">{{ cls.description }}</p>
           </div>
         </div>
-      </div>
-      <div v-if="showRandomize" class="text-center mt-3">
-        <button class="btn btn-reset px-4 py-2" @click="randomize">Random Character</button>
+        <div v-if="showRandomize" class="class-option" :style="{ animationDelay: `${classes.length * 0.1}s` }" @click="randomize">
+          <div class="art-with-shadow">
+            <div class="art-placeholder art-placeholder--class art-placeholder--random">?</div>
+            <div class="class-option-shadow"></div>
+          </div>
+          <div class="class-text">
+            <p class="class-name">Random Character</p>
+            <p class="class-desc">Choose a random option</p>
+          </div>
+        </div>
       </div>
     </div>
     <Transition name="slide-in">
