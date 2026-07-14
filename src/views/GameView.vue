@@ -375,7 +375,7 @@
                   </Transition>
                 </div>
               </div>
-              <button class="btn btn-reset px-5 py-2 mt-3" @click="modal = null">Close</button>
+              <button class="btn btn-press px-5 py-2 mt-3" @click="modal = null">Close</button>
             </template>
             <template v-else-if="modal === 'defeat'">
               <button class="modal-close-btn" type="button" aria-label="Close" @click="modal = null">✕</button>

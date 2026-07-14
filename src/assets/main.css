@@ -28,12 +28,12 @@ body {
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background-color: rgb(214, 211, 211);
-  /* background-image: url('./background.jpg'); */
+  background-color: rgb(161, 157, 157);
+  background-image: url('./background.jpg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  opacity: 0.6;
+  opacity: 0.15;
 }
 
 /* Navbar */
