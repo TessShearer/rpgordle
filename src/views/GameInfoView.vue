@@ -1,6 +1,6 @@
 ﻿<template>
   <main class="container py-4">
-    <div class="decocard py-5 my-5">
+    <!-- <div class="decocard py-5 my-5">
       <div class="decocorner decotop decoleft"></div>
       <div class="decocorner decotop decoright"></div>
       <div class="decocorner decobottom decoleft"></div>
@@ -11,7 +11,7 @@
         <span class="decoright"></span>
         HELLO
       </h3>
-    </div>
+    </div> -->
     
 
     <!-- ── Game ─────────────────────────────────────────────────────────── -->
@@ -38,7 +38,7 @@
     </section>
 
     <!-- ── Needed from Carter ────────────────────────────────────────────── -->
-    <section class="info-section">
+    <section class="info-section mb-5">
       <h2 class="info-heading mb-3">Needed from Carter</h2>
       <NoteSection title="Needed from Carter" placeholder="Add a note for Carter..." :notes="notes.carter"
         :loading="submitting.carter" v-model="draft.carter" @add="addNote('carter')" @delete="deleteNote" />

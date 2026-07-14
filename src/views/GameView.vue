@@ -1992,7 +1992,8 @@ function useItem() {
   } else if (item.effect === 'caltrops') {
     const allWordLetters = new Set(boards.value.flatMap(b => b.secretWord.split('')))
     const already = new Set(fortuneTellerGreyLetters.value)
-    const pool = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').filter(l => !allWordLetters.has(l) && !already.has(l))
+    const revealed = keyboardStatuses.value
+    const pool = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').filter(l => !allWordLetters.has(l) && !already.has(l) && revealed[l] !== 'absent')
     const shuffled = [...pool].sort(() => Math.random() - 0.5)
     const newLetters = shuffled.slice(0, 4)
     caltropsFlyingAnim.value = true
@@ -2025,22 +2026,37 @@ function useItem() {
 function revealCrystalHint() {
   const unsolvedBoards = boards.value.filter(b => !b.solved)
   if (!unsolvedBoards.length) return
-  const unionStatuses = getUnionLetterStatuses()
-  // Reveal 1 letter per unsolved board, avoiding duplicates across boards
+  const revealed = keyboardStatuses.value
+  const TARGET_LETTERS = 2
   const pickedLetters = new Set()
   const letterBoardPairs = []
-  for (const board of unsolvedBoards) {
-    const known = new Set([...Object.keys(unionStatuses), ...pickedLetters])
-    if (board.hintLetter) known.add(board.hintLetter)
-    board.crystalHints.forEach(l => known.add(l))
-    const wordLetters = [...new Set(board.secretWord.split(''))]
-    const unknown = wordLetters.filter(l => !known.has(l))
-    const pool = (unknown.length ? unknown : wordLetters).filter(l => !pickedLetters.has(l))
-    if (!pool.length) continue
-    const letter = pool[Math.floor(Math.random() * pool.length)]
-    letterBoardPairs.push({ board, letter })
-    pickedLetters.add(letter)
+
+  // One pass over all boards, picking at most one letter per board. When preferFresh is
+  // true, only letters not already yellow/green on the keyboard are eligible.
+  const pickPass = (preferFresh) => {
+    let progress = false
+    for (const board of unsolvedBoards) {
+      if (pickedLetters.size >= TARGET_LETTERS) break
+      const known = new Set(pickedLetters)
+      if (board.hintLetter) known.add(board.hintLetter)
+      board.crystalHints.forEach(l => known.add(l))
+      const wordLetters = [...new Set(board.secretWord.split(''))]
+      let candidates = wordLetters.filter(l => !known.has(l))
+      if (preferFresh) candidates = candidates.filter(l => revealed[l] !== 'correct' && revealed[l] !== 'present')
+      if (!candidates.length) continue
+      const letter = candidates[Math.floor(Math.random() * candidates.length)]
+      letterBoardPairs.push({ board, letter })
+      pickedLetters.add(letter)
+      progress = true
+    }
+    return progress
   }
+
+  // Exhaust not-yet-revealed letters across all boards first; only fall back to
+  // redundant (already yellow/green) letters if none remain anywhere.
+  while (pickedLetters.size < TARGET_LETTERS && pickPass(true));
+  while (pickedLetters.size < TARGET_LETTERS && pickPass(false));
+
   queueKeyboardPops(letterBoardPairs.map(p => p.letter), (l) => {
     const pair = letterBoardPairs.find(p => p.letter === l)
     if (pair) pair.board.crystalHints = [...pair.board.crystalHints, l]
