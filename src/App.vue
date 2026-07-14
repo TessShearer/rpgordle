@@ -1,6 +1,9 @@
 <template>
   <nav class="navbar navbar-expand app-navbar">
     <div class="container">
+        <button v-if="gameNav.active" type="button" class="btn nav-restart-btn" @click="gameNav.restart?.()">
+          <span aria-hidden="true">⟲</span> Restart
+        </button>
         <ul class="navbar-nav flex-row ms-auto">
           <li class="nav-item">
             <RouterLink class="nav-link" to="/">Daily</RouterLink>
@@ -25,4 +28,7 @@
 
 <script setup>
 import { RouterLink, RouterView } from 'vue-router'
+import { useGameNavStore } from '@/stores/gameNav.js'
+
+const gameNav = useGameNavStore()
 </script>

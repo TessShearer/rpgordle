@@ -218,10 +218,6 @@
               </div>
             </div>
 
-            <button class="btn btn-reset btn-restart-fixed" @click="restartJourney">
-              Start over
-            </button>
-
             <div v-if="currentBoss && !isBossFight" class="mt-3 text-center">
               <p class="monster-text mb-0"><strong>The realm has been attacked by the {{ currentBoss.name }}:</strong> {{ currentBoss.effect }}</p>
             </div>
@@ -498,8 +494,9 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { CLASSES, ENEMIES, MINIBOSSES, BOSSES, SHOP_ITEMS, ALL_ITEMS, STAGE_SEQUENCE, JOURNEY_LENGTH } from '@/data/gameData.js'
+import { useGameNavStore } from '@/stores/gameNav.js'
 import BossIntro from '@/components/BossIntro.vue'
 import BossFightIntro from '@/components/BossFightIntro.vue'
 import ClassSelect from '@/components/ClassSelect.vue'
@@ -529,6 +526,8 @@ const MODAL_CONTENT = {
   complete: { message: 'You completed your quest and the realm has been saved! New Game?', button: 'New Game' },
 }
 
+
+const gameNav = useGameNavStore()
 
 // ── Screen / class ────────────────────────────────────────────────────────────
 const screen = ref('intro')
@@ -648,12 +647,18 @@ function makeBoard(id, secretWord) {
   }
 }
 
+// Shield blocks the Abominable Snowman's forced-frozen-letter effect for one guess
+function isFrozenBypassed(board) {
+  return currentBoss.value?.id === 'abominable-snowman' && board.shieldedRows.has(board.guesses.length)
+}
+
 function buildEffectiveGuess(board) {
   const len = board.secretWord.length
+  const bypassFrozen = isFrozenBypassed(board)
   const result = []
   let userIdx = 0
   for (let i = 0; i < len; i++) {
-    if (board.frozenSlots[i] !== undefined) {
+    if (!bypassFrozen && board.frozenSlots[i] !== undefined) {
       result.push(board.frozenSlots[i])
     } else if (board.crossbowSlots[i] !== undefined) {
       result.push(board.crossbowSlots[i])
@@ -748,8 +753,9 @@ const nonFrozenCount = computed(() => {
   const active = boards.value.filter(b => !b.solved)
   if (!active.length) return wordLength.value
   return Math.max(...active.map(board => {
+    const bypassFrozen = isFrozenBypassed(board)
     const allFrozen = new Set([
-      ...Object.keys(board.frozenSlots).map(Number),
+      ...(bypassFrozen ? [] : Object.keys(board.frozenSlots).map(Number)),
       ...Object.keys(board.crossbowSlots).map(Number),
     ].filter(k => k < wordLength.value))
     return wordLength.value - allFrozen.size
@@ -2094,8 +2100,12 @@ async function applyAnnoyingKidGuess() {
   await submitGuess(true)
 }
 
+// Surface the restart action to the navbar (App.vue), which lives outside this routed view
+watch(screen, (val) => { gameNav.active = val === 'playing' }, { immediate: true })
+
 onMounted(async () => {
   window.addEventListener('keydown', onKeyDown)
+  gameNav.restart = restartJourney
   if (props.mode === 'daily') {
     try {
       dailyConfig.value = await fetchOrCreateDaily()
@@ -2107,5 +2117,9 @@ onMounted(async () => {
     }
   }
 })
-onUnmounted(() => window.removeEventListener('keydown', onKeyDown))
+onUnmounted(() => {
+  window.removeEventListener('keydown', onKeyDown)
+  gameNav.active = false
+  gameNav.restart = null
+})
 </script>

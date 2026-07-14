@@ -53,6 +53,23 @@ body {
   text-decoration: underline;
 }
 
+.app-navbar .nav-restart-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background-color: transparent;
+  color: var(--gs-100);
+
+  font-size: 0.9rem;
+  padding: 0.25rem 0.65rem;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.app-navbar .nav-restart-btn:hover {
+  color: #ffffff;
+  border-color: var(--gs-400);
+}
+
 /* Counter card */
 .counter-card {
   background-color: var(--gs-100);
@@ -182,13 +199,6 @@ body {
   border-color: var(--gs-700);
 }
 
-.btn-restart-fixed {
-  position: fixed;
-  top: 4.25rem;
-  right: 1.25rem;
-  z-index: 50;
-}
-
 .submit-row {
   display: flex;
   justify-content: center;
@@ -217,13 +227,6 @@ body {
 @keyframes sneak-pulse {
   0%, 100% { transform: scale(1); }
   50%       { transform: scale(1.14); }
-}
-
-@media (max-width: 859px) {
-  .btn-restart-fixed {
-    top: auto;
-    bottom: 1.25rem;
-  }
 }
 
 /* Category dropdown */
@@ -2475,8 +2478,7 @@ body {
 .bow-targeting-active .journey-dots,
 .bow-targeting-active .submit-row,
 .bow-targeting-active .keyboard,
-.bow-targeting-active .won-message-inline,
-.bow-targeting-active .btn-restart-fixed {
+.bow-targeting-active .won-message-inline {
   opacity: 0.3;
   pointer-events: none;
   transition: opacity 0.2s;

@@ -81,11 +81,16 @@ defineExpose({ getInputRowRects })
 
 const wordLength = computed(() => props.board.secretWord.length || 5)
 
+// Shield blocks the Abominable Snowman's forced-frozen-letter effect for one guess
+const bypassFrozen = computed(() =>
+  props.boss?.id === 'abominable-snowman' && props.board.shieldedRows.has(props.board.guesses.length)
+)
+
 const effectiveGuessArr = computed(() => {
   const result = []
   let userIdx = 0
   for (let i = 0; i < wordLength.value; i++) {
-    if (props.board.frozenSlots[i] !== undefined) {
+    if (!bypassFrozen.value && props.board.frozenSlots[i] !== undefined) {
       result.push(props.board.frozenSlots[i])
     } else if (props.board.crossbowSlots?.[i] !== undefined) {
       result.push(props.board.crossbowSlots[i])
@@ -123,7 +128,7 @@ function isInputRow(row) {
 }
 
 function isFrozenCol(col) {
-  return props.board.frozenSlots[col] !== undefined || props.board.crossbowSlots?.[col] !== undefined
+  return (!bypassFrozen.value && props.board.frozenSlots[col] !== undefined) || props.board.crossbowSlots?.[col] !== undefined
 }
 
 function isObscured(row, col) {
@@ -156,7 +161,7 @@ function tileClass(row, col) {
   if (row === props.board.guesses.length && props.gameState === 'playing' && !props.board.solved) {
     if (props.zombieRising && effectiveGuessArr.value[col]) return 'tile--filled tile--zombie'
     if (props.boardScrambling && effectiveGuessArr.value[col]) return 'tile--filled tile--scrambling'
-    if (props.board.frozenSlots[col] !== undefined || props.board.crossbowSlots?.[col] !== undefined) return 'tile--frozen'
+    if ((!bypassFrozen.value && props.board.frozenSlots[col] !== undefined) || props.board.crossbowSlots?.[col] !== undefined) return 'tile--frozen'
     return effectiveGuessArr.value[col] ? 'tile--filled' : 'tile--empty'
   }
   return 'tile--empty'
