@@ -8,7 +8,7 @@ export const CLASSES = [
   { id: 'cleric', name: 'Cleric', health: 6, description: 'Clerics heal to full after every correct guess' },
   { id: 'village-idiot', name: 'Village Idiot', health: 13, description: 'For the Village Idiot, any string of letters is a valid word' },
   { id: 'thief', name: 'Thief', health: 12, description: 'Thieves take 2 items from the shop instead of 1' },
-  { id: 'fortune-teller', name: 'Fortune Teller', health: 12, description: 'Fortune Tellrs reveal some letters that are not in the word' },
+  { id: 'fortune-teller', name: 'Fortune Teller', health: 12, description: 'Fortune Tellers reveal some letters that are not in the word' },
   { id: 'archer', name: 'Archer', health: 13, description: 'Archers shoot the gameboard to reveal a green letter' },
   { id: 'changeling', name: 'Changeling', health: 10, description: 'Gain the ability of a random character, and gain another later on' },
 ]
