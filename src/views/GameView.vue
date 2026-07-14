@@ -20,13 +20,11 @@
 
       <!-- ── Class Select ───────────────────────────────────────────────── -->
       <ClassSelect v-else-if="screen === 'class-select'" :classes="selectableClasses" :selected-class-id="selectedClass"
-        :show-randomize="mode !== 'daily'"
-        @select="selectedClass = $event" @confirm="selectClass($event)" />
+        :show-randomize="mode !== 'daily'" @select="selectedClass = $event" @confirm="selectClass($event)" />
 
       <!-- ── Boss Select (free play) ──────────────────────────────────── -->
       <BossSelect v-else-if="screen === 'boss-select'" :bosses="BOSSES" :selected-boss-id="selectedBoss"
-        :show-randomize="mode !== 'daily'"
-        @select="selectedBoss = $event" @confirm="confirmBossSelect" />
+        :show-randomize="mode !== 'daily'" @select="selectedBoss = $event" @confirm="confirmBossSelect" />
 
       <!-- ── Miniboss Test Select ──────────────────────────────────────── -->
       <div v-else-if="screen === 'miniboss-select' && mode === 'testing'" class="miniboss-test-wrapper">
@@ -59,7 +57,8 @@
           <!-- Mobile-only portraits strip (hidden on desktop) -->
           <div class="mobile-portraits">
             <div class="portrait-slot">
-              <div class="portrait-img-col" :class="{ 'health-hit': playerDamageAnim === 'damage', 'health-heal': playerDamageAnim === 'heal' }">
+              <div class="portrait-img-col"
+                :class="{ 'health-hit': playerDamageAnim === 'damage', 'health-heal': playerDamageAnim === 'heal' }">
                 <div v-if="mode === 'testing'" class="test-health-btns">
                   <button class="btn-test-health btn-test-heal" @click="testHeal">Heal</button>
                   <button class="btn-test-health btn-test-damage" @click="testDamage">Damage</button>
@@ -83,16 +82,20 @@
             </div>
             <div v-if="currentEnemy" class="portrait-slot portrait-slot--enemy">
               <div class="portrait-img-col" :class="{ 'health-hit': enemyHitAnim }">
-                <div class="art-placeholder art-placeholder--portrait" :class="{ 'h-shake': bossShaking }">Art of {{ currentEnemy.name }}</div>
-                <div v-if="currentEnemy.id === 'slumbering-giant'" class="snore-bars" :class="{ 'snore-bars--awake': giantAwake }">
-                  <div v-for="i in 4" :key="i" class="snore-bar" :class="{ 'snore-bar--filled': i <= giantSnoreBars }"></div>
+                <div class="art-placeholder art-placeholder--portrait" :class="{ 'h-shake': bossShaking }">Art of {{
+        currentEnemy.name }}</div>
+                <div v-if="currentEnemy.id === 'slumbering-giant'" class="snore-bars"
+                  :class="{ 'snore-bars--awake': giantAwake }">
+                  <div v-for="i in 4" :key="i" class="snore-bar" :class="{ 'snore-bar--filled': i <= giantSnoreBars }">
+                  </div>
                 </div>
                 <p class="portrait-stat">{{ currentEnemy.name }}</p>
                 <div class="enemy-health portrait-pips">
                   <span v-for="n in currentEnemy.health" :key="n" class="health-pip"
                     :class="{ 'health-pip--lost': n > enemyHealth }"></span>
                 </div>
-                <p v-if="currentEnemy.regen > 0" class="portrait-enemy-effect">Player heals {{ currentEnemy.regen }} health on kill</p>
+                <p v-if="currentEnemy.regen > 0" class="portrait-enemy-effect">Player heals {{ currentEnemy.regen }}
+                  health on kill</p>
                 <p v-if="currentEnemy.effect" class="portrait-enemy-effect">{{ currentEnemy.effect }}</p>
               </div>
             </div>
@@ -101,28 +104,29 @@
           <!-- Left panel: class character art (desktop only) -->
           <aside class="game-panel game-panel--left">
             <div class="class-feature">
-              <div class="class-feature-img-col" :class="{ 'health-hit': playerDamageAnim === 'damage', 'health-heal': playerDamageAnim === 'heal' }">
+              <div class="class-feature-img-col"
+                :class="{ 'health-hit': playerDamageAnim === 'damage', 'health-heal': playerDamageAnim === 'heal' }">
                 <div class="small-card">
-                <div v-if="mode === 'testing'" class="test-health-btns">
-                  <button class="btn-test-health btn-test-heal" @click="testHeal">Heal</button>
-                  <button class="btn-test-health btn-test-damage" @click="testDamage">Damage</button>
-                </div>
-                <img v-if="featureArtImage" :src="featureArtImage" :alt="featureArtText" class="feature-img" />
-                <div v-else class="art-placeholder art-placeholder--feature">{{ featureArtText }}</div>
-                <p class="feature-label">HP: {{ playerHealth }} / {{ playerMaxHealth }}</p>
-                <div class="player-health-pips">
-                  <span v-for="n in playerMaxHealth" :key="n" class="health-pip health-pip--player"
-                    :class="{ 'health-pip--lost': n > playerHealth }"></span>
-                </div>
-                <template v-if="playerClass === 'changeling' && changelingAbilities.length">
-                  <p v-for="ability in changelingAbilities" :key="ability" class="portrait-enemy-effect">
-                    {{ CLASSES.find(c => c.id === ability)?.description }}
+                  <div v-if="mode === 'testing'" class="test-health-btns">
+                    <button class="btn-test-health btn-test-heal" @click="testHeal">Heal</button>
+                    <button class="btn-test-health btn-test-damage" @click="testDamage">Damage</button>
+                  </div>
+                  <img v-if="featureArtImage" :src="featureArtImage" :alt="featureArtText" class="feature-img" />
+                  <div v-else class="art-placeholder art-placeholder--feature">{{ featureArtText }}</div>
+                  <p class="feature-label">HP: {{ playerHealth }} / {{ playerMaxHealth }}</p>
+                  <div class="player-health-pips">
+                    <span v-for="n in playerMaxHealth" :key="n" class="health-pip health-pip--player"
+                      :class="{ 'health-pip--lost': n > playerHealth }"></span>
+                  </div>
+                  <template v-if="playerClass === 'changeling' && changelingAbilities.length">
+                    <p v-for="ability in changelingAbilities" :key="ability" class="portrait-enemy-effect">
+                      {{ CLASSES.find(c => c.id === ability)?.description }}
+                    </p>
+                  </template>
+                  <p v-else-if="CLASSES.find(c => c.id === playerClass)?.description" class="portrait-enemy-effect">
+                    {{ CLASSES.find(c => c.id === playerClass)?.description }}
                   </p>
-                </template>
-                <p v-else-if="CLASSES.find(c => c.id === playerClass)?.description" class="portrait-enemy-effect">
-                  {{ CLASSES.find(c => c.id === playerClass)?.description }}
-                </p>
-              </div>
+                </div>
                 <div class="inventory small-card mt-2">
                   <div class="inventory-title-row">
                     <p class="inventory-label">Inventory</p>
@@ -132,7 +136,8 @@
                       @click="confirmUseItem(item)">
                       <div class="inventory-item-inner">
                         <div class="inventory-item-front">
-                          <img v-if="ITEM_IMAGES[item.id]" :src="ITEM_IMAGES[item.id]" :alt="item.name" class="inv-img" />
+                          <img v-if="ITEM_IMAGES[item.id]" :src="ITEM_IMAGES[item.id]" :alt="item.name"
+                            class="inv-img" />
                           <div v-else class="art-placeholder art-placeholder--inv">{{ item.name }}</div>
                           <!-- <p class="inventory-item-name">{{ item.name }}</p> -->
                         </div>
@@ -141,7 +146,8 @@
                         </div>
                       </div>
                     </div>
-                    <button v-if="mode === 'testing'" class="btn-test-add-item" title="Add item" @click="modal = 'test-shop'">+</button>
+                    <button v-if="mode === 'testing'" class="btn-test-add-item" title="Add item"
+                      @click="modal = 'test-shop'">+</button>
                   </div>
                 </div>
               </div>
@@ -168,32 +174,22 @@
             <div class="boards-container" :class="{ 'boards-container--multi': boards.length > 1 }">
               <template v-for="board in boards" :key="board.id">
                 <div v-if="board.solved && boards.length > 1" class="solved-word-chip">
-                  <span v-for="(letter, i) in board.secretWord.split('')" :key="i" class="solved-chip-tile">{{ letter }}</span>
+                  <span v-for="(letter, i) in board.secretWord.split('')" :key="i" class="solved-chip-tile">{{ letter
+                    }}</span>
                 </div>
-                <WordleBoard
-                  v-else
-                  :ref="(el) => setBoardRef(board.id, el)"
-                  :board="board"
-                  :current-guess="currentGuess"
-                  :game-state="gameState"
-                  :boss="currentBoss"
-                  :is-boss-fight="isBossFight"
-                  :has-seer="hasAbility('seer')"
-                  :has-scholar="hasAbility('scholar')"
-                  :shadow-obscured-col="shadowObscuredCol"
-                  :board-shaking="boardShaking"
-                  :zombie-rising="zombieRising"
-                  :compact="false"
-                  :bow-targeting="bowTargeting && !board.solved"
-                  @shake-end="boardShaking = false"
-                  @bow-target="useBowAtCol($event)"
-                />
+                <WordleBoard v-else :ref="(el) => setBoardRef(board.id, el)" :board="board"
+                  :current-guess="currentGuess" :game-state="gameState" :boss="currentBoss" :is-boss-fight="isBossFight"
+                  :has-seer="hasAbility('seer')" :has-scholar="hasAbility('scholar')"
+                  :shadow-obscured-col="shadowObscuredCol" :board-shaking="boardShaking" :zombie-rising="zombieRising"
+                  :compact="false" :bow-targeting="bowTargeting && !board.solved" @shake-end="boardShaking = false"
+                  @bow-target="useBowAtCol($event)" />
               </template>
             </div>
 
             <Transition name="modal">
               <div v-if="wonMessage" class="won-message-inline">
-                <p class="won-message-text"><span v-if="wonDamage > 0">{{ wonDamage }} damage!</span><span v-else>{{ currentEnemy?.name }} defeated!</span></p>
+                <p class="won-message-text"><span v-if="wonDamage > 0">{{ wonDamage }} damage!</span><span v-else>{{
+        currentEnemy?.name }} defeated!</span></p>
                 <p v-if="lastRegen > 0" class="won-message-sub">{{ lastRegen }} healed!</p>
                 <div class="won-progress-track">
                   <div class="won-progress-fill"></div>
@@ -203,41 +199,53 @@
 
             <p v-if="inputError" class="text-danger text-center small mb-2">{{ inputError }}</p>
 
+            <p v-if="gameState === 'lost'" class="text-center small mb-2">
+              The word{{ lostWords.length > 1 ? 's were' : ' was' }}
+              <span v-for="(word, wi) in lostWords" :key="wi">
+                <strong>{{ word.toLowerCase() }}</strong><span v-if="wi < lostWords.length - 1">, </span>
+              </span>
+            </p>
+
             <!-- Submit + Keyboard -->
             <div v-if="gameState === 'playing'" class="submit-row mb-2">
               <button class="btn btn-press px-4 py-1" @click="handleKey('ENTER')">Submit</button>
-              <button v-if="inventory.includes('sneak-attack')" class="btn btn-sneak-attack px-4 py-1" @click="triggerSneakAttack">
+              <button v-if="inventory.includes('sneak-attack')" class="btn btn-sneak-attack px-4 py-1"
+                @click="triggerSneakAttack">
                 <span class="sneak-attack-text">Sneak Attack!</span>
               </button>
             </div>
             <div v-if="gameState === 'playing'" class="keyboard">
               <div v-for="(row, r) in KEY_ROWS" :key="r" class="key-row">
                 <button v-for="key in row" :key="key" class="key"
-                  :class="[keyClass(key), { 'key--pop': poppingKey === key }]"
-                  @click="handleKey(key)">{{ key }}</button>
+                  :class="[keyClass(key), { 'key--pop': poppingKey === key }]" @click="handleKey(key)">{{ key
+                  }}</button>
               </div>
             </div>
 
             <div v-if="currentBoss && !isBossFight" class="mt-3 text-center">
-              <p class="monster-text mb-0"><strong>The realm has been attacked by the {{ currentBoss.name }}:</strong> {{ currentBoss.effect }}</p>
+              <p class="monster-text mb-0"><strong>The realm has been attacked by the {{ currentBoss.name }}:</strong>
+                {{ currentBoss.effect }}</p>
             </div>
 
             <div v-if="currentBoss" class="boss-strip-area mt-2">
               <div class="boss-strip-inventory">
                 <p class="boss-strip-inv-label">Inventory</p>
                 <div class="boss-strip-inv-list">
-                  <div v-for="(item, i) in inventoryItems" :key="i" class="boss-strip-inv-item" @click="confirmUseItem(item)">
+                  <div v-for="(item, i) in inventoryItems" :key="i" class="boss-strip-inv-item"
+                    @click="confirmUseItem(item)">
                     <img v-if="ITEM_IMAGES[item.id]" :src="ITEM_IMAGES[item.id]" :alt="item.name" class="boss-inv-img" />
                     <div v-else class="art-placeholder art-placeholder--boss-inv">{{ item.name }}</div>
                   </div>
-                  <button v-if="mode === 'testing'" class="btn-test-add-item boss-strip-add-btn" title="Add item" @click="modal = 'test-shop'">+</button>
+                  <button v-if="mode === 'testing'" class="btn-test-add-item boss-strip-add-btn" title="Add item"
+                    @click="modal = 'test-shop'">+</button>
                 </div>
               </div>
               <div v-if="currentBoss?.id === 'necromancer'" class="boss-image-strip">
                 <GraveyardDisplay :words="allGuessedWords" />
               </div>
               <div v-else class="boss-image-strip">
-                <img v-if="CHARACTER_IMAGES[currentBoss.id]" :src="CHARACTER_IMAGES[currentBoss.id]" :alt="currentBoss.name" class="boss-strip-img" />
+                <img v-if="CHARACTER_IMAGES[currentBoss.id]" :src="CHARACTER_IMAGES[currentBoss.id]"
+                  :alt="currentBoss.name" class="boss-strip-img" />
                 <div v-else class="art-placeholder art-placeholder--boss-strip">Art of {{ currentBoss.name }}</div>
               </div>
             </div>
@@ -255,8 +263,10 @@
             <div v-if="currentEnemy" class="enemy-section small-card" :class="{ 'health-hit': enemyHitAnim }">
               <div class="art-placeholder art-placeholder--monster" :class="{ 'h-shake': bossShaking }"
                 @animationend="bossShaking = false">Art of {{ currentEnemy.name }}</div>
-              <div v-if="currentEnemy.id === 'slumbering-giant'" class="snore-bars" :class="{ 'snore-bars--awake': giantAwake }">
-                <div v-for="i in 4" :key="i" class="snore-bar" :class="{ 'snore-bar--filled': i <= giantSnoreBars }"></div>
+              <div v-if="currentEnemy.id === 'slumbering-giant'" class="snore-bars"
+                :class="{ 'snore-bars--awake': giantAwake }">
+                <div v-for="i in 4" :key="i" class="snore-bar" :class="{ 'snore-bar--filled': i <= giantSnoreBars }">
+                </div>
               </div>
               <p class="enemy-name">{{ currentEnemy.name }}</p>
               <div class="enemy-health">
@@ -344,6 +354,7 @@
 
             <!-- Test shop -->
             <template v-else-if="modal === 'test-shop'">
+              <button class="modal-close-btn" type="button" aria-label="Close" @click="modal = null">✕</button>
               <p class="modal-message">Testing - Add Items</p>
               <div class="shop-items">
                 <div v-for="item in SHOP_ITEMS" :key="item.id" class="shop-item"
@@ -358,11 +369,15 @@
                       <p class="shop-item-desc">{{ item.description }}</p>
                     </div>
                   </div>
+                  <Transition name="item-added-fade">
+                    <div v-if="testAddedItemId === item.id" class="shop-item-added-badge">✓ Added</div>
+                  </Transition>
                 </div>
               </div>
               <button class="btn btn-reset px-5 py-2 mt-3" @click="modal = null">Close</button>
             </template>
             <template v-else-if="modal === 'defeat'">
+              <button class="modal-close-btn" type="button" aria-label="Close" @click="modal = null">✕</button>
               <p class="modal-message">You were defeated!</p>
               <p class="modal-submessage">
                 The answer{{ lostWords.length > 1 ? 's were' : ' was' }}:
@@ -1557,8 +1572,13 @@ function testHeal() {
 function testDamage() {
   playerHealth.value = Math.max(0, playerHealth.value - 1)
 }
+const testAddedItemId = ref(null)
+let testAddedTimer = null
 function testAddItem(item) {
   inventory.value.push(item.id)
+  testAddedItemId.value = item.id
+  clearTimeout(testAddedTimer)
+  testAddedTimer = setTimeout(() => { testAddedItemId.value = null }, 900)
 }
 
 const CHANGELING_POOL = ['seer', 'scholar', 'assassin', 'cleric', 'village-idiot', 'thief', 'knight', 'treasurer', 'archer']
@@ -2130,5 +2150,6 @@ onUnmounted(() => {
   window.removeEventListener('keydown', onKeyDown)
   gameNav.active = false
   gameNav.restart = null
+  clearTimeout(testAddedTimer)
 })
 </script>

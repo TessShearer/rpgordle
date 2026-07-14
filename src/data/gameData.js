@@ -9,7 +9,7 @@ export const CLASSES = [
   { id: 'village-idiot', name: 'Village Idiot', health: 13, description: 'Any string of letters is a valid guess, not just real words.' },
   { id: 'thief', name: 'The Thief', health: 12, description: 'Take 2 items from the shop instead of 1.' },
   { id: 'fortune-teller', name: 'Fortune Teller', health: 12, description: 'Reveal some letters that are not in the word.' },
-    { id: 'archer', name: 'Archer', health: 13, description: 'Shoot the gameboard to reveal a green letter.' },
+  { id: 'archer', name: 'Archer', health: 13, description: 'Shoot the gameboard to reveal a green letter.' },
   { id: 'changeling', name: 'The Changeling', health: 10, description: 'Gain the ability of a random character, and gain another later on.' },
 ]
 
@@ -78,14 +78,14 @@ export const SHOP_ITEMS = [
     effect: 'caltrops',
     cost: 2,
   },
-    {
+  {
     id: 'smoke-bomb',
     name: 'Smoke Bomb',
     description: 'When used, you take no damage from your next incorrect guess',
     effect: 'smoke-bomb',
     cost: 2,
   },
-      {
+  {
     id: 'vampiric-dagger',
     name: 'Vampiric Dagger',
     description: 'When used, you begin to heal +1 for each correct guess',
@@ -121,9 +121,10 @@ export const BOSSES = [
     health: 3,
     regen: 0,
     wordLength: 5,
-    effect: 'A random letter on your first guess fades to shadow',
+    effect: 'A random letter on your first guess is hidden in shadow',
+    effect: 'A random letter is hidden in shadow',
     announcement: 'Your quest is to defeat the Shadow Sorcerer, who veils a random letter on your first guess each round.',
-    enhancedAnnouncement: 'You found the boss! Now every guess has a shadowed letter — and it shifts each time.',
+    enhancedAnnouncement: 'You found the boss! He casts a shadow over part of every guess',
   },
   {
     id: 'gelatinous-cube',
@@ -132,8 +133,9 @@ export const BOSSES = [
     regen: 0,
     wordLength: 5,
     boardCount: 1,
-    effect: 'Each round a letter is slimed for double damage.',
-    announcement: 'Your quest is to defeat the Gelatinous Cube. It will cover letters in toxic goo — guessing with a slimed letter will deal extra damage.',
+    effect: 'Guessing a slime covered letter will deal an extra damage',
+    enhancedEffect: 'Multiple letters are slimed and guesses with any slime deal extra damage.',
+    announcement: 'Your quest is to defeat the Gelatinous Cube. It will cover letters in toxic slime. Guesses with a slimed letter will deal 1 extra damage.',
     enhancedAnnouncement: 'You found the boss! Now THREE letters are slimed for double damage.',
   },
   {
@@ -148,7 +150,8 @@ export const BOSSES = [
       { boardCount: 2, wordLength: 5 },
       { boardCount: 4, wordLength: 3 },
     ],
-    effect: 'Can survive being split into pieces.',
+    effect: 'The slime can survive being split into pieces.',
+    enhancedEffect: "Can survive being split into pieces",
     announcement: 'Your quest is to defeat the Giant Slime. It is hiding deep in the kingdom and can survive being split to pieces.',
     enhancedAnnouncement: 'You found the boss! Chop it to bits!',
   },
@@ -159,6 +162,7 @@ export const BOSSES = [
     regen: 0,
     wordLength: 5,
     effect: 'Freezes correct guesses in place',
+    enhancedEffect: "Freezes green letters and requires you to use yellow letters",
     announcement: 'Your quest is to defeat the Aboninable Snowman. It will freeze a correctly guessed letter in place for all future guesses.',
     enhancedAnnouncement: 'You found the boss! Now yellow letters must be used!',
   },
@@ -168,7 +172,8 @@ export const BOSSES = [
     health: 2,
     regen: 0,
     wordLength: 5,
-    effect: 'Take extra damage for repeated used words',
+    effect: 'Take extra damage for repeatedly used words across the game',
+    enhancedEffect: 'Take extra damage for repeatedly used words AND for using greyed out letters',
     announcement: 'Your quest is to defeat the Necromancer. Using the same word twice will deal an extra damage',
     enhancedAnnouncement: 'You found the boss! Using greyed out letters will now deal extra damage as well!',
   },
