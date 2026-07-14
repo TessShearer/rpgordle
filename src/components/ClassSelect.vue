@@ -11,7 +11,7 @@
             <div v-else class="art-placeholder art-placeholder--class">Art for {{ cls.name }} goes here</div>
             <div class="class-option-shadow"></div>
           </div>
-          <div class="decoheading">
+          <div class="decoheading" :class="{ 'decoheading--long': cls.name.length > 10 }">
             <span class="decoleft"></span>
             <span class="decoright"></span>
             <p class="pt-1">{{ cls.name }}</p>
@@ -28,7 +28,7 @@
           <div class="decoheading">
             <span class="decoleft"></span>
             <span class="decoright"></span>
-            <p class="pt-1">Random Character</p>
+            <p class="pt-1">Random</p>
           </div>
           <p class="class-desc">Choose a random option</p>
         </div>

@@ -7,10 +7,10 @@ export const CLASSES = [
   { id: 'assassin', name: 'Assassin', health: 8, description: 'Can sneak attack with 3 yellow letters.' },
   { id: 'cleric', name: 'Cleric', health: 6, description: 'Heal to full after every correct guess.' },
   { id: 'village-idiot', name: 'Village Idiot', health: 13, description: 'Any string of letters is a valid guess, not just real words.' },
-  { id: 'thief', name: 'The Thief', health: 12, description: 'Take 2 items from the shop instead of 1.' },
+  { id: 'thief', name: 'Thief', health: 12, description: 'Take 2 items from the shop instead of 1.' },
   { id: 'fortune-teller', name: 'Fortune Teller', health: 12, description: 'Reveal some letters that are not in the word.' },
   { id: 'archer', name: 'Archer', health: 13, description: 'Shoot the gameboard to reveal a green letter.' },
-  { id: 'changeling', name: 'The Changeling', health: 10, description: 'Gain the ability of a random character, and gain another later on.' },
+  { id: 'changeling', name: 'Changeling', health: 10, description: 'Gain the ability of a random character, and gain another later on.' },
 ]
 
 export const ENEMIES = [

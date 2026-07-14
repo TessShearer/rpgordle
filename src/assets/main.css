@@ -388,7 +388,7 @@ body {
 
 .class-option {
   flex: 1 1 90px;
-  max-width: 140px;
+  max-width: 100px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1218,7 +1218,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(13, 115, 119, 0.92);
+  background: rgba(51, 177, 87, 0.92);
   color: #ffffff;
   font-weight: 700;
   font-size: 0.85rem;
@@ -2737,57 +2737,65 @@ body {
 .decoheading {
 	all: unset;
 	display: flex;
+	align-items: center;
+	justify-content: center;
 	font-family: "Viaoda Libre";
+	font-size: 0.85rem;
+	line-height: 1.1;
 	text-align: center;
 	border-top: 1px solid var(--border);
 	border-bottom: 1px solid var(--border);
-	height: 2rem;
-	padding: 0 1rem;
+	height: 1.9rem;
+	padding: 0.15rem 0.35rem;
 	position: relative;
 	--border: hsl(40, 66%, 47%);
   color: hsl(40, 66%, 47%);
-	margin: 0 2rem;
+	margin: 0 0.6rem;
 
 	cursor: pointer;
+
+	p {
+		margin: 0;
+	}
 
 	.decoleft,
 	.decoright {
 		position: absolute;
-		width: 1.45rem;
-		height: 1.45rem;
+		width: 1.1rem;
+		height: 1.1rem;
 		border-bottom: 1px solid var(--border);
 		border-left: 1px solid var(--border);
-    top: 5px;
+    top: 50%;
 
 		&::before {
 			content: "";
-			width: 0.75rem;
-			height: 0.75rem;
+			width: 0.55rem;
+			height: 0.55rem;
 			border: 1px solid var(--border);
 			position: absolute;
-			top: calc(1rem + 1px);
-			left: calc(-0.4rem);
+			top: calc(0.75rem + 1px);
+			left: calc(-0.3rem);
 		}
 
 		&::after {
 			content: "";
-			width: 0.5rem;
-			height: 0.5rem;
+			width: 0.35rem;
+			height: 0.35rem;
 			background: var(--border);
 			position: absolute;
-			top: calc(1rem - 1px);
+			top: calc(0.75rem - 1px);
 			left: calc(-0rem - 1px);
 		}
 	}
 
 	.decoleft {
-		left: -0.75rem;
-		transform: rotate(45deg);
+		left: -0.55rem;
+		transform: translateY(-50%) rotate(45deg);
 	}
 
 	.decoright {
-		right: -0.75rem;
-		transform: rotate(-135deg);
+		right: -0.55rem;
+		transform: translateY(-50%) rotate(-135deg);
 	}
 
 	&:hover {
@@ -2798,4 +2806,12 @@ body {
 			background: var(--button-hover);
 		}
 	}
+}
+
+/* Names too long to fit on one line at the normal size get a smaller size instead —
+   the border box itself stays a fixed height either way, so the corner brackets
+   never need to reflow/reposition per-name. */
+.decoheading--long {
+	font-size: 0.62rem;
+	line-height: 1.15;
 }

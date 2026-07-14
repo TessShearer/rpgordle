@@ -26,7 +26,7 @@
             <div class="class-option-shadow"></div>
           </div>
           <div class="class-text">
-            <p class="class-name">Random {{ label }}</p>
+            <p class="class-name">Random</p>
             <p class="class-desc">Choose a random option</p>
           </div>
         </div>
