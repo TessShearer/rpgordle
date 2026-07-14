@@ -9,7 +9,7 @@
           class="class-option"
           :class="{ 'class-option--selected': selectedBossId === boss.id }"
           :style="{ animationDelay: `${i * 0.1}s` }"
-          @click="$emit('select', boss.id)"
+          @click="choose(boss.id)"
         >
           <div class="art-with-shadow">
             <div class="art-placeholder art-placeholder--class">Art of {{ boss.name }}</div>
@@ -32,13 +32,6 @@
         </div>
       </div>
     </div>
-    <Transition name="slide-in">
-      <div v-if="selectedBossId" class="class-select-aside">
-        <button class="btn btn-press px-4 py-3 fs-5" @click="$emit('confirm', selectedBossId)">
-          Continue
-        </button>
-      </div>
-    </Transition>
   </div>
 </template>
 
@@ -51,9 +44,13 @@ const props = defineProps({
 })
 const emit = defineEmits(['select', 'confirm'])
 
+function choose(id) {
+  emit('select', id)
+  emit('confirm', id)
+}
+
 function randomize() {
   const item = props.bosses[Math.floor(Math.random() * props.bosses.length)]
-  emit('select', item.id)
-  emit('confirm', item.id)
+  choose(item.id)
 }
 </script>

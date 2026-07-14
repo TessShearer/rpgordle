@@ -285,7 +285,8 @@
       <!-- Modal -->
       <Transition name="modal">
         <div v-if="modal" class="modal-overlay">
-          <div class="modal-card" :class="{ 'modal-card--wide': modal === 'shop' || modal === 'test-shop' || modal === 'stats' || modal === 'changeling-test-pick' }">
+          <div class="modal-card-glow" :class="{ 'modal-card--wide': modal === 'shop' || modal === 'test-shop' || modal === 'stats' || modal === 'changeling-test-pick' }">
+          <div class="modal-card">
 
             <!-- Boss announcement -->
             <template v-if="modal === 'boss-announcement'">
@@ -484,6 +485,7 @@
               @click="handleModalAction">
               {{ MODAL_CONTENT[modal].button }}
             </button>
+          </div>
           </div>
         </div>
       </Transition>
