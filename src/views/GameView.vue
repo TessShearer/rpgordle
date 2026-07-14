@@ -96,7 +96,7 @@
                 </div>
                 <p v-if="currentEnemy.regen > 0" class="portrait-enemy-effect">Player heals {{ currentEnemy.regen }}
                   health on kill</p>
-                <p v-if="currentEnemy.effect" class="portrait-enemy-effect">{{ currentEnemy.effect }}</p>
+                <p v-if="currentEnemyEffect" class="portrait-enemy-effect">{{ currentEnemyEffect }}</p>
               </div>
             </div>
           </div>
@@ -274,7 +274,7 @@
                   :class="{ 'health-pip--lost': n > enemyHealth }"></span>
               </div>
               <p v-if="currentEnemy.regen > 0" class="monster-text">Regen {{ currentEnemy.regen }} health on kill</p>
-              <p class="monster-text">{{ currentEnemy.effect }}</p>
+              <p class="monster-text">{{ currentEnemyEffect }}</p>
             </div>
           </aside>
 
@@ -747,6 +747,13 @@ function openShop() {
 }
 
 const isBossFight = computed(() => stage.value >= STAGE_SEQUENCE.length)
+
+// During the boss fight, show the boss's enhanced ability instead of its base one
+const currentEnemyEffect = computed(() => {
+  if (!currentEnemy.value) return ''
+  if (isBossFight.value && currentEnemy.value.enhancedEffect) return currentEnemy.value.enhancedEffect
+  return currentEnemy.value.effect
+})
 
 const enemyIntroHeadline = computed(() => {
   if (!currentEnemy.value) return ''
