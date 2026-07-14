@@ -9,7 +9,7 @@
       <h3 class="decoheading">
         <span class="decoleft"></span>
         <span class="decoright"></span>
-        <span class="mt-5">TEXT</span>
+        HELLO
       </h3>
     </div>
     

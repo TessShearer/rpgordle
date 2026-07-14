@@ -18,6 +18,8 @@
     </div>
   </nav>
 
+  <div class="app-background" aria-hidden="true"></div>
+
   <RouterView :key="$route.name" />
 </template>
 
