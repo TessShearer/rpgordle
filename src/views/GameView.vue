@@ -273,7 +273,7 @@
                 <span v-for="n in currentEnemy.health" :key="n" class="health-pip"
                   :class="{ 'health-pip--lost': n > enemyHealth }"></span>
               </div>
-              <p v-if="currentEnemy.regen > 0" class="monster-text">Regen {{ currentEnemy.regen }} health on kill</p>
+              <p v-if="currentEnemy.regen > 0" class="monster-text">Player heals {{ currentEnemy.regen }} health on kill</p>
               <p class="monster-text">{{ currentEnemyEffect }}</p>
             </div>
           </aside>
@@ -763,12 +763,6 @@ const enemyIntroHeadline = computed(() => {
   return `${article} ${currentEnemy.value.name} blocks your path!`
 })
 
-const obscuredCols = computed(() => {
-  if (currentBoss.value?.id !== 'shadow-sorcerer') return []
-  const center = Math.floor((wordLength.value - 1) / 2)
-  return isBossFight.value ? [center, center + 1] : [center]
-})
-
 // ── Derived ───────────────────────────────────────────────────────────────────
 const wordLength = computed(() => boards.value[0]?.secretWord.length ?? 5)
 
@@ -813,15 +807,15 @@ const featureArtImage = computed(() => {
 // Union letter statuses across all boards, skipping obscured columns, with class/crystal hints layered on top
 const keyboardStatuses = computed(() => {
   const priority = { correct: 3, present: 2, absent: 1 }
-  const obscured = obscuredCols.value
   const base = {}
 
   for (const board of boards.value) {
     if (board.solved && boards.value.length > 1) continue
-    board.guesses.forEach((guess) => {
+    board.guesses.forEach((guess, gi) => {
+      const obscuredCol = board.obscuredGuessPositions[gi] ?? null
       const evaluated = evaluateGuess(guess, board.secretWord)
       evaluated.forEach(({ letter, status }, col) => {
-        if (obscured.includes(col)) return
+        if (col === obscuredCol) return
         if (!base[letter] || priority[status] > priority[base[letter]]) base[letter] = status
       })
     })
@@ -1856,7 +1850,10 @@ async function loadWord(showModal) {
   giantSnoreBars.value = 0
   smokeBombActive.value = false
   vampiricDaggerActive.value = false
-  allGuessedWords.value = []
+  // Necromancer: guessed words stay double-damage and in the graveyard for the whole game
+  if (currentBoss.value?.id !== 'necromancer') {
+    allGuessedWords.value = []
+  }
   giantAwake.value = false
   // Unused sneak attack disappears when a new word begins
   inventory.value = inventory.value.filter(id => id !== 'sneak-attack')

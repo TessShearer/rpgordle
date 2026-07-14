@@ -1,16 +1,16 @@
 export const CLASSES = [
   { id: 'peasant', name: 'Peasant', health: 14, description: 'Peasants have no ability' },
-  { id: 'seer', name: 'Seer', health: 10, description: 'Seers reveal a yellow letter from each word.' },
+  { id: 'seer', name: 'Seer', health: 10, description: 'Seers reveal a yellow letter from each word' },
   { id: 'knight', name: 'Knight', health: 16, description: 'Knights have extra health and a shield' },
-  { id: 'scholar', name: 'Scholar', health: 13, description: 'Scholars can tell you information about the type of word you are guessing.' },
+  { id: 'scholar', name: 'Scholar', health: 13, description: 'Scholars can tell you information about the type of word' },
   { id: 'treasurer', name: 'Treasurer', health: 10, description: 'Treasurers start the game with 2 items' },
-  { id: 'assassin', name: 'Assassin', health: 8, description: 'Assassins can sneak attack with 3 yellow letters.' },
-  { id: 'cleric', name: 'Cleric', health: 6, description: 'Clerics heal to full after every correct guess.' },
-  { id: 'village-idiot', name: 'Village Idiot', health: 13, description: 'For the Village Idiot, any string of letters is a valid word.' },
-  { id: 'thief', name: 'Thief', health: 12, description: 'Thieves take 2 items from the shop instead of 1.' },
-  { id: 'fortune-teller', name: 'Fortune Teller', health: 12, description: 'Fortune Tellrs reveal some letters that are not in the word.' },
-  { id: 'archer', name: 'Archer', health: 13, description: 'Archers shoot the gameboard to reveal a green letter.' },
-  { id: 'changeling', name: 'Changeling', health: 10, description: 'Gain the ability of a random character, and gain another later on.' },
+  { id: 'assassin', name: 'Assassin', health: 8, description: 'Assassins can sneak attack with 3 yellow letters' },
+  { id: 'cleric', name: 'Cleric', health: 6, description: 'Clerics heal to full after every correct guess' },
+  { id: 'village-idiot', name: 'Village Idiot', health: 13, description: 'For the Village Idiot, any string of letters is a valid word' },
+  { id: 'thief', name: 'Thief', health: 12, description: 'Thieves take 2 items from the shop instead of 1' },
+  { id: 'fortune-teller', name: 'Fortune Teller', health: 12, description: 'Fortune Tellrs reveal some letters that are not in the word' },
+  { id: 'archer', name: 'Archer', health: 13, description: 'Archers shoot the gameboard to reveal a green letter' },
+  { id: 'changeling', name: 'Changeling', health: 10, description: 'Gain the ability of a random character, and gain another later on' },
 ]
 
 export const ENEMIES = [
