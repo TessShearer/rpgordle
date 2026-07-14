@@ -57,7 +57,7 @@
           <!-- Mobile-only portraits strip (hidden on desktop) -->
           <div class="mobile-portraits">
             <div class="portrait-slot">
-              <div class="portrait-img-col"
+              <div class="portrait-img-col small-card"
                 :class="{ 'health-hit': playerDamageAnim === 'damage', 'health-heal': playerDamageAnim === 'heal' }">
                 <div v-if="mode === 'testing'" class="test-health-btns">
                   <button class="btn-test-health btn-test-heal" @click="testHeal">Heal</button>
@@ -81,7 +81,7 @@
               </div>
             </div>
             <div v-if="currentEnemy" class="portrait-slot portrait-slot--enemy">
-              <div class="portrait-img-col" :class="{ 'health-hit': enemyHitAnim }">
+              <div class="portrait-img-col small-card" :class="{ 'health-hit': enemyHitAnim }">
                 <div class="art-placeholder art-placeholder--portrait" :class="{ 'h-shake': bossShaking }">Art of {{
         currentEnemy.name }}</div>
                 <div v-if="currentEnemy.id === 'slumbering-giant'" class="snore-bars"

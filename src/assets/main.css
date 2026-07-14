@@ -1086,10 +1086,10 @@ body {
   );
   filter: drop-shadow(0 0 1px rgba(180, 150, 90, 0.4)) drop-shadow(0 6px 20px rgba(0, 0, 0, 0.7));
   border-radius: 0;
-  padding: calc(2.5rem + 12px) 2rem calc(2.5rem + 12px);
+  padding: calc(2rem + 4px) 2rem calc(2rem + 4px);
   text-align: center;
   max-width: 320px;
-  width: 90%;
+  width: 80%;
   color: var(--gs-100);
   margin: auto 0;
 }
