@@ -11,13 +11,11 @@
             <div v-else class="art-placeholder art-placeholder--class">Art for {{ cls.name }} goes here</div>
             <div class="class-option-shadow"></div>
           </div>
-          <div class="decoheading" :class="{ 'decoheading--long': cls.name.length > 10 }">
-            <span class="decoleft"></span>
-            <span class="decoright"></span>
-            <p class="pt-1">{{ cls.name }}</p>
+          <div>
+            <p class="pt-1 class-name">{{ cls.name }}</p>
+            <p class="class-health">{{ cls.health }} Health</p>
+            <p class="class-desc">{{ cls.description }}</p>
           </div>
-          <p class="class-health">{{ cls.health }} Health</p>
-          <p class="class-desc">{{ cls.description }}</p>
         </div>
         <div v-if="showRandomize" class="class-option" :style="{ animationDelay: `${classes.length * 0.1}s` }"
           @click="randomize">
@@ -25,12 +23,10 @@
             <div class="art-placeholder art-placeholder--class art-placeholder--random">?</div>
             <div class="class-option-shadow"></div>
           </div>
-          <div class="decoheading">
-            <span class="decoleft"></span>
-            <span class="decoright"></span>
-            <p class="pt-1">Random</p>
+          <div>
+            <p class="pt-1 class-name">Random</p>
+            <p class="class-desc">Choose a random option</p>
           </div>
-          <p class="class-desc">Choose a random option</p>
         </div>
       </div>
     </div>

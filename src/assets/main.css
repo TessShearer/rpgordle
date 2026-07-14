@@ -322,6 +322,16 @@ body {
 .class-option:nth-child(9)  .class-img  { animation: bounce        2.0s ease-in-out infinite 0.80s; }
 .class-option:nth-child(10) .art-placeholder--class,
 .class-option:nth-child(10) .class-img  { animation: bounce        2.1s ease-in-out infinite 1.25s; }
+.class-option:nth-child(11) .art-placeholder--class,
+.class-option:nth-child(11) .class-img  { animation: bounce        2.1s ease-in-out infinite 1.70s; }
+.class-option:nth-child(12) .art-placeholder--class,
+.class-option:nth-child(12) .class-img  { animation: bounce        1.9s ease-in-out infinite 0.35s; }
+.class-option:nth-child(13) .art-placeholder--class,
+.class-option:nth-child(13) .class-img  { animation: bounce        2.3s ease-in-out infinite 1.05s; }
+.class-option:nth-child(14) .art-placeholder--class,
+.class-option:nth-child(14) .class-img  { animation: bounce        2.0s ease-in-out infinite 1.50s; }
+.class-option:nth-child(15) .art-placeholder--class,
+.class-option:nth-child(15) .class-img  { animation: bounce        2.2s ease-in-out infinite 0.10s; }
 
 .class-option:nth-child(1)  .class-option-shadow { animation: shadow-bounce 2.0s ease-in-out infinite 0.00s; }
 .class-option:nth-child(2)  .class-option-shadow { animation: shadow-bounce 2.3s ease-in-out infinite 0.45s; }
@@ -333,6 +343,11 @@ body {
 .class-option:nth-child(8)  .class-option-shadow { animation: shadow-bounce 2.2s ease-in-out infinite 1.55s; }
 .class-option:nth-child(9)  .class-option-shadow { animation: shadow-bounce 2.0s ease-in-out infinite 0.80s; }
 .class-option:nth-child(10) .class-option-shadow { animation: shadow-bounce 2.1s ease-in-out infinite 1.25s; }
+.class-option:nth-child(11) .class-option-shadow { animation: shadow-bounce 2.1s ease-in-out infinite 1.70s; }
+.class-option:nth-child(12) .class-option-shadow { animation: shadow-bounce 1.9s ease-in-out infinite 0.35s; }
+.class-option:nth-child(13) .class-option-shadow { animation: shadow-bounce 2.3s ease-in-out infinite 1.05s; }
+.class-option:nth-child(14) .class-option-shadow { animation: shadow-bounce 2.0s ease-in-out infinite 1.50s; }
+.class-option:nth-child(15) .class-option-shadow { animation: shadow-bounce 2.2s ease-in-out infinite 0.10s; }
 
 .art-with-shadow {
   display: flex;
@@ -411,36 +426,7 @@ body {
   font-weight: 700;
   font-size: 0.85rem;
   color: var(--gs-900);
-  margin-bottom: 0.2rem;
-  /* Medieval nameplate */
-  position: relative;
-  display: inline-block;
-  border: none;
-  outline: 1.5px solid #6e1111;
-  outline-offset: 0px;
-  box-shadow: inset 0 0 0 1px rgba(110, 17, 17, 0.2);
-  padding: 0.15em 0.9em;
-  clip-path: polygon(
-    7px 0%, calc(100% - 7px) 0%,
-    100% 7px, 100% calc(100% - 7px),
-    calc(100% - 7px) 100%, 7px 100%,
-    0% calc(100% - 7px), 0% 7px
-  );
 }
-
-.class-name::before,
-.class-name::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  width: 9px;
-  height: 9px;
-  background: transparent;
-  border: 1.5px solid #6e1111;
-  transform: translateY(-50%) rotate(45deg);
-}
-.class-name::before { left:  -4px; }
-.class-name::after  { right: -4px; }
 
 .class-health {
   font-size: 0.65rem;
@@ -2740,7 +2726,7 @@ body {
 	align-items: center;
 	justify-content: center;
 	font-family: "Viaoda Libre";
-	font-size: 0.85rem;
+	font-size: .9rem;
 	line-height: 1.1;
 	text-align: center;
 	border-top: 1px solid var(--border);
@@ -2761,8 +2747,8 @@ body {
 	.decoleft,
 	.decoright {
 		position: absolute;
-		width: 1.1rem;
-		height: 1.1rem;
+		width: 1.6rem;
+		height: 1.6rem;
 		border-bottom: 1px solid var(--border);
 		border-left: 1px solid var(--border);
     top: 50%;
@@ -2773,7 +2759,7 @@ body {
 			height: 0.55rem;
 			border: 1px solid var(--border);
 			position: absolute;
-			top: calc(0.75rem + 1px);
+			top: calc(1.25rem + 1px);
 			left: calc(-0.3rem);
 		}
 
@@ -2783,18 +2769,18 @@ body {
 			height: 0.35rem;
 			background: var(--border);
 			position: absolute;
-			top: calc(0.75rem - 1px);
+			top: calc(1.25rem - 1px);
 			left: calc(-0rem - 1px);
 		}
 	}
 
 	.decoleft {
-		left: -0.55rem;
+		left: -0.75rem;
 		transform: translateY(-50%) rotate(45deg);
 	}
 
 	.decoright {
-		right: -0.55rem;
+		right: -0.75rem;
 		transform: translateY(-50%) rotate(-135deg);
 	}
 
@@ -2808,9 +2794,7 @@ body {
 	}
 }
 
-/* Names too long to fit on one line at the normal size get a smaller size instead —
-   the border box itself stays a fixed height either way, so the corner brackets
-   never need to reflow/reposition per-name. */
+/* Names too long to fit on one line at the normal size get a smaller size instead */
 .decoheading--long {
 	font-size: 0.62rem;
 	line-height: 1.15;
