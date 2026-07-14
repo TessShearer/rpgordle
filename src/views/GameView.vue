@@ -102,6 +102,7 @@
           <aside class="game-panel game-panel--left">
             <div class="class-feature">
               <div class="class-feature-img-col" :class="{ 'health-hit': playerDamageAnim === 'damage', 'health-heal': playerDamageAnim === 'heal' }">
+                <div class="small-card">
                 <div v-if="mode === 'testing'" class="test-health-btns">
                   <button class="btn-test-health btn-test-heal" @click="testHeal">Heal</button>
                   <button class="btn-test-health btn-test-damage" @click="testDamage">Damage</button>
@@ -121,9 +122,10 @@
                 <p v-else-if="CLASSES.find(c => c.id === playerClass)?.description" class="portrait-enemy-effect">
                   {{ CLASSES.find(c => c.id === playerClass)?.description }}
                 </p>
-                <div v-if="inventoryItems.length || mode === 'testing'" class="inventory mt-2">
+              </div>
+                <div class="inventory small-card mt-2">
                   <div class="inventory-title-row">
-                    <p class="feature-label">Inventory</p>
+                    <p class="inventory-label">Inventory</p>
                   </div>
                   <div class="inventory-list">
                     <div v-for="(item, i) in inventoryItems" :key="i" class="inventory-item"
@@ -132,7 +134,7 @@
                         <div class="inventory-item-front">
                           <img v-if="ITEM_IMAGES[item.id]" :src="ITEM_IMAGES[item.id]" :alt="item.name" class="inv-img" />
                           <div v-else class="art-placeholder art-placeholder--inv">{{ item.name }}</div>
-                          <p class="inventory-item-name">{{ item.name }}</p>
+                          <!-- <p class="inventory-item-name">{{ item.name }}</p> -->
                         </div>
                         <div class="inventory-item-back">
                           <p class="inventory-item-desc">{{ item.description }}</p>
@@ -254,7 +256,7 @@
 
           <!-- Right panel: current enemy -->
           <aside class="game-panel game-panel--right">
-            <div v-if="currentEnemy" class="enemy-section" :class="{ 'health-hit': enemyHitAnim }">
+            <div v-if="currentEnemy" class="enemy-section small-card" :class="{ 'health-hit': enemyHitAnim }">
               <div class="art-placeholder art-placeholder--monster" :class="{ 'h-shake': bossShaking }"
                 @animationend="bossShaking = false">Art of {{ currentEnemy.name }}</div>
               <div v-if="currentEnemy.id === 'slumbering-giant'" class="snore-bars" :class="{ 'snore-bars--awake': giantAwake }">
@@ -274,14 +276,18 @@
 
       </template>
 
-      <!-- Modal (sits above all screens) -->
+      <!-- Modal -->
       <Transition name="modal">
         <div v-if="modal" class="modal-overlay">
           <div class="modal-card" :class="{ 'modal-card--wide': modal === 'shop' || modal === 'test-shop' || modal === 'stats' || modal === 'changeling-test-pick' }">
+
+            <!-- Boss announcement -->
             <template v-if="modal === 'boss-announcement'">
               <div class="art-placeholder art-placeholder--modal-monster my-3">Art of {{ currentBoss.name }}</div>
               <p class="modal-message">{{ currentBoss.announcement }}</p>
             </template>
+
+            <!-- Shop -->
             <template v-else-if="modal === 'shop'">
               <p class="modal-message">You found a shop!</p>
               <p class="modal-submessage">{{ shopPrompt }}</p>
@@ -306,6 +312,8 @@
                 </button>
               </Transition>
             </template>
+
+            <!-- Use an item modal -->
             <template v-else-if="modal === 'use-item'">
               <p class="modal-message">Use {{ pendingUseItem.name }}?</p>
               <p class="modal-submessage">{{ pendingUseItem.description }}</p>
@@ -319,6 +327,8 @@
                 </button>
               </div>
             </template>
+
+            <!-- Know it all -->
             <template v-else-if="modal === 'know-it-all'">
               <Transition name="kit-fade" mode="out-in">
                 <p v-if="knowItAllModalPhase === 'taunt'" key="taunt" class="modal-message kit-message">
@@ -335,14 +345,17 @@
                 {{ knowItAllCanDismiss ? 'Got it' : '...' }}
               </button>
             </template>
+
+            <!-- Test shop -->
             <template v-else-if="modal === 'test-shop'">
-              <p class="modal-message">Testing — Add Items</p>
+              <p class="modal-message">Testing - Add Items</p>
               <div class="shop-items">
                 <div v-for="item in SHOP_ITEMS" :key="item.id" class="shop-item"
                   @click="testAddItem(item)">
                   <div class="shop-item-inner">
                     <div class="shop-item-front">
-                      <div class="art-placeholder art-placeholder--item">{{ item.name }}</div>
+                      <img v-if="ITEM_IMAGES[item.id]" :src="ITEM_IMAGES[item.id]" :alt="item.name" class="shop-img" />
+                      <div v-else class="art-placeholder art-placeholder--item">{{ item.name }}</div>
                       <p class="shop-item-name">{{ item.name }}</p>
                     </div>
                     <div class="shop-item-back">

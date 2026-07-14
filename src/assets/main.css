@@ -28,7 +28,8 @@ body {
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background-image: url('./background.jpg');
+  background-color: rgb(214, 211, 211);
+  /* background-image: url('./background.jpg'); */
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -692,8 +693,8 @@ body {
 
   /* Panels sit beside the board and center their content vertically */
   .game-panel {
-    width: 160px;
-    max-width: 160px;
+    width: 220px;
+    max-width: 220px;
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
@@ -1060,6 +1061,22 @@ body {
   margin-bottom: 1.5rem;
 }
 
+.small-card {
+  background: radial-gradient(ellipse at center, #362f2b 0%, #241f1e 60%, #161212 100%);
+  clip-path: polygon(
+    0% 12px, 50% 0%, 100% 12px,
+    100% calc(100% - 12px), 50% 100%, 0% calc(100% - 12px)
+  );
+  filter: drop-shadow(0 0 1px rgba(180, 150, 90, 0.4)) drop-shadow(0 6px 20px rgba(0, 0, 0, 0.7));
+  border-radius: 0;
+  padding: calc(2.5rem + 12px) 2rem calc(2.5rem + 12px);
+  text-align: center;
+  max-width: 320px;
+  width: 90%;
+  color: var(--gs-100);
+  margin: auto 0;
+}
+
 .modal-enter-active,
 .modal-leave-active { transition: opacity 0.2s ease; }
 .modal-enter-from,
@@ -1157,6 +1174,12 @@ body {
   line-height: 1.4;
 }
 
+.shop-img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+}
+
 .inventory-list {
   display: grid;
   grid-template-columns: repeat(2, 56px);
@@ -1173,15 +1196,12 @@ body {
 .inventory-item-inner {
   width: 100%;
   height: 100%;
-  border-radius: 0.4rem;
 }
 
 .inventory-item-front {
   position: relative;
   width: 100%;
   height: 100%;
-  border-radius: 0.4rem;
-  border: 1px solid var(--gs-200);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1230,7 +1250,7 @@ body {
 .inventory-item-name {
   font-size: 0.65rem;
   text-align: center;
-  color: var(--gs-700);
+  color: white;
   margin: 0;
   max-width: 52px;
 }
@@ -1621,6 +1641,14 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--gs-600);
+  margin-bottom: 0.1rem;
+}
+
+.inventory-label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: white;
   margin-bottom: 0.1rem;
 }
 
