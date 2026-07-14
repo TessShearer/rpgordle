@@ -25,11 +25,16 @@ function pickRandom(arr, count) {
   return count ? shuffled.slice(0, count) : shuffled[0]
 }
 
-// Returns { word: 'CASTLE', partOfSpeech: 'noun' } — partOfSpeech may be null if not in Firestore
+// Returns { word: 'CASTLE', partOfSpeech: 'noun', definition: '...' } — either may be
+// null if not in Firestore
 async function fetchWord(length = 5, extra = {}) {
   const wordLower = await fetchGameWord({ minLength: length, maxLength: length, ...extra })
   const data = await fetchWordData(wordLower).catch(() => null)
-  return { word: wordLower.toUpperCase(), partOfSpeech: data?.partOfSpeech ?? null }
+  return {
+    word: wordLower.toUpperCase(),
+    partOfSpeech: data?.partOfSpeech ?? null,
+    definition: data?.definition ?? null,
+  }
 }
 
 async function getRecentDailies(dateKey) {
@@ -59,8 +64,11 @@ async function generateDaily(dateKey) {
   // Pre-generate Changeling abilities so all players get the same two
   const changelingAbilities = pickRandom([...CHANGELING_POOL], 2).map(id => id)
 
-  // Pre-generate Treasurer starting items so all players get the same two
-  const treasurerItemIds = pickRandom([...shopPool], 2).map(s => s.id)
+  // Pre-generate Treasurer starting items (only relevant if Treasurer is a selectable class today)
+  // so all players who pick Treasurer get the same two.
+  const treasurerItemIds = classIds.includes('treasurer')
+    ? pickRandom([...shopPool], 2).map(s => s.id)
+    : []
 
   const stageEnemies = {}
   for (let i = 0; i < STAGE_SEQUENCE.length; i++) {
@@ -90,6 +98,16 @@ async function generateDaily(dateKey) {
       }
     } else {
       words[`stage-${i}`] = await fetchWord(stageWordLen, wordExtra)
+    }
+
+    // Annoying Kid forces the player's first guess — pre-generate that word too, so it's
+    // the same for everyone (it must differ from the stage's own secret word)
+    if (enemy?.id === 'annoying-kid') {
+      let kidWord
+      do {
+        kidWord = await fetchWord(stageWordLen)
+      } while (kidWord.word === words[`stage-${i}`]?.word)
+      words[`stage-${i}-annoying-kid`] = kidWord
     }
   }
   for (let round = 0; round < boss.health; round++) {

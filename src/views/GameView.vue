@@ -2074,9 +2074,18 @@ async function applyAnnoyingKidGuess() {
   if (!board) return
 
   let word
-  try {
-    word = (await fetchGameWord({ minLength: board.secretWord.length, maxLength: board.secretWord.length })).toUpperCase()
-  } catch { /* fall through */ }
+  if (props.mode === 'daily' && dailyConfig.value) {
+    const wordEntry = dailyConfig.value.words[`stage-${stage.value}-annoying-kid`]
+    const savedWord = (typeof wordEntry === 'object' ? wordEntry?.word : wordEntry)?.toUpperCase()
+    if (savedWord && savedWord.length === board.secretWord.length && savedWord !== board.secretWord) {
+      word = savedWord
+    }
+  }
+  if (!word) {
+    try {
+      word = (await fetchGameWord({ minLength: board.secretWord.length, maxLength: board.secretWord.length })).toUpperCase()
+    } catch { /* fall through */ }
+  }
   if (!word || word === board.secretWord) {
     const alpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
     do { word = Array.from({ length: board.secretWord.length }, () => alpha[Math.floor(Math.random() * 26)]).join('') }
