@@ -1059,11 +1059,12 @@ body {
   background: rgba(0, 0, 0, 0.03);
 }
 
-.tile--frozen {
-  border-color: #538d4e;
-  color: #538d4e;
-  background: rgba(83, 141, 78, 0.25);
-  box-shadow: 0 0 8px 3px rgba(83, 141, 78, 0.28);
+/* Ghost hint: a green letter clue the player can type over — a lighter, translucent
+   version of .tile--correct so it reads as a suggestion rather than a locked-in value. */
+.tile--hint {
+  border-color: rgba(83, 141, 78, 0.5);
+  color: rgba(83, 141, 78, 0.55);
+  background: rgba(83, 141, 78, 0.07);
 }
 
 /* Keyboard */

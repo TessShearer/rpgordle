@@ -22,13 +22,13 @@
         <div
           v-for="col in wordLength" :key="col"
           class="tile"
-          :class="[tileClass(row - 1, col - 1), { 'tile--targeting': bowTargeting && isInputRow(row - 1) && !isFrozenCol(col - 1) }]"
+          :class="[tileClass(row - 1, col - 1), { 'tile--targeting': bowTargeting && isInputRow(row - 1) && !isHintedCol(col - 1) }]"
           :style="tileStyle(row - 1, col - 1)"
           :ref="(el) => setTileRef(row - 1, col - 1, el)"
-          @click="bowTargeting && isInputRow(row - 1) && !isFrozenCol(col - 1) && $emit('bow-target', col - 1)"
+          @click="bowTargeting && isInputRow(row - 1) && !isHintedCol(col - 1) && $emit('bow-target', col - 1)"
         >
           {{ tileChar(row - 1, col - 1) }}
-          <div v-if="bowTargeting && isInputRow(row - 1) && !isFrozenCol(col - 1)" class="crosshair-overlay">
+          <div v-if="bowTargeting && isInputRow(row - 1) && !isHintedCol(col - 1)" class="crosshair-overlay">
             <div class="crosshair-ring"></div>
           </div>
         </div>
@@ -44,8 +44,6 @@ const props = defineProps({
   board: { type: Object, required: true },
   currentGuess: { type: String, default: '' },
   gameState: { type: String, required: true },
-  boss: { type: Object, default: null },
-  isBossFight: { type: Boolean, default: false },
   hasSeer: { type: Boolean, default: false },
   hasScholar: { type: Boolean, default: false },
   shadowObscuredCol: { type: Number, default: null },
@@ -72,7 +70,7 @@ function getInputRowRects() {
   const result = []
   for (let col = 0; col < wordLength.value; col++) {
     const el = tileRefs[row]?.[col]
-    if (el) result.push({ col, letter: effectiveGuessArr.value[col], rect: el.getBoundingClientRect(), el })
+    if (el) result.push({ col, letter: props.currentGuess[col] ?? '', rect: el.getBoundingClientRect(), el })
   }
   return result
 }
@@ -81,26 +79,12 @@ defineExpose({ getInputRowRects })
 
 const wordLength = computed(() => props.board.secretWord.length || 5)
 
-// Shield blocks the Abominable Snowman's forced-frozen-letter effect for one guess
-const bypassFrozen = computed(() =>
-  props.boss?.id === 'abominable-snowman' && props.board.shieldedRows.has(props.board.guesses.length)
-)
-
-const effectiveGuessArr = computed(() => {
-  const result = []
-  let userIdx = 0
-  for (let i = 0; i < wordLength.value; i++) {
-    if (!bypassFrozen.value && props.board.frozenSlots[i] !== undefined) {
-      result.push(props.board.frozenSlots[i])
-    } else if (props.board.crossbowSlots?.[i] !== undefined) {
-      result.push(props.board.crossbowSlots[i])
-    } else {
-      result.push(props.currentGuess[userIdx] ?? '')
-      userIdx++
-    }
-  }
-  return result
-})
+// The green letter to show as a ghost hint at this column, if any — from the Abominable
+// Snowman (enforced elsewhere), the Bow and Arrow, or the Crossbow (neither enforced)
+function hintLetterAt(col) {
+  const b = props.board
+  return b.hintSlots?.[col] ?? b.bowSlots?.[col] ?? b.crossbowSlots?.[col] ?? null
+}
 
 function evaluateGuess(guess) {
   const status = Array(guess.length).fill('absent')
@@ -127,8 +111,8 @@ function isInputRow(row) {
   return row === props.board.guesses.length && props.gameState === 'playing' && !props.board.solved
 }
 
-function isFrozenCol(col) {
-  return (!bypassFrozen.value && props.board.frozenSlots[col] !== undefined) || props.board.crossbowSlots?.[col] !== undefined
+function isHintedCol(col) {
+  return hintLetterAt(col) !== null
 }
 
 function isObscured(row, col) {
@@ -150,7 +134,7 @@ function tileChar(row, col) {
   }
   if (isObscured(row, col)) return ''
   if (row < props.board.guesses.length) return props.board.guesses[row][col] ?? ''
-  if (row === props.board.guesses.length) return effectiveGuessArr.value[col] ?? ''
+  if (row === props.board.guesses.length) return props.currentGuess[col] ?? hintLetterAt(col) ?? ''
   return ''
 }
 
@@ -159,20 +143,22 @@ function tileClass(row, col) {
   if (isObscured(row, col)) return 'tile--obscured'
   if (row < props.board.guesses.length) return `tile--${evaluatedRows.value[row][col].status}`
   if (row === props.board.guesses.length && props.gameState === 'playing' && !props.board.solved) {
-    if (props.zombieRising && effectiveGuessArr.value[col]) return 'tile--filled tile--zombie'
-    if (props.boardScrambling && effectiveGuessArr.value[col]) return 'tile--filled tile--scrambling'
-    if ((!bypassFrozen.value && props.board.frozenSlots[col] !== undefined) || props.board.crossbowSlots?.[col] !== undefined) return 'tile--frozen'
-    return effectiveGuessArr.value[col] ? 'tile--filled' : 'tile--empty'
+    const typed = props.currentGuess[col]
+    if (props.zombieRising && typed) return 'tile--filled tile--zombie'
+    if (props.boardScrambling && typed) return 'tile--filled tile--scrambling'
+    if (!typed && hintLetterAt(col) !== null) return 'tile--hint'
+    return typed ? 'tile--filled' : 'tile--empty'
   }
   return 'tile--empty'
 }
 
 function tileStyle(row, col) {
   const isCurrentRow = row === props.board.guesses.length && props.gameState === 'playing' && !props.board.solved
-  if (isCurrentRow && props.zombieRising && effectiveGuessArr.value[col]) {
+  const typed = props.currentGuess[col]
+  if (isCurrentRow && props.zombieRising && typed) {
     return { animationDelay: `${col * 100}ms` }
   }
-  if (isCurrentRow && props.boardScrambling && effectiveGuessArr.value[col]) {
+  if (isCurrentRow && props.boardScrambling && typed) {
     return { animationDelay: `${col * 55}ms` }
   }
   return {}

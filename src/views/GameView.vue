@@ -28,7 +28,7 @@
 
       <!-- ── Miniboss Test Select ──────────────────────────────────────── -->
       <div v-else-if="screen === 'miniboss-select' && mode === 'testing'" class="miniboss-test-wrapper">
-        <BossSelect :bosses="MINIBOSSES" :selected-boss-id="selectedMiniboss" :show-randomize="true" label="Miniboss"
+        <BossSelect :bosses="testingMinibossOptions" :selected-boss-id="selectedMiniboss" :show-randomize="true" label="Miniboss"
           @select="selectedMiniboss = $event" @confirm="confirmMinibossSelect" />
       </div>
 
@@ -178,7 +178,7 @@
                     }}</span>
                 </div>
                 <WordleBoard v-else :ref="(el) => setBoardRef(board.id, el)" :board="board"
-                  :current-guess="currentGuess" :game-state="gameState" :boss="currentBoss" :is-boss-fight="isBossFight"
+                  :current-guess="currentGuess" :game-state="gameState"
                   :has-seer="hasAbility('seer')" :has-scholar="hasAbility('scholar')"
                   :shadow-obscured-col="shadowObscuredCol" :board-shaking="boardShaking" :zombie-rising="zombieRising"
                   :compact="false" :bow-targeting="bowTargeting && !board.solved" @shake-end="boardShaking = false"
@@ -655,8 +655,9 @@ function makeBoard(id, secretWord) {
     guesses: [],
     hintLetter: '',
     hintWordType: '',
-    frozenSlots: {},
-    crossbowSlots: {},
+    hintSlots: {},    // Abominable Snowman — enforced: must retype the matching letter
+    bowSlots: {},     // Bow and Arrow — a clue only, persists, never enforced
+    crossbowSlots: {}, // Crossbow — a clue only, lasts one guess, never enforced
     obscuredGuessPositions: [],
     shieldedRows: new Set(),
     crystalHints: [],
@@ -664,27 +665,14 @@ function makeBoard(id, secretWord) {
   }
 }
 
-// Shield blocks the Abominable Snowman's forced-frozen-letter effect for one guess
-function isFrozenBypassed(board) {
-  return currentBoss.value?.id === 'abominable-snowman' && board.shieldedRows.has(board.guesses.length)
+const ORDINALS = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth']
+function ordinal(n) {
+  return ORDINALS[n - 1] ?? `${n}th`
 }
 
-function buildEffectiveGuess(board) {
-  const len = board.secretWord.length
-  const bypassFrozen = isFrozenBypassed(board)
-  const result = []
-  let userIdx = 0
-  for (let i = 0; i < len; i++) {
-    if (!bypassFrozen && board.frozenSlots[i] !== undefined) {
-      result.push(board.frozenSlots[i])
-    } else if (board.crossbowSlots[i] !== undefined) {
-      result.push(board.crossbowSlots[i])
-    } else {
-      result.push(currentGuess.value[userIdx] ?? '')
-      userIdx++
-    }
-  }
-  return result.join('')
+// Shield blocks the Abominable Snowman's forced-green-letter effect for one guess
+function hintEnforcementBypassed(board) {
+  return currentBoss.value?.id === 'abominable-snowman' && board.shieldedRows.has(board.guesses.length)
 }
 
 function evaluateGuess(guess, secretWord) {
@@ -721,6 +709,17 @@ const selectableClasses = computed(() => {
     return CLASSES.filter(c => dailyConfig.value.classIds.includes(c.id))
   }
   return CLASSES
+})
+
+// Testing screen's manual miniboss picker — Hydra's own miniboss never shows up here since
+// picking Hydra as the boss skips this screen entirely, and Cerberus's 3-board mechanic
+// conflicts with the Abominable Snowman's letter-freezing ability.
+const testingMinibossOptions = computed(() => {
+  let pool = MINIBOSSES.filter(m => m.id !== 'hydra-miniboss')
+  if (currentBoss.value?.id === 'abominable-snowman') {
+    pool = pool.filter(m => m.id !== 'cerberus')
+  }
+  return pool
 })
 
 const availableShopItems = computed(() => {
@@ -765,20 +764,6 @@ const enemyIntroHeadline = computed(() => {
 
 // ── Derived ───────────────────────────────────────────────────────────────────
 const wordLength = computed(() => boards.value[0]?.secretWord.length ?? 5)
-
-// Max non-frozen positions across all active boards (user must type enough for the most open board)
-const nonFrozenCount = computed(() => {
-  const active = boards.value.filter(b => !b.solved)
-  if (!active.length) return wordLength.value
-  return Math.max(...active.map(board => {
-    const bypassFrozen = isFrozenBypassed(board)
-    const allFrozen = new Set([
-      ...(bypassFrozen ? [] : Object.keys(board.frozenSlots).map(Number)),
-      ...Object.keys(board.crossbowSlots).map(Number),
-    ].filter(k => k < wordLength.value))
-    return wordLength.value - allFrozen.size
-  }))
-})
 
 const featureArtText = computed(() => {
   if (playerClass.value === 'changeling' && changelingAbilities.value.length > 0) {
@@ -875,7 +860,7 @@ function handleKey(key) {
     currentGuess.value = currentGuess.value.slice(0, -1)
   } else if (key === 'ENTER') {
     submitGuess()
-  } else if (currentGuess.value.length < nonFrozenCount.value) {
+  } else if (currentGuess.value.length < wordLength.value) {
     currentGuess.value += key
   }
 }
@@ -913,13 +898,14 @@ function onKeyDown(e) {
     return
   }
   if (screen.value === 'miniboss-select') {
-    const idx = MINIBOSSES.findIndex(m => m.id === selectedMiniboss.value)
+    const list = testingMinibossOptions.value
+    const idx = list.findIndex(m => m.id === selectedMiniboss.value)
     if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
       e.preventDefault()
-      selectedMiniboss.value = MINIBOSSES[(idx + 1) % MINIBOSSES.length].id
+      selectedMiniboss.value = list[(idx + 1) % list.length].id
     } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
       e.preventDefault()
-      selectedMiniboss.value = MINIBOSSES[idx < 1 ? MINIBOSSES.length - 1 : idx - 1].id
+      selectedMiniboss.value = list[idx < 1 ? list.length - 1 : idx - 1].id
     } else if (e.key === 'Enter' && selectedMiniboss.value) {
       confirmMinibossSelect(selectedMiniboss.value)
     } else if (e.key === 'Escape') {
@@ -1199,19 +1185,33 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
   const activeBoards = boards.value.filter(b => !b.solved)
   if (!activeBoards.length) return
 
-  if (currentGuess.value.length < nonFrozenCount.value) {
+  if (currentGuess.value.length < wordLength.value) {
     inputError.value = `Guess must be ${wordLength.value} letters`
     return
   }
 
   const firstActive = activeBoards[0]
-  const submitted = buildEffectiveGuess(firstActive)
+  const submitted = currentGuess.value
 
   // Tricksy Fairy: FLIP-animate the scramble unless the guess is already correct
   if (!skipScramble && currentEnemy.value?.id === 'tricksy-fairy' && submitted !== firstActive.secretWord) {
     await doFairyScramble(firstActive)
     await submitGuess(true, true)
     return
+  }
+
+  // Abominable Snowman: previously-frozen green letters must be retyped correctly
+  if (currentBoss.value?.id === 'abominable-snowman') {
+    for (const board of activeBoards) {
+      if (hintEnforcementBypassed(board)) continue
+      const cols = Object.keys(board.hintSlots).map(Number).sort((a, b) => a - b)
+      const badCol = cols.find(col => submitted[col] !== board.hintSlots[col])
+      if (badCol !== undefined) {
+        inputError.value = `The ${ordinal(badCol + 1)} letter must be a ${board.hintSlots[badCol]}`
+        currentGuess.value = ''
+        return
+      }
+    }
   }
 
   // Enhanced Snowman: all known-yellow letters must appear in the guess
@@ -1235,7 +1235,7 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
   }
 
   // Validate word (Village Idiot, internal calls, and correct answers skip this)
-  const isCorrectAnswer = activeBoards.some(b => buildEffectiveGuess(b) === b.secretWord)
+  const isCorrectAnswer = activeBoards.some(b => submitted === b.secretWord)
   if (!hasAbility('village-idiot') && !skipValidation && !isCorrectAnswer) {
     validating.value = true
     try {
@@ -1253,9 +1253,6 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
       validating.value = false
     }
   }
-
-  // Build all per-board submissions BEFORE clearing currentGuess
-  const boardSubmissions = activeBoards.map(board => buildEffectiveGuess(board))
 
   const alreadyGuessed = allGuessedWords.value.includes(submitted)
 
@@ -1292,7 +1289,7 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
   let boardsSolvedThisGuess = 0
   for (let bi = 0; bi < activeBoards.length; bi++) {
     const board = activeBoards[bi]
-    const boardSubmitted = boardSubmissions[bi]
+    const boardSubmitted = submitted
     const guessRowIndex = board.guesses.length
     const rowShielded = board.shieldedRows.has(guessRowIndex)
     board.obscuredGuessPositions = [...board.obscuredGuessPositions, rowShielded ? null : shadowObscuredCol.value]
@@ -1303,13 +1300,13 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
       anyBoardSolvedThisGuess = true
       boardsSolvedThisGuess++
     } else if (currentBoss.value?.id === 'abominable-snowman') {
-      // Freeze new green positions
+      // Remember new green positions — these must be retyped correctly from now on
       const guessEval = evaluateGuess(boardSubmitted, board.secretWord)
-      const newFrozen = { ...board.frozenSlots }
+      const newHints = { ...board.hintSlots }
       guessEval.forEach(({ letter, status }, col) => {
-        if (status === 'correct' && newFrozen[col] === undefined) newFrozen[col] = letter
+        if (status === 'correct' && newHints[col] === undefined) newHints[col] = letter
       })
-      board.frozenSlots = newFrozen
+      board.hintSlots = newHints
     }
   }
 
@@ -1547,24 +1544,32 @@ function selectClass(cls) {
   if (props.mode === 'daily' && dailyConfig.value) {
     currentBoss.value = BOSSES.find(b => b.id === dailyConfig.value.bossId)
     screen.value = 'boss-intro'
-  } else if (props.mode === 'testing') {
-    selectedBoss.value = null
-    screen.value = 'miniboss-select'
   } else {
     selectedBoss.value = null
+    selectedMiniboss.value = null
     screen.value = 'boss-select'
   }
 }
 
 function confirmBossSelect(bossId) {
   currentBoss.value = BOSSES.find(b => b.id === bossId)
-  beginJourney()
+  // The Hydra and its miniboss are a package deal — one implies the other, so Hydra
+  // skips the testing miniboss screen entirely rather than asking a moot question.
+  if (bossId === 'hydra') {
+    selectedMiniboss.value = 'hydra-miniboss'
+    beginJourney()
+  } else if (props.mode === 'testing') {
+    selectedMiniboss.value = null
+    screen.value = 'miniboss-select'
+  } else {
+    selectedMiniboss.value = null
+    beginJourney()
+  }
 }
 
-// Stores the forced miniboss choice and returns to boss select to continue the normal flow.
 function confirmMinibossSelect(minibossId) {
   selectedMiniboss.value = minibossId
-  screen.value = 'boss-select'
+  beginJourney()
 }
 
 // ── Testing helpers ───────────────────────────────────────────────────────────
@@ -1737,9 +1742,14 @@ async function startStage(stageNum) {
         // Use the forced miniboss chosen on the dev test screen
         currentEnemy.value = MINIBOSSES.find(m => m.id === selectedMiniboss.value)
       } else {
-        const pool = currentBoss.value?.id === 'hydra'
-          ? MINIBOSSES.filter(m => m.id === 'hydra-miniboss')
-          : MINIBOSSES.filter(m => m.id !== 'hydra-miniboss')
+        let pool
+        if (currentBoss.value?.id === 'hydra') {
+          pool = MINIBOSSES.filter(m => m.id === 'hydra-miniboss')
+        } else {
+          pool = MINIBOSSES.filter(m => m.id !== 'hydra-miniboss')
+          // Cerberus's 3-board mechanic conflicts with the Abominable Snowman's letter-freezing
+          if (currentBoss.value?.id === 'abominable-snowman') pool = pool.filter(m => m.id !== 'cerberus')
+        }
         if (props.mode === 'daily' && dailyConfig.value) {
           const enemyId = dailyConfig.value.stageEnemies[stageNum]
           currentEnemy.value = pool.find(e => e.id === enemyId) ?? pool[Math.floor(Math.random() * pool.length)]
@@ -1960,8 +1970,8 @@ function cancelUseItem() {
 
 function useBowAtCol(col) {
   for (const board of boards.value) {
-    if (!board.solved && board.frozenSlots[col] === undefined) {
-      board.frozenSlots = { ...board.frozenSlots, [col]: board.secretWord[col] }
+    if (!board.solved && board.hintSlots[col] === undefined && board.bowSlots[col] === undefined) {
+      board.bowSlots = { ...board.bowSlots, [col]: board.secretWord[col] }
     }
   }
   if (shadowObscuredCol.value === col) shadowObscuredCol.value = null

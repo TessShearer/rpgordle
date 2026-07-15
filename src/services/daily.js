@@ -75,9 +75,13 @@ async function generateDaily(dateKey) {
     if (STAGE_SEQUENCE[i] === 'miniboss' && boss.id === 'hydra') {
       stageEnemies[i] = 'hydra-miniboss'
     } else {
-      const pool = STAGE_SEQUENCE[i] === 'miniboss'
+      let pool = STAGE_SEQUENCE[i] === 'miniboss'
         ? MINIBOSSES.filter(m => m.id !== 'hydra-miniboss')
         : ENEMIES
+      // Cerberus's 3-board mechanic conflicts with the Abominable Snowman's letter-freezing
+      if (STAGE_SEQUENCE[i] === 'miniboss' && boss.id === 'abominable-snowman') {
+        pool = pool.filter(m => m.id !== 'cerberus')
+      }
       stageEnemies[i] = pickRandom(pool).id
     }
   }

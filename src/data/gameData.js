@@ -32,7 +32,7 @@ export const MINIBOSSES = [
   { id: 'mirror-spirit', name: 'Mirror Spirit', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'The answer (and all your guesses) must be the same forwards and backwards!' },
   { id: 'know-it-all', name: 'Know It All', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'The answer is a word he does not think you will know.' },
   { id: 'slumbering-giant', name: 'Slumbering Giant', regen: 4, health: 1, wordLength: 5, boardCount: 1, effect: 'You won\'t take any damage from a wrong guess...unless you wake her up.' },
-  { id: 'hydra-miniboss', name: 'Hydra', regen: 4, health: 2, wordLength: 5, boardCount: 1, effect: 'Cut off its head!' },
+  { id: 'hydra-miniboss', name: 'Hydra', regen: 4, health: 1, wordLength: 5, boardCount: 1, effect: 'Cut off its head!' },
 ]
 
 export const SHOP_ITEMS = [
