@@ -528,7 +528,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
-import { CLASSES, ENEMIES, MINIBOSSES, BOSSES, SHOP_ITEMS, ALL_ITEMS, getStageSequence, getJourneyLength } from '@/data/gameData.js'
+import { CLASSES, ENEMIES, MINIBOSSES, BOSSES, SHOP_ITEMS, ALL_ITEMS, CHANGELING_POOL, getStageSequence, getJourneyLength } from '@/data/gameData.js'
 import { useGameNavStore } from '@/stores/gameNav.js'
 import BossIntro from '@/components/BossIntro.vue'
 import BossFightIntro from '@/components/BossFightIntro.vue'
@@ -1724,8 +1724,6 @@ function testAddItem(item) {
   testAddedTimer = setTimeout(() => { testAddedItemId.value = null }, 900)
 }
 
-const CHANGELING_POOL = ['seer', 'scholar', 'assassin', 'cleric', 'village-idiot', 'thief', 'knight', 'treasurer', 'archer']
-
 function hasAbility(id) {
   return playerClass.value === id ||
     (playerClass.value === 'changeling' && changelingAbilities.value.includes(id))
@@ -1745,11 +1743,13 @@ function applyChangelingSecondAbilityBonus() {
     playerHealth.value = Math.min(playerHealth.value + 3, playerMaxHealth.value)
     inventory.value.push('shield')
   } else if (latest === 'treasurer') {
-    const pool = props.mode === 'daily' && dailyConfig.value?.shopItemIds
-      ? SHOP_ITEMS.filter(s => dailyConfig.value.shopItemIds.includes(s.id))
-      : SHOP_ITEMS
-    const shuffled = [...pool].sort(() => Math.random() - 0.5)
-    shuffled.slice(0, 2).forEach(item => inventory.value.push(item.id))
+    if (props.mode === 'daily' && dailyConfig.value?.treasurerItemIds?.length) {
+      dailyConfig.value.treasurerItemIds.forEach(id => inventory.value.push(id))
+    } else {
+      const pool = availableShopItems.value
+      const shuffled = [...pool].sort(() => Math.random() - 0.5)
+      shuffled.slice(0, 2).forEach(item => inventory.value.push(item.id))
+    }
   } else if (latest === 'archer') {
     inventory.value.push('bow-and-arrow')
     inventory.value.push('bow-and-arrow')
@@ -1801,7 +1801,9 @@ function showChangelingTestPick(isSecond, callback) {
 }
 
 function pickChangelingAbility(classId) {
-  changelingAbilities.value = [classId]
+  changelingAbilities.value = changelingRevealIsSecond.value
+    ? [...changelingAbilities.value, classId]
+    : [classId]
   applyChangelingSecondAbilityBonus()
   modal.value = null
   const cb = changelingRevealCallback.value
@@ -1965,10 +1967,17 @@ function applyDangerLetters(isBoss) {
 
 function applyFortuneTellerHints() {
   if (!hasAbility('fortune-teller')) return
-  const allWordLetters = new Set(boards.value.flatMap(b => b.secretWord.split('')))
-  const pool = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').filter(l => !allWordLetters.has(l))
-  const shuffled = [...pool].sort(() => Math.random() - 0.5)
-  const letters = shuffled.slice(0, 4)
+  let letters
+  if (props.mode === 'daily' && dailyConfig.value?.fortuneTellerHints) {
+    const key = isBossFight.value ? `boss-${bossWordIndex.value}` : `stage-${stage.value}`
+    letters = dailyConfig.value.fortuneTellerHints[key]
+  }
+  if (!letters?.length) {
+    const allWordLetters = new Set(boards.value.flatMap(b => b.secretWord.split('')))
+    const pool = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').filter(l => !allWordLetters.has(l))
+    const shuffled = [...pool].sort(() => Math.random() - 0.5)
+    letters = shuffled.slice(0, 4)
+  }
   for (const letter of letters) {
     _pendingKeyPops.push({ letter, before: () => { fortuneTellerGreyLetters.value = [...fortuneTellerGreyLetters.value, letter] } })
   }
@@ -2042,7 +2051,8 @@ async function loadWord(showModal) {
       const word = (typeof wordEntry === 'object' ? wordEntry.word : wordEntry).toUpperCase() || ''
       const b = makeBoard(i, word)
       if (hasAbility('seer') && word) {
-        b.hintLetter = word[Math.floor(Math.random() * word.length)]
+        const dailySeerLetter = dailyConfig.value.seerHints?.[wordKey] ?? dailyConfig.value.seerHints?.[fallbackKey]
+        b.hintLetter = dailySeerLetter ?? word[Math.floor(Math.random() * word.length)]
         _pendingKeyPops.push({ letter: b.hintLetter, before: null })
       }
       if (hasAbility('scholar')) b.hintWordType = (typeof wordEntry === 'object' ? wordEntry.partOfSpeech : null) || ''

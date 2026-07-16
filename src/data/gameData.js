@@ -13,6 +13,10 @@ export const CLASSES = [
   { id: 'changeling', name: 'Changeling', health: 10, description: 'Gain the ability of a random character, and gain another later on' },
 ]
 
+// Abilities the Changeling can roll — kept in one place so freeplay/testing and the
+// daily pre-generation draw from the exact same pool.
+export const CHANGELING_POOL = ['seer', 'scholar', 'assassin', 'cleric', 'village-idiot', 'thief', 'knight', 'treasurer', 'archer']
+
 export const ENEMIES = [
   { id: 'useless-goblin', name: 'Goblin', regen: 2, health: 1, effect: '' },
   { id: 'cave-spider', name: 'Cave Spider', regen: 2, health: 1, effect: '' },
