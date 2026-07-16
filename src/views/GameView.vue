@@ -161,9 +161,9 @@
           <div class="game-center">
             <!-- Journey progress -->
             <div class="text-center mb-2">
-              <p class="game-meta mb-2">Enemy {{ stage + 1 }} of {{ JOURNEY_LENGTH }}</p>
+              <p class="game-meta mb-2">Enemy {{ stage + 1 }} of {{ journeyLength }}</p>
               <div class="journey-dots mb-2">
-                <span v-for="i in JOURNEY_LENGTH" :key="i" class="journey-dot" :class="dotClass(i - 1)"></span>
+                <span v-for="i in journeyLength" :key="i" class="journey-dot" :class="dotClass(i - 1)"></span>
               </div>
             </div>
 
@@ -228,7 +228,7 @@
             </div>
 
             <div v-if="currentBoss" class="mt-3 text-center">
-              <p class="monster-text mb-0"><strong>The realm has been attacked by the {{ currentBoss.name }}:</strong>
+              <p class="game-meta mb-0"><strong>The realm has been attacked by the {{ currentBoss.name }}:</strong>
                 {{ isBossFight && currentBoss.enhancedEffect ? currentBoss.enhancedEffect : currentBoss.effect }}</p>
             </div>
 
@@ -404,6 +404,7 @@
               </div>
             </template>
             <template v-else-if="modal === 'stats'">
+              <button class="modal-close-btn" type="button" aria-label="Close" @click="modal = null">✕</button>
               <h2 class="stats-title">{{ gameResult === 'won' ? 'Quest Complete!' : 'Quest Failed' }}</h2>
               <div class="stats-body">
                 <p class="stats-label">Played as:</p>
@@ -433,7 +434,6 @@
                 <button class="btn btn-press px-5 py-2" @click="copyStats">
                   {{ copied ? '✓ Copied!' : 'Copy to Clipboard' }}
                 </button>
-                <button class="btn btn-reset px-5 py-2 mt-2" @click="restartJourney">Play Again</button>
               </div>
             </template>
             <template v-else-if="modal === 'changeling-test-pick'">
@@ -524,7 +524,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
-import { CLASSES, ENEMIES, MINIBOSSES, BOSSES, SHOP_ITEMS, ALL_ITEMS, STAGE_SEQUENCE, JOURNEY_LENGTH } from '@/data/gameData.js'
+import { CLASSES, ENEMIES, MINIBOSSES, BOSSES, SHOP_ITEMS, ALL_ITEMS, getStageSequence, getJourneyLength } from '@/data/gameData.js'
 import { useGameNavStore } from '@/stores/gameNav.js'
 import BossIntro from '@/components/BossIntro.vue'
 import BossFightIntro from '@/components/BossFightIntro.vue'
@@ -764,7 +764,10 @@ function openShop() {
   modal.value = 'shop'
 }
 
-const isBossFight = computed(() => stage.value >= STAGE_SEQUENCE.length)
+const stageSequence = computed(() => getStageSequence(currentBoss.value?.id))
+const journeyLength = computed(() => getJourneyLength(currentBoss.value?.id))
+
+const isBossFight = computed(() => stage.value >= stageSequence.value.length)
 
 // During the boss fight, show the boss's enhanced ability instead of its base one
 const currentEnemyEffect = computed(() => {
@@ -1161,8 +1164,9 @@ async function handleAllBoardsSolved() {
     lastRegen.value = healAmt
     if (healAmt > 0) await animatePlayerHeal(healAmt)
     gameState.value = 'won'
-    const isLast = stage.value === JOURNEY_LENGTH - 1
-    const isMiniboss = MINIBOSSES.some(m => m.id === currentEnemy.value?.id)
+    const isLast = stage.value === journeyLength.value - 1
+    // Shop opens right before the miniboss stage, regardless of where that falls in stageSequence
+    const nextIsMiniboss = stageSequence.value[stage.value + 1] === 'miniboss'
     if (isLast) {
       gameResult.value = 'won'
       wonDamage.value = 0
@@ -1171,7 +1175,7 @@ async function handleAllBoardsSolved() {
         wonMessage.value = false
         modal.value = 'stats'
       }, 1800)
-    } else if (isMiniboss) {
+    } else if (nextIsMiniboss) {
       wonDamage.value = 0
       wonMessage.value = true
       const needsSecondAbility = playerClass.value === 'changeling' && changelingAbilities.value.length < 2
@@ -1791,7 +1795,7 @@ async function startStage(stageNum) {
     bossWordIndex.value = 0
     screen.value = 'boss-fight-intro'
   } else {
-    const stageType = STAGE_SEQUENCE[stageNum]
+    const stageType = stageSequence.value[stageNum]
     if (stageType === 'miniboss') {
       if (selectedMiniboss.value) {
         // Use the forced miniboss chosen on the dev test screen

@@ -1,7 +1,7 @@
 import { db } from '@/firebase.js'
 import { doc, getDoc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore'
 import {
-  CLASSES, ENEMIES, MINIBOSSES, BOSSES, SHOP_ITEMS, STAGE_SEQUENCE,
+  CLASSES, ENEMIES, MINIBOSSES, BOSSES, SHOP_ITEMS, getStageSequence,
 } from '@/data/gameData.js'
 import { fetchGameWord, fetchWordData } from '@/services/words.js'
 
@@ -72,16 +72,17 @@ async function generateDaily(dateKey) {
     ? pickRandom([...shopPool], 2).map(s => s.id)
     : []
 
+  const stageSequence = getStageSequence(boss.id)
   const stageEnemies = {}
-  for (let i = 0; i < STAGE_SEQUENCE.length; i++) {
-    if (STAGE_SEQUENCE[i] === 'miniboss' && boss.id === 'hydra') {
+  for (let i = 0; i < stageSequence.length; i++) {
+    if (stageSequence[i] === 'miniboss' && boss.id === 'hydra') {
       stageEnemies[i] = 'hydra-miniboss'
     } else {
-      let pool = STAGE_SEQUENCE[i] === 'miniboss'
+      let pool = stageSequence[i] === 'miniboss'
         ? MINIBOSSES.filter(m => m.id !== 'hydra-miniboss')
         : ENEMIES
       // Cerberus's 3-board mechanic conflicts with the Abominable Snowman's letter-freezing
-      if (STAGE_SEQUENCE[i] === 'miniboss' && boss.id === 'abominable-snowman') {
+      if (stageSequence[i] === 'miniboss' && boss.id === 'abominable-snowman') {
         pool = pool.filter(m => m.id !== 'cerberus')
       }
       stageEnemies[i] = pickRandom(pool).id
@@ -98,8 +99,8 @@ async function generateDaily(dateKey) {
   }
 
   const words = {}
-  for (let i = 0; i < STAGE_SEQUENCE.length; i++) {
-    const stageType = STAGE_SEQUENCE[i]
+  for (let i = 0; i < stageSequence.length; i++) {
+    const stageType = stageSequence[i]
     const pool = stageType === 'miniboss' ? MINIBOSSES : ENEMIES
     const enemy = pool.find(e => e.id === stageEnemies[i])
     const stageBoardCount = enemy?.boardCount ?? 1
