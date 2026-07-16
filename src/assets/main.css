@@ -2202,6 +2202,52 @@ body {
   line-height: 1.4;
 }
 
+/* ── Win/loss stats tables ────────────────────────────────────────────────── */
+.stats-tables-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.stats-table {
+  border-collapse: collapse;
+  min-width: 260px;
+}
+
+.stats-table caption {
+  caption-side: top;
+  text-align: left;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.95rem;
+  color: var(--gs-700);
+  margin-bottom: 0.5rem;
+}
+
+.stats-table th,
+.stats-table td {
+  border: 1px solid var(--gs-200);
+  padding: 0.4rem 0.75rem;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.stats-table th {
+  background: var(--gs-100);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.7rem;
+  color: var(--gs-700);
+}
+
+.stats-table td:first-child {
+  text-align: left;
+  font-weight: 600;
+}
+
 /* ── Testing box ─────────────────────────────────────────────────────────── */
 .testing-box {
   position: relative;

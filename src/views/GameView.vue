@@ -540,6 +540,7 @@ import { CHARACTER_IMAGES } from '@/assets/characterImages.js'
 import { ITEM_IMAGES } from '@/assets/itemImages.js'
 import { fetchOrCreateDaily } from '@/services/daily.js'
 import { fetchGameWord, fetchWordData } from '@/services/words.js'
+import { recordGameResult } from '@/services/stats.js'
 
 const props = defineProps({
   mode: { type: String, default: 'daily' },
@@ -1036,6 +1037,15 @@ function recordCurrentRound() {
   })
 }
 
+// Fire-and-forget: records this game's outcome for the Game Info page's win/loss tables
+function recordGameEnd(result) {
+  recordGameResult({
+    classId: playerClass.value,
+    bossId: currentBoss.value?.id,
+    result,
+  }).catch(err => console.error('recordGameResult:', err))
+}
+
 function totalGuessCount(entry) {
   return Math.max(0, ...entry.boards.map(b => b.guesses.length))
 }
@@ -1216,6 +1226,7 @@ async function handleAllBoardsSolved() {
     const nextIsMiniboss = stageSequence.value[stage.value + 1] === 'miniboss'
     if (isLast) {
       gameResult.value = 'won'
+      recordGameEnd('won')
       wonDamage.value = 0
       wonMessage.value = true
       setTimeout(() => {
@@ -1451,6 +1462,7 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
               recordCurrentRound()
               gameState.value = 'lost'
               gameResult.value = 'lost'
+              recordGameEnd('lost')
               setTimeout(() => { modal.value = 'defeat' }, 1200)
             }
           }
@@ -1463,6 +1475,7 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
           recordCurrentRound()
           gameState.value = 'lost'
           gameResult.value = 'lost'
+          recordGameEnd('lost')
           setTimeout(() => { modal.value = 'defeat' }, 1200)
         }
       }
@@ -1496,6 +1509,7 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
           recordCurrentRound()
           gameState.value = 'lost'
           gameResult.value = 'lost'
+          recordGameEnd('lost')
           setTimeout(() => { modal.value = 'defeat' }, 1200)
           return
         }
