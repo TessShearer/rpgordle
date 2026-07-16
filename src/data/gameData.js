@@ -184,9 +184,9 @@ export const BOSSES = [
     regen: 0,
     wordLength: 5,
     effect: 'Heal one less hp every time you heal, minimum 1',
-    enhancedEffect: 'Take extra damage for repeatedly used words AND for using greyed out letters',
-    announcement: 'Your quest is to defeat the Necromancer. Using the same word twice will deal an extra damage',
-    enhancedAnnouncement: 'You found the boss! Using greyed out letters will now deal extra damage as well!',
+    enhancedEffect: 'Your healing is still reduced',
+    announcement: 'Your quest is to defeat the Plague Lord, who will reduce your healing by 1 every time you heal more than 1 health',
+    enhancedAnnouncement: 'You found the boss!',
   },
   {
     id: 'hydra',

@@ -1110,6 +1110,13 @@ async function animatePlayerDamage(amount) {
   animatingHealth.value = false
 }
 
+// Plague Lord: every heal is reduced by 1, but never below 1 (so single-HP heals,
+// like a 1-regen enemy or the Vampiric Dagger's usual tick, are unaffected)
+function plagueLordHeal(amount) {
+  if (amount <= 0 || currentBoss.value?.id !== 'plague-lord') return amount
+  return Math.max(1, amount - 1)
+}
+
 async function animatePlayerHeal(amount) {
   animatingHealth.value = true
   for (let i = 0; i < amount; i++) {
@@ -1150,7 +1157,7 @@ async function handleAllBoardsSolved() {
   if (enemyHealth.value <= 0) {
     recordCurrentRound()
     const regen = currentEnemy.value.regen
-    const healAmt = Math.min(regen, playerMaxHealth.value - playerHealth.value)
+    const healAmt = plagueLordHeal(Math.min(regen, playerMaxHealth.value - playerHealth.value))
     lastRegen.value = healAmt
     if (healAmt > 0) await animatePlayerHeal(healAmt)
     gameState.value = 'won'
@@ -1363,9 +1370,9 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
   const allSolved = boards.value.every(b => b.solved)
 
   if (anyBoardSolvedThisGuess) {
-    if (vampiricDaggerActive.value) await animatePlayerHeal(boardsSolvedThisGuess)
+    if (vampiricDaggerActive.value) await animatePlayerHeal(plagueLordHeal(boardsSolvedThisGuess))
     if (hasAbility('cleric')) {
-      const healAmt = playerMaxHealth.value - playerHealth.value
+      const healAmt = plagueLordHeal(playerMaxHealth.value - playerHealth.value)
       if (healAmt > 0) await animatePlayerHeal(healAmt)
     }
   }
@@ -2054,7 +2061,7 @@ function useItem() {
     healthPotionAnim.value = true
     setTimeout(() => {
       healthPotionAnim.value = false
-      animatePlayerHeal(3)
+      animatePlayerHeal(plagueLordHeal(3))
     }, 700)
   } else if (item.effect === 'shield') {
     shieldAnim.value = true
