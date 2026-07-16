@@ -186,6 +186,7 @@
                   :shadow-obscured-col="shadowObscuredCol" :board-shaking="boardShaking" :zombie-rising="zombieRising"
                   :graveyard-wobble="graveyardWobble"
                   :compact="false" :bow-targeting="bowTargeting && !board.solved" :danger-letters="dangerLetters"
+                  :fire-letters="fireLetters"
                   @shake-end="boardShaking = false"
                   @bow-target="useBowAtCol($event)" />
               </template>
@@ -551,6 +552,36 @@ const KEY_ROWS = [
   ['ENTER', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', '⌫'],
 ]
 
+// Physically-adjacent keys on a QWERTY keyboard — used by the Dragon's spreading fire
+const KEYBOARD_ADJACENCY = {
+  Q: ['W', 'A'],
+  W: ['Q', 'E', 'A', 'S'],
+  E: ['W', 'R', 'S', 'D'],
+  R: ['E', 'T', 'D', 'F'],
+  T: ['R', 'Y', 'F', 'G'],
+  Y: ['T', 'U', 'G', 'H'],
+  U: ['Y', 'I', 'H', 'J'],
+  I: ['U', 'O', 'J', 'K'],
+  O: ['I', 'P', 'K', 'L'],
+  P: ['O', 'L'],
+  A: ['Q', 'W', 'S', 'Z'],
+  S: ['W', 'E', 'A', 'D', 'Z', 'X'],
+  D: ['E', 'R', 'S', 'F', 'X', 'C'],
+  F: ['R', 'T', 'D', 'G', 'C', 'V'],
+  G: ['T', 'Y', 'F', 'H', 'V', 'B'],
+  H: ['Y', 'U', 'G', 'J', 'B', 'N'],
+  J: ['U', 'I', 'H', 'K', 'N', 'M'],
+  K: ['I', 'O', 'J', 'L', 'M'],
+  L: ['O', 'P', 'K'],
+  Z: ['A', 'S', 'X'],
+  X: ['S', 'D', 'Z', 'C'],
+  C: ['D', 'F', 'X', 'V'],
+  V: ['F', 'G', 'C', 'B'],
+  B: ['G', 'H', 'V', 'N'],
+  N: ['H', 'J', 'B', 'M'],
+  M: ['J', 'K', 'N'],
+}
+
 
 const MODAL_CONTENT = {
   'boss-announcement': { button: 'Begin Quest' },
@@ -585,6 +616,11 @@ const currentEnemy = ref(null)
 const enemyHealth = ref(0)
 const lastRegen = ref(0)
 const dangerLetters = ref([])
+// Dragon: every guess made this game (across all enemies and the boss fight) stokes the fire.
+// Every 3rd guess ignites another keyboard letter — the first is arbitrary, each one after
+// that must be adjacent (on the physical keyboard) to an already-lit letter.
+const dragonGuessCount = ref(0)
+const fireLetters = ref([])
 const inventory = ref([])
 const inventoryItems = computed(() => inventory.value.map(id => ALL_ITEMS.find(i => i.id === id)).filter(Boolean))
 const pendingUseItem = ref(null)
@@ -890,10 +926,12 @@ function dotClass(i) {
 function keyClass(key) {
   if (key === 'ENTER' || key === '⌫') return 'key--action'
   const isDanger = dangerLetters.value.length > 0 && dangerLetters.value.includes(key)
+  const isFire = fireLetters.value.length > 0 && fireLetters.value.includes(key)
   const status = keyboardStatuses.value[key]
   const classes = []
   if (status) classes.push(`key--${status}`)
   if (isDanger) classes.push('key--danger')
+  if (isFire) classes.push('key--fire')
   return classes.join(' ')
 }
 
@@ -1328,6 +1366,12 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
   }
   currentGuess.value = ''
 
+  // Dragon: every guess (correct or not, across the whole game) stokes the fire
+  if (currentBoss.value?.id === 'dragon') {
+    dragonGuessCount.value += 1
+    if (dragonGuessCount.value % 3 === 0) igniteNextLetter()
+  }
+
   // Snapshot absent letters from PREVIOUS guesses before this one is recorded.
   // Used by the Necromancer boss-fight penalty — must be computed here, not after
   // board.guesses is updated, or the current guess would evaluate itself as absent.
@@ -1443,7 +1487,11 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
           }
         }
 
-        await animatePlayerDamage((doubleDamage ? 2 : 1) + necroPenalty)
+        const dragonPenalty = (!abilityBlocked
+          && currentBoss.value?.id === 'dragon'
+          && fireLetters.value.some(l => submitted.includes(l))) ? 1 : 0
+
+        await animatePlayerDamage((doubleDamage ? 2 : 1) + necroPenalty + dragonPenalty)
         if (playerHealth.value <= 0) {
           recordCurrentRound()
           gameState.value = 'lost'
@@ -1499,6 +1547,8 @@ function handleModalAction() {
     currentEnemy.value = null
     enemyHealth.value = 0
     dangerLetters.value = []
+    dragonGuessCount.value = 0
+    fireLetters.value = []
     inventory.value = []
     boards.value = []
     allGuessedWords.value = []
@@ -1543,6 +1593,8 @@ function restartJourney() {
   currentEnemy.value = null
   enemyHealth.value = 0
   dangerLetters.value = []
+  dragonGuessCount.value = 0
+  fireLetters.value = []
   inventory.value = []
   boards.value = []
   allGuessedWords.value = []
@@ -1865,6 +1917,25 @@ async function processKeyPopQueue() {
     await new Promise(r => setTimeout(r, 80))
   }
   _keyPopRunning = false
+}
+
+// Dragon: light up one more keyboard letter. The first is arbitrary; every letter after
+// that must be physically adjacent to one already on fire, so the flame visibly spreads.
+function igniteNextLetter() {
+  const alpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
+  const lit = fireLetters.value
+  let candidates
+  if (!lit.length) {
+    candidates = alpha
+  } else {
+    const neighbors = new Set()
+    lit.forEach(letter => (KEYBOARD_ADJACENCY[letter] ?? []).forEach(n => neighbors.add(n)))
+    candidates = [...neighbors].filter(l => !lit.includes(l))
+    if (!candidates.length) candidates = alpha.filter(l => !lit.includes(l))
+  }
+  if (!candidates.length) return
+  const letter = candidates[Math.floor(Math.random() * candidates.length)]
+  queueKeyboardPops([letter], (l) => { fireLetters.value = [...fireLetters.value, l] })
 }
 
 function applyDangerLetters(isBoss) {

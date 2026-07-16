@@ -1081,6 +1081,13 @@ body {
   background-color: rgba(88, 237, 205, 0.7);
 }
 
+/* Dragon fire letter: warns the player mid-type, matching .key--fire's glow */
+.tile--fire {
+  border: 2px solid #ff8a3d;
+  box-shadow: 0 0 8px 3px rgba(255, 140, 40, 0.7), 0 0 18px 5px rgba(140, 60, 0, 0.4);
+  background-color: rgba(255, 140, 40, 0.7);
+}
+
 /* Keyboard */
 .keyboard {
   display: flex;
@@ -1132,6 +1139,11 @@ body {
 .key--danger {
   border: 2px solid #45c5a9;
   box-shadow: 0 0 8px 3px rgba(88, 237, 205, 0.7), 0 0 18px 5px rgba(13, 115, 119, 0.4);
+}
+
+.key--fire {
+  border: 2px solid #ff8a3d;
+  box-shadow: 0 0 8px 3px rgba(255, 140, 40, 0.7), 0 0 18px 5px rgba(140, 60, 0, 0.4);
 }
 
 .key:hover {
