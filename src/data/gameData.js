@@ -122,7 +122,7 @@ export const BOSSES = [
     regen: 0,
     wordLength: 5,
     effect: 'A random letter on your first guess is hidden in shadow',
-    effect: 'A random letter is hidden in shadow',
+    enhancedEffect: 'A random letter is hidden in shadow',
     announcement: 'Your quest is to defeat the Shadow Sorcerer, who veils a random letter on your first guess each round.',
     enhancedAnnouncement: 'You found the boss! He casts a shadow over part of every guess',
   },
@@ -177,7 +177,7 @@ export const BOSSES = [
     announcement: 'Your quest is to defeat the Necromancer. Using the same word twice will deal an extra damage',
     enhancedAnnouncement: 'You found the boss! Using greyed out letters will now deal extra damage as well!',
   },
-    {
+  {
     id: 'plague-lord',
     name: 'Plague Lord',
     health: 2,
@@ -187,6 +187,17 @@ export const BOSSES = [
     enhancedEffect: 'Your healing is still reduced',
     announcement: 'Your quest is to defeat the Plague Lord, who will reduce your healing by 1 every time you heal more than 1 health',
     enhancedAnnouncement: 'You found the boss!',
+  },
+  {
+    id: 'key-master',
+    name: 'Key Master',
+    health: 2,
+    regen: 0,
+    wordLength: 5,
+    effect: 'Collect keys to unlock necessary letters',
+    enhancedEffect: 'It\'s locked up tight',
+    announcement: 'Your quest is to defeat the  Key Master, who has locked up necessary letters',
+    enhancedAnnouncement: 'You found the boss! Unlock his locks.',
   },
   {
     id: 'hydra',
