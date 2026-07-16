@@ -1,11 +1,11 @@
 export const CLASSES = [
   { id: 'peasant', name: 'Peasant', health: 14, description: 'Peasants have no ability' },
   { id: 'seer', name: 'Seer', health: 10, description: 'Seers reveal a yellow letter from each word' },
-  { id: 'knight', name: 'Knight', health: 16, description: 'Knights have extra health and a shield' },
+  { id: 'knight', name: 'Knight', health: 15, description: 'Knights have extra health and a shield' },
   { id: 'scholar', name: 'Scholar', health: 13, description: 'Scholars can tell you information about the type of word' },
   { id: 'treasurer', name: 'Treasurer', health: 10, description: 'Treasurers start the game with 2 items' },
-  { id: 'assassin', name: 'Assassin', health: 8, description: 'Assassins can sneak attack with 3 yellow letters' },
-  { id: 'cleric', name: 'Cleric', health: 6, description: 'Clerics heal to full after every correct guess' },
+  { id: 'assassin', name: 'Assassin', health: 8, description: 'Assassins can sneak attack with 3/5 yellow letters' },
+  { id: 'cleric', name: 'Cleric', health: 6, description: 'Clerics heal to full health after every correct guess' },
   { id: 'village-idiot', name: 'Village Idiot', health: 13, description: 'For the Village Idiot, any string of letters is a valid word' },
   { id: 'thief', name: 'Thief', health: 12, description: 'Thieves take 2 items from the shop instead of 1' },
   { id: 'fortune-teller', name: 'Fortune Teller', health: 12, description: 'Fortune Tellers reveal some letters that are not in the word' },
@@ -31,7 +31,7 @@ export const MINIBOSSES = [
   { id: 'cerberus', name: 'Cerberus', regen: 3, health: 1, boardCount: 3, wordLength: 5, effect: 'Should a dog have three heads?' },
   { id: 'mirror-spirit', name: 'Mirror Spirit', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'The answer (and all your guesses) must be the same forwards and backwards!' },
   { id: 'know-it-all', name: 'Know It All', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'The answer is a word he does not think you will know.' },
-  { id: 'slumbering-giant', name: 'Slumbering Giant', regen: 4, health: 1, wordLength: 5, boardCount: 1, effect: 'You won\'t take any damage from a wrong guess...unless you wake her up.' },
+  { id: 'slumbering-giant', name: 'Slumbering Giant', regen: 4, health: 1, wordLength: 5, boardCount: 1, effect: 'You won\'t take any damage from a wrong guess...until you wake her up.' },
   { id: 'hydra-miniboss', name: 'Hydra', regen: 4, health: 1, wordLength: 5, boardCount: 1, effect: 'Cut off its head!' },
 ]
 
@@ -46,7 +46,7 @@ export const SHOP_ITEMS = [
   {
     id: 'shield',
     name: 'Shield',
-    description: 'Blocks the boss ability for one guess.',
+    description: 'When used, you take no damage from your next incorrect guess.',
     effect: 'shield',
     cost: 4,
   },
@@ -81,7 +81,7 @@ export const SHOP_ITEMS = [
   {
     id: 'smoke-bomb',
     name: 'Smoke Bomb',
-    description: 'When used, you take no damage from your next incorrect guess',
+    description: 'Blocks the boss ability for one guess.',
     effect: 'smoke-bomb',
     cost: 2,
   },
@@ -139,7 +139,7 @@ export const BOSSES = [
     enhancedAnnouncement: 'You found the boss! Now THREE letters are slimed for double damage.',
   },
   {
-    id: 'toxic-slime',
+    id: 'giant-slime',
     name: 'Giant Slime',
     health: 3,
     regen: 0,
@@ -173,6 +173,17 @@ export const BOSSES = [
     regen: 0,
     wordLength: 5,
     effect: 'Take extra damage for repeatedly used words across the game',
+    enhancedEffect: 'Take extra damage for repeatedly used words AND for using greyed out letters',
+    announcement: 'Your quest is to defeat the Necromancer. Using the same word twice will deal an extra damage',
+    enhancedAnnouncement: 'You found the boss! Using greyed out letters will now deal extra damage as well!',
+  },
+    {
+    id: 'plague-lord',
+    name: 'Plague Lord',
+    health: 2,
+    regen: 0,
+    wordLength: 5,
+    effect: 'Heal one less hp every time you heal, minimum 1',
     enhancedEffect: 'Take extra damage for repeatedly used words AND for using greyed out letters',
     announcement: 'Your quest is to defeat the Necromancer. Using the same word twice will deal an extra damage',
     enhancedAnnouncement: 'You found the boss! Using greyed out letters will now deal extra damage as well!',

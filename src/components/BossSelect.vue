@@ -1,7 +1,7 @@
 <template>
   <div class="class-select-layout">
     <div class="class-select-main">
-      <p class="game-meta text-center my-4">Choose your boss What does this say -> {{label}}</p>
+      <p class="game-meta text-center my-4">Choose your {{label}}</p>
       <div class="class-options">
         <div
           v-for="(boss, i) in bosses"

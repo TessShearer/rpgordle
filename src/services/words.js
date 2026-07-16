@@ -30,13 +30,16 @@ const COL = 'words'
  * randomSeed range query so every call gets a different word without fetching
  * the whole collection.
  */
-export async function fetchGameWord({ minLength = 5, maxLength = 5, palindrome = null, difficulty = null } = {}) {
+export async function fetchGameWord({
+  minLength = 5, maxLength = 5, palindrome = null, difficulty = null, exclude = [],
+} = {}) {
   const targetLength = minLength + Math.floor(Math.random() * (maxLength - minLength + 1))
   const col  = collection(db, COL)
   const base = [
     where('enabled', '==', true),
     where('length',  '==', targetLength),
   ]
+  const excludeSet = new Set(exclude.map(w => w.toLowerCase()))
 
   // Filtered queries (palindrome / difficulty): fetch a pool and pick randomly.
   // These require additional Firestore composite indexes. Firestore will log a
@@ -48,16 +51,24 @@ export async function fetchGameWord({ minLength = 5, maxLength = 5, palindrome =
     const snap = await getDocs(query(col, ...filters, limit(200)))
     if (snap.empty) throw new Error(`No matching words found with length ${targetLength}.`)
     const docs = snap.docs
-    return docs[Math.floor(Math.random() * docs.length)].data().word
+    // Prefer a word that hasn't already been used this game; fall back to the
+    // full pool only if every candidate has already been used (tiny word pools)
+    const unused = docs.filter(d => !excludeSet.has(d.data().word))
+    const pool = unused.length ? unused : docs
+    return pool[Math.floor(Math.random() * pool.length)].data().word
   }
 
-  // Standard random-seed approach for regular words
+  // Standard random-seed approach for regular words. Fetch a small batch instead
+  // of a single doc so we can skip over words already used this game.
+  const BATCH = 20
   const seed = Math.random()
   let snap = await getDocs(
-    query(col, ...base, where('randomSeed', '>=', seed), orderBy('randomSeed'), limit(1))
+    query(col, ...base, where('randomSeed', '>=', seed), orderBy('randomSeed'), limit(BATCH))
   )
-  if (snap.empty) {
-    snap = await getDocs(query(col, ...base, orderBy('randomSeed'), limit(1)))
+  let match = snap.docs.find(d => !excludeSet.has(d.data().word))
+  if (!match) {
+    snap = await getDocs(query(col, ...base, orderBy('randomSeed'), limit(BATCH)))
+    match = snap.docs.find(d => !excludeSet.has(d.data().word))
   }
   if (snap.empty) {
     throw new Error(
@@ -65,7 +76,9 @@ export async function fetchGameWord({ minLength = 5, maxLength = 5, palindrome =
       `Add words to the Firestore "words" collection.`
     )
   }
-  return snap.docs[0].data().word
+  // Every candidate in both batches was already used (only possible with a very
+  // small word pool for this length) — fall back to a repeat rather than failing
+  return (match ?? snap.docs[0]).data().word
 }
 
 /**

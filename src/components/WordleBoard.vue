@@ -22,7 +22,10 @@
         <div
           v-for="col in wordLength" :key="col"
           class="tile"
-          :class="[tileClass(row - 1, col - 1), { 'tile--targeting': bowTargeting && isInputRow(row - 1) && !isHintedCol(col - 1) }]"
+          :class="[tileClass(row - 1, col - 1), {
+            'tile--targeting': bowTargeting && isInputRow(row - 1) && !isHintedCol(col - 1),
+            'tile--danger': isDangerAt(row - 1, col - 1),
+          }]"
           :style="tileStyle(row - 1, col - 1)"
           :ref="(el) => setTileRef(row - 1, col - 1, el)"
           @click="bowTargeting && isInputRow(row - 1) && !isHintedCol(col - 1) && $emit('bow-target', col - 1)"
@@ -50,8 +53,10 @@ const props = defineProps({
   boardShaking:    { type: Boolean, default: false },
   boardScrambling: { type: Boolean, default: false },
   zombieRising:    { type: Boolean, default: false },
+  graveyardWobble: { type: Boolean, default: false },
   compact:         { type: Boolean, default: false },
   bowTargeting:    { type: Boolean, default: false },
+  dangerLetters:   { type: Array, default: () => [] },
 })
 
 defineEmits(['shake-end', 'bow-target'])
@@ -115,9 +120,15 @@ function isHintedCol(col) {
   return hintLetterAt(col) !== null
 }
 
+function isDangerAt(row, col) {
+  if (!isInputRow(row) || !props.dangerLetters.length) return false
+  const typed = props.currentGuess[col]
+  return !!typed && props.dangerLetters.includes(typed)
+}
+
 function isObscured(row, col) {
   if (props.board.solved) return false
-  if (props.board.shieldedRows.has(row)) return false
+  if (props.board.abilityBlockedRows.has(row)) return false
   if (row < props.board.guesses.length) {
     return props.board.obscuredGuessPositions?.[row] === col &&
            props.board.obscuredGuessPositions[row] !== null
@@ -145,6 +156,7 @@ function tileClass(row, col) {
   if (row === props.board.guesses.length && props.gameState === 'playing' && !props.board.solved) {
     const typed = props.currentGuess[col]
     if (props.zombieRising && typed) return 'tile--filled tile--zombie'
+    if (props.graveyardWobble && typed) return 'tile--filled tile--wobble'
     if (props.boardScrambling && typed) return 'tile--filled tile--scrambling'
     if (!typed && hintLetterAt(col) !== null) return 'tile--hint'
     return typed ? 'tile--filled' : 'tile--empty'
@@ -157,6 +169,9 @@ function tileStyle(row, col) {
   const typed = props.currentGuess[col]
   if (isCurrentRow && props.zombieRising && typed) {
     return { animationDelay: `${col * 100}ms` }
+  }
+  if (isCurrentRow && props.graveyardWobble && typed) {
+    return { animationDelay: `${col * 90}ms` }
   }
   if (isCurrentRow && props.boardScrambling && typed) {
     return { animationDelay: `${col * 55}ms` }

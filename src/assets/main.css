@@ -28,8 +28,8 @@ body {
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  /* background-color: rgb(161, 157, 157); */
-  background-image: url('./background.jpg');
+  background-color: rgb(161, 157, 157);
+  /* background-image: url('./background.jpg'); */
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -640,7 +640,7 @@ body {
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--gs-600);
+  color: var(--gs-100);
   margin: 0;
 }
 
@@ -857,6 +857,13 @@ body {
     height: 130px;
   }
 
+  .monster-img {
+    width: 100%;
+    height: 130px;
+    object-fit: contain;
+    border-radius: 0.5rem;
+  }
+
   .monster-section {
     display: flex;
     flex-direction: column;
@@ -1065,6 +1072,13 @@ body {
   border-color: rgba(83, 141, 78, 0.5);
   color: rgba(83, 141, 78, 0.55);
   background: rgba(83, 141, 78, 0.07);
+}
+
+/* Gelatinous cube danger letter: warns the player mid-type, matching .key--danger's glow */
+.tile--danger {
+  border: 2px solid #45c5a9;
+  box-shadow: 0 0 8px 3px rgba(88, 237, 205, 0.7), 0 0 18px 5px rgba(13, 115, 119, 0.4);
+  background-color: rgba(88, 237, 205, 0.7);
 }
 
 /* Keyboard */
@@ -1306,7 +1320,7 @@ body {
 
 .modal-card {
   position: relative;
-  background: #1e1a1a;
+  background: #302e2e;
   clip-path: polygon(0% 24px, 50% 0%, 100% 24px,
       100% calc(100% - 24px), 50% 100%, 0% calc(100% - 24px));
   border-radius: 0;
@@ -1331,7 +1345,7 @@ body {
   background: transparent;
   border: 1px solid var(--gs-600);
   border-radius: 50%;
-  color: var(--gs-100);
+  color: white;
   font-size: 1.05rem;
   line-height: 1;
   padding: 0;
@@ -1348,12 +1362,12 @@ body {
 .modal-message {
   font-size: 1.3rem;
   font-weight: 700;
-  color: var(--gs-100);
+  color: white;
   margin-bottom: 1.5rem;
 }
 
 .small-card {
-  background: radial-gradient(ellipse at center, #362f2b 0%, #241f1e 60%, #161212 100%);
+  background: radial-gradient(ellipse at center, #3c3633 0%, #302e2e 60%, #282525 100%);
   clip-path: polygon(0% 12px, 50% 0%, 100% 12px,
       100% calc(100% - 12px), 50% 100%, 0% calc(100% - 12px));
   filter: drop-shadow(0 0 1px rgba(180, 150, 90, 0.4)) drop-shadow(0 6px 20px rgba(0, 0, 0, 0.7));
@@ -1362,7 +1376,7 @@ body {
   text-align: center;
   max-width: 320px;
   width: 80%;
-  color: var(--gs-100);
+  color: white;
   margin: auto 0;
 }
 
@@ -1381,6 +1395,15 @@ body {
   height: 120px;
   margin: 0 auto;
   font-size: 0.7rem;
+}
+
+.modal-monster-img {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  border-radius: 0.5rem;
+  display: block;
+  margin: 0 auto;
 }
 
 .shop-items {
@@ -1505,6 +1528,7 @@ body {
 .inventory-list {
   display: grid;
   grid-template-columns: repeat(2, 56px);
+  justify-content: center;
   gap: 0.4rem;
 }
 
@@ -1680,6 +1704,34 @@ body {
   position: relative;
   z-index: 100;
   pointer-events: none;
+}
+
+/* Necromancer graveyard: live warning wobble while the in-progress guess matches
+   an already-guessed word, before the player has a chance to submit it */
+@keyframes tile-wobble {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+
+  25% {
+    transform: translateY(-3px) rotate(-4deg);
+  }
+
+  50% {
+    transform: translateY(1px) rotate(3deg);
+  }
+
+  75% {
+    transform: translateY(-2px) rotate(-2deg);
+  }
+}
+
+.tile--wobble {
+  animation: tile-wobble 0.6s ease-in-out infinite;
+  position: relative;
+  color: #2d2824;
+  border-color: #3e332b;
+  background: rgba(39, 58, 37, 0.18);
 }
 
 /* Compact tile — shrinks smoothly into place when a board collapses */
@@ -2013,6 +2065,7 @@ body {
   display: flex;
   flex-direction: row;
   align-items: flex-start;
+  justify-content: center;
   gap: 0.5rem;
   width: 100%;
   max-width: 360px;
@@ -2020,6 +2073,7 @@ body {
 }
 
 .class-feature-img-col {
+  width: 100%;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -2052,7 +2106,7 @@ body {
   font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--gs-600);
+  color: var(--gs-100);
   margin-bottom: 0.1rem;
 }
 
@@ -2292,7 +2346,7 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--gs-700);
+  color: var(--gs-100);
   margin: 0;
 }
 
@@ -2300,7 +2354,7 @@ body {
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--gs-600);
+  color: var(--gs-100);
   margin: 0;
   line-height: 1.4;
 }
@@ -2602,7 +2656,7 @@ body {
   display: flex;
   flex-direction: row;
   width: 100%;
-  height: 80px;
+  height: 110px;
   gap: 0.4rem;
 }
 
@@ -2652,7 +2706,7 @@ body {
 
 .boss-image-strip {
   flex: 1;
-  height: 80px;
+  height: 110px;
   border-radius: 0.4rem;
   overflow: hidden;
 }
@@ -2660,7 +2714,7 @@ body {
 .boss-strip-img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 @media (min-width: 860px) {
@@ -2680,7 +2734,7 @@ body {
 
 .art-placeholder--boss-strip {
   width: 100%;
-  height: 80px;
+  height: 110px;
 }
 
 .graveyard {
@@ -2837,6 +2891,7 @@ body {
 .inventory-title-row {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.4rem;
   margin-bottom: 0.25rem;
 }
@@ -3024,9 +3079,7 @@ body {
   top: 52%;
   width: 100px;
   height: 100px;
-  background: var(--gs-600);
-  border: 2px solid var(--gs-400);
-  border-radius: 6px;
+  object-fit: contain;
   z-index: 1000;
   pointer-events: none;
   animation: potion-fly 0.70s ease-in forwards;

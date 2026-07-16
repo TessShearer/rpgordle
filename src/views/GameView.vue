@@ -82,7 +82,9 @@
             </div>
             <div v-if="currentEnemy" class="portrait-slot portrait-slot--enemy">
               <div class="portrait-img-col small-card" :class="{ 'health-hit': enemyHitAnim }">
-                <div class="art-placeholder art-placeholder--portrait" :class="{ 'h-shake': bossShaking }">Art of {{
+                <img v-if="CHARACTER_IMAGES[currentEnemy.id]" :src="CHARACTER_IMAGES[currentEnemy.id]"
+                  :alt="currentEnemy.name" class="portrait-img" :class="{ 'h-shake': bossShaking }" />
+                <div v-else class="art-placeholder art-placeholder--portrait" :class="{ 'h-shake': bossShaking }">Art of {{
         currentEnemy.name }}</div>
                 <div v-if="currentEnemy.id === 'slumbering-giant'" class="snore-bars"
                   :class="{ 'snore-bars--awake': giantAwake }">
@@ -96,7 +98,8 @@
                 </div>
                 <p v-if="currentEnemy.regen > 0" class="portrait-enemy-effect">Player heals {{ currentEnemy.regen }}
                   health on kill</p>
-                <p v-if="currentEnemyEffect" class="portrait-enemy-effect">{{ currentEnemyEffect }}</p>
+                <p v-if="knowItAllReveal" class="portrait-enemy-effect">{{ knowItAllReveal }}</p>
+                <p v-else-if="currentEnemyEffect" class="portrait-enemy-effect">{{ currentEnemyEffect }}</p>
               </div>
             </div>
           </div>
@@ -113,7 +116,7 @@
                   </div>
                   <img v-if="featureArtImage" :src="featureArtImage" :alt="featureArtText" class="feature-img" />
                   <div v-else class="art-placeholder art-placeholder--feature">{{ featureArtText }}</div>
-                  <p class="feature-label">HP: {{ playerHealth }} / {{ playerMaxHealth }}</p>
+                  <p class="feature-label text-white">HP: {{ playerHealth }} / {{ playerMaxHealth }}</p>
                   <div class="player-health-pips">
                     <span v-for="n in playerMaxHealth" :key="n" class="health-pip health-pip--player"
                       :class="{ 'health-pip--lost': n > playerHealth }"></span>
@@ -181,7 +184,9 @@
                   :current-guess="currentGuess" :game-state="gameState"
                   :has-seer="hasAbility('seer')" :has-scholar="hasAbility('scholar')"
                   :shadow-obscured-col="shadowObscuredCol" :board-shaking="boardShaking" :zombie-rising="zombieRising"
-                  :compact="false" :bow-targeting="bowTargeting && !board.solved" @shake-end="boardShaking = false"
+                  :graveyard-wobble="graveyardWobble"
+                  :compact="false" :bow-targeting="bowTargeting && !board.solved" :danger-letters="dangerLetters"
+                  @shake-end="boardShaking = false"
                   @bow-target="useBowAtCol($event)" />
               </template>
             </div>
@@ -222,9 +227,9 @@
               </div>
             </div>
 
-            <div v-if="currentBoss && !isBossFight" class="mt-3 text-center">
+            <div v-if="currentBoss" class="mt-3 text-center">
               <p class="monster-text mb-0"><strong>The realm has been attacked by the {{ currentBoss.name }}:</strong>
-                {{ currentBoss.effect }}</p>
+                {{ isBossFight && currentBoss.enhancedEffect ? currentBoss.enhancedEffect : currentBoss.effect }}</p>
             </div>
 
             <div v-if="currentBoss" class="boss-strip-area mt-2">
@@ -261,7 +266,10 @@
           <!-- Right panel: current enemy -->
           <aside class="game-panel game-panel--right">
             <div v-if="currentEnemy" class="enemy-section small-card" :class="{ 'health-hit': enemyHitAnim }">
-              <div class="art-placeholder art-placeholder--monster" :class="{ 'h-shake': bossShaking }"
+              <img v-if="CHARACTER_IMAGES[currentEnemy.id]" :src="CHARACTER_IMAGES[currentEnemy.id]"
+                :alt="currentEnemy.name" class="monster-img" :class="{ 'h-shake': bossShaking }"
+                @animationend="bossShaking = false" />
+              <div v-else class="art-placeholder art-placeholder--monster" :class="{ 'h-shake': bossShaking }"
                 @animationend="bossShaking = false">Art of {{ currentEnemy.name }}</div>
               <div v-if="currentEnemy.id === 'slumbering-giant'" class="snore-bars"
                 :class="{ 'snore-bars--awake': giantAwake }">
@@ -274,7 +282,8 @@
                   :class="{ 'health-pip--lost': n > enemyHealth }"></span>
               </div>
               <p v-if="currentEnemy.regen > 0" class="monster-text">Player heals {{ currentEnemy.regen }} health on kill</p>
-              <p class="monster-text">{{ currentEnemyEffect }}</p>
+              <p v-if="knowItAllReveal" class="monster-text">{{ knowItAllReveal }}</p>
+              <p v-else class="monster-text">{{ currentEnemyEffect }}</p>
             </div>
           </aside>
 
@@ -290,7 +299,9 @@
 
             <!-- Boss announcement -->
             <template v-if="modal === 'boss-announcement'">
-              <div class="art-placeholder art-placeholder--modal-monster my-3">Art of {{ currentBoss.name }}</div>
+              <img v-if="CHARACTER_IMAGES[currentBoss.id]" :src="CHARACTER_IMAGES[currentBoss.id]"
+                :alt="currentBoss.name" class="modal-monster-img my-3" />
+              <div v-else class="art-placeholder art-placeholder--modal-monster my-3">Art of {{ currentBoss.name }}</div>
               <p class="modal-message">{{ currentBoss.announcement }}</p>
             </template>
 
@@ -304,7 +315,8 @@
                   @click="selectedShopItemId = item.id">
                   <div class="shop-item-inner">
                     <div class="shop-item-front">
-                      <div class="art-placeholder art-placeholder--item">{{ item.name }}</div>
+                      <img v-if="ITEM_IMAGES[item.id]" :src="ITEM_IMAGES[item.id]" :alt="item.name" class="shop-img" />
+                      <div v-else class="art-placeholder art-placeholder--item">{{ item.name }}</div>
                       <p class="shop-item-name">{{ item.name }}</p>
                     </div>
                     <div class="shop-item-back">
@@ -499,7 +511,7 @@
     <div v-if="vorpalSwordAnim" class="vorpal-sword-projectile" aria-hidden="true"></div>
 
     <!-- Health Potion animation -->
-    <div v-if="healthPotionAnim" class="health-potion-projectile" aria-hidden="true"></div>
+    <img v-if="healthPotionAnim" :src="ITEM_IMAGES['health-potion']" alt="" class="health-potion-projectile" aria-hidden="true" />
 
     <!-- Shield animation -->
     <div v-if="shieldAnim" class="shield-anim" aria-hidden="true"></div>
@@ -574,6 +586,9 @@ const inventory = ref([])
 const inventoryItems = computed(() => inventory.value.map(id => ALL_ITEMS.find(i => i.id === id)).filter(Boolean))
 const pendingUseItem = ref(null)
 const allGuessedWords = ref([])
+// Every secret word assigned so far this game (freeplay/testing only — daily words are
+// pre-generated and deduped in daily.js), so the same answer never comes up twice
+const usedSecretWords = ref([])
 
 // ── Class abilities ───────────────────────────────────────────────────────────
 const vorpalSwordActive = ref(false)
@@ -589,7 +604,7 @@ const zombieRising = ref(false)
 const fortuneTellerGreyLetters = ref([])
 const giantSnoreBars = ref(0)
 const giantAwake = ref(false)
-const smokeBombActive = ref(false)
+const damageBlockActive = ref(false)
 const vampiricDaggerActive = ref(false)
 const changelingRevealPhase = ref(0)
 const changelingRevealFromId = ref(null)
@@ -659,7 +674,7 @@ function makeBoard(id, secretWord) {
     bowSlots: {},     // Bow and Arrow — a clue only, persists, never enforced
     crossbowSlots: {}, // Crossbow — a clue only, lasts one guess, never enforced
     obscuredGuessPositions: [],
-    shieldedRows: new Set(),
+    abilityBlockedRows: new Set(),
     crystalHints: [],
     solved: false,
   }
@@ -670,9 +685,9 @@ function ordinal(n) {
   return ORDINALS[n - 1] ?? `${n}th`
 }
 
-// Shield blocks the Abominable Snowman's forced-green-letter effect for one guess
+// Smoke Bomb blocks the Abominable Snowman's forced-green-letter effect for one guess
 function hintEnforcementBypassed(board) {
-  return currentBoss.value?.id === 'abominable-snowman' && board.shieldedRows.has(board.guesses.length)
+  return currentBoss.value?.id === 'abominable-snowman' && board.abilityBlockedRows.has(board.guesses.length)
 }
 
 function evaluateGuess(guess, secretWord) {
@@ -723,13 +738,15 @@ const testingMinibossOptions = computed(() => {
 })
 
 const availableShopItems = computed(() => {
-  const noShield = ['hydra', 'toxic-slime'].includes(currentBoss.value?.id)
+  // Smoke Bomb (blocks a boss's per-guess ability) has nothing to block against
+  // Hydra or the Giant Slime — neither has a per-guess status effect to bypass
+  const noBossBlockItem = ['hydra', 'giant-slime'].includes(currentBoss.value?.id)
   if (props.mode === 'daily' && dailyConfig.value) {
     return SHOP_ITEMS.filter(s =>
-      dailyConfig.value.shopItemIds.includes(s.id) && !(noShield && s.id === 'shield')
+      dailyConfig.value.shopItemIds.includes(s.id) && !(noBossBlockItem && s.id === 'smoke-bomb')
     )
   }
-  return noShield ? SHOP_ITEMS.filter(s => s.id !== 'shield') : SHOP_ITEMS
+  return noBossBlockItem ? SHOP_ITEMS.filter(s => s.id !== 'smoke-bomb') : SHOP_ITEMS
 })
 
 const currentShopItems = computed(() =>
@@ -738,8 +755,8 @@ const currentShopItems = computed(() =>
 
 function openShop() {
   if (props.mode !== 'daily') {
-    const pool = ['hydra', 'toxic-slime'].includes(currentBoss.value?.id)
-      ? SHOP_ITEMS.filter(s => s.id !== 'shield')
+    const pool = ['hydra', 'giant-slime'].includes(currentBoss.value?.id)
+      ? SHOP_ITEMS.filter(s => s.id !== 'smoke-bomb')
       : SHOP_ITEMS
     const shuffled = [...pool].sort(() => Math.random() - 0.5)
     freeplayShopItems.value = shuffled.slice(0, 3)
@@ -756,6 +773,14 @@ const currentEnemyEffect = computed(() => {
   return currentEnemy.value.effect
 })
 
+// Know It All: once he's revealed the definition, show it in place of his effect text
+// until he's defeated (currentEnemy moves on, so this naturally stops applying)
+const knowItAllReveal = computed(() =>
+  currentEnemy.value?.id === 'know-it-all' && knowItAllDefinition.value
+    ? `This word is defined as ${knowItAllDefinition.value}`
+    : ''
+)
+
 const enemyIntroHeadline = computed(() => {
   if (!currentEnemy.value) return ''
   const article = /^[aeiou]/i.test(currentEnemy.value.name) ? 'An' : 'A'
@@ -764,6 +789,14 @@ const enemyIntroHeadline = computed(() => {
 
 // ── Derived ───────────────────────────────────────────────────────────────────
 const wordLength = computed(() => boards.value[0]?.secretWord.length ?? 5)
+
+// Necromancer: wobble the in-progress guess live once it fully matches a graveyard word,
+// warning the player before they submit into the double-damage penalty
+const graveyardWobble = computed(() =>
+  currentBoss.value?.id === 'necromancer' &&
+  currentGuess.value.length === wordLength.value &&
+  allGuessedWords.value.includes(currentGuess.value)
+)
 
 const featureArtText = computed(() => {
   if (playerClass.value === 'changeling' && changelingAbilities.value.length > 0) {
@@ -1270,7 +1303,9 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
     zombieRising.value = false
   }
 
-  allGuessedWords.value = [...allGuessedWords.value, submitted]
+  if (!allGuessedWords.value.includes(submitted)) {
+    allGuessedWords.value = [...allGuessedWords.value, submitted]
+  }
   currentGuess.value = ''
 
   // Snapshot absent letters from PREVIOUS guesses before this one is recorded.
@@ -1291,8 +1326,8 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
     const board = activeBoards[bi]
     const boardSubmitted = submitted
     const guessRowIndex = board.guesses.length
-    const rowShielded = board.shieldedRows.has(guessRowIndex)
-    board.obscuredGuessPositions = [...board.obscuredGuessPositions, rowShielded ? null : shadowObscuredCol.value]
+    const rowAbilityBlocked = board.abilityBlockedRows.has(guessRowIndex)
+    board.obscuredGuessPositions = [...board.obscuredGuessPositions, rowAbilityBlocked ? null : shadowObscuredCol.value]
     board.guesses = [...board.guesses, boardSubmitted]
 
     if (boardSubmitted === board.secretWord) {
@@ -1344,14 +1379,20 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
         giantSnoreBars.value++
         if (giantSnoreBars.value >= 4) {
           giantAwake.value = true
-          await animatePlayerDamage(7)
-          if (playerHealth.value <= 0) {
-            recordCurrentRound()
-            gameState.value = 'lost'
-            gameResult.value = 'lost'
-            setTimeout(() => { modal.value = 'defeat' }, 1200)
+          if (damageBlockActive.value) {
+            damageBlockActive.value = false
+          } else {
+            await animatePlayerDamage(7)
+            if (playerHealth.value <= 0) {
+              recordCurrentRound()
+              gameState.value = 'lost'
+              gameResult.value = 'lost'
+              setTimeout(() => { modal.value = 'defeat' }, 1200)
+            }
           }
         }
+      } else if (damageBlockActive.value) {
+        damageBlockActive.value = false
       } else {
         await animatePlayerDamage(2)
         if (playerHealth.value <= 0) {
@@ -1362,13 +1403,13 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
         }
       }
     } else {
-      // No board solved — player takes damage (smoke bomb absorbs it if active)
-      if (smokeBombActive.value) {
-        smokeBombActive.value = false
+      // No board solved — player takes damage (shield absorbs it if active)
+      if (damageBlockActive.value) {
+        damageBlockActive.value = false
       } else {
         const guessRow = firstActive.guesses.length - 1
-        const isShielded = firstActive.shieldedRows.has(guessRow)
-        const doubleDamage = !isShielded
+        const abilityBlocked = firstActive.abilityBlockedRows.has(guessRow)
+        const doubleDamage = !abilityBlocked
           && currentBoss.value?.id === 'gelatinous-cube'
           && dangerLetters.value.length > 0
           && dangerLetters.value.some(l => submitted.includes(l))
@@ -1394,9 +1435,13 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
 
       // These run on any wrong guess regardless of smoke bomb
       if (hasAbility('assassin') && !inventory.value.includes('sneak-attack')) {
-        const anyQualifies = activeBoards.some((board, bi) =>
-          evaluateGuess(boardSubmissions[bi], board.secretWord).filter(c => c.status === 'present').length >= 3
-        )
+        // 3/5 yellow letters (60%) unlocks the sneak attack — scaled by word length so
+        // longer words aren't harder to qualify for
+        const anyQualifies = activeBoards.some((board) => {
+          const presentCount = evaluateGuess(submitted, board.secretWord)
+            .filter(c => c.status === 'present').length
+          return presentCount / board.secretWord.length >= 0.6
+        })
         if (anyQualifies) {
           inventory.value = [...inventory.value, 'sneak-attack']
         }
@@ -1437,6 +1482,7 @@ function handleModalAction() {
     inventory.value = []
     boards.value = []
     allGuessedWords.value = []
+    usedSecretWords.value = []
     vorpalSwordActive.value = false
     wonMessage.value = false
     wonDamage.value = 0
@@ -1451,7 +1497,7 @@ function handleModalAction() {
     validating.value = false
     fortuneTellerGreyLetters.value = []
     giantSnoreBars.value = 0
-  smokeBombActive.value = false
+  damageBlockActive.value = false
   vampiricDaggerActive.value = false
     giantAwake.value = false
     gameLog.value = []
@@ -1479,6 +1525,7 @@ function restartJourney() {
   inventory.value = []
   boards.value = []
   allGuessedWords.value = []
+  usedSecretWords.value = []
   vorpalSwordActive.value = false
   bowTargeting.value = false
   wonMessage.value = false
@@ -1493,7 +1540,7 @@ function restartJourney() {
   validating.value = false
   fortuneTellerGreyLetters.value = []
   giantSnoreBars.value = 0
-  smokeBombActive.value = false
+  damageBlockActive.value = false
   vampiricDaggerActive.value = false
   giantAwake.value = false
   gameLog.value = []
@@ -1677,6 +1724,7 @@ function pickChangelingAbility(classId) {
 function beginJourney() {
   screen.value = 'playing'
   allGuessedWords.value = []
+  usedSecretWords.value = []
   if (playerClass.value === 'knight') {
     inventory.value.push('shield')
   }
@@ -1858,7 +1906,7 @@ async function loadWord(showModal) {
   dangerLetters.value = []
   fortuneTellerGreyLetters.value = []
   giantSnoreBars.value = 0
-  smokeBombActive.value = false
+  damageBlockActive.value = false
   vampiricDaggerActive.value = false
   // Necromancer: guessed words stay double-damage and in the graveyard for the whole game
   if (currentBoss.value?.id !== 'necromancer') {
@@ -1905,7 +1953,8 @@ async function loadWord(showModal) {
     if (currentEnemy.value?.id === 'mirror-spirit') wordOptions.palindrome = true
     if (currentEnemy.value?.id === 'know-it-all') wordOptions.difficulty = 2
     for (let i = 0; i < boardCount; i++) {
-      const wordLower = await fetchGameWord(wordOptions)
+      const wordLower = await fetchGameWord({ ...wordOptions, exclude: usedSecretWords.value })
+      usedSecretWords.value = [...usedSecretWords.value, wordLower]
       const word = wordLower.toUpperCase()
       const b = makeBoard(i, word)
       if (hasAbility('seer')) {
@@ -2010,10 +2059,7 @@ function useItem() {
   } else if (item.effect === 'shield') {
     shieldAnim.value = true
     setTimeout(() => { shieldAnim.value = false }, 950)
-    const rowToShield = boards.value[0]?.guesses.length ?? 0
-    for (const board of boards.value) {
-      board.shieldedRows = new Set([...board.shieldedRows, rowToShield])
-    }
+    damageBlockActive.value = true
   } else if (item.effect === 'crystal-ball') {
     revealCrystalHint()
   } else if (item.effect === 'crossbow') {
@@ -2028,7 +2074,10 @@ function useItem() {
   } else if (item.effect === 'vorpal-sword') {
     vorpalSwordActive.value = true
   } else if (item.effect === 'smoke-bomb') {
-    smokeBombActive.value = true
+    const rowToBlock = boards.value[0]?.guesses.length ?? 0
+    for (const board of boards.value) {
+      board.abilityBlockedRows = new Set([...board.abilityBlockedRows, rowToBlock])
+    }
   } else if (item.effect === 'vampiric-dagger') {
     vampiricDaggerActive.value = true
   } else if (item.effect === 'caltrops') {

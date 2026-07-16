@@ -58,7 +58,9 @@ async function generateDaily(dateKey) {
   const classPool         = CLASSES.filter(c => !yesterdayClassIds.includes(c.id))
   const classIds          = pickRandom(classPool.length >= 3 ? classPool : CLASSES, 3).map(c => c.id)
 
-  const shopPool = boss.id === 'hydra' ? SHOP_ITEMS.filter(s => s.id !== 'shield') : SHOP_ITEMS
+  // Smoke Bomb (blocks a boss's per-guess ability) has nothing to block against
+  // Hydra or the Giant Slime — neither has a per-guess status effect to bypass
+  const shopPool = ['hydra', 'giant-slime'].includes(boss.id) ? SHOP_ITEMS.filter(s => s.id !== 'smoke-bomb') : SHOP_ITEMS
   const shopItemIds = pickRandom(shopPool, 3).map(s => s.id)
 
   // Pre-generate Changeling abilities so all players get the same two
@@ -86,6 +88,15 @@ async function generateDaily(dateKey) {
     }
   }
 
+  // Tracks every secret word assigned so far so the same word never comes up twice
+  // in one daily game (across stages, minibosses, and boss rounds/boards)
+  const usedWords = new Set()
+  async function fetchUnusedWord(length, extra = {}) {
+    const entry = await fetchWord(length, { ...extra, exclude: [...usedWords] })
+    usedWords.add(entry.word.toLowerCase())
+    return entry
+  }
+
   const words = {}
   for (let i = 0; i < STAGE_SEQUENCE.length; i++) {
     const stageType = STAGE_SEQUENCE[i]
@@ -98,10 +109,10 @@ async function generateDaily(dateKey) {
     if (enemy?.id === 'know-it-all') wordExtra.difficulty = 2
     if (stageBoardCount > 1) {
       for (let b = 0; b < stageBoardCount; b++) {
-        words[`stage-${i}-board-${b}`] = await fetchWord(stageWordLen, wordExtra)
+        words[`stage-${i}-board-${b}`] = await fetchUnusedWord(stageWordLen, wordExtra)
       }
     } else {
-      words[`stage-${i}`] = await fetchWord(stageWordLen, wordExtra)
+      words[`stage-${i}`] = await fetchUnusedWord(stageWordLen, wordExtra)
     }
 
     // Annoying Kid forces the player's first guess — pre-generate that word too, so it's
@@ -120,10 +131,10 @@ async function generateDaily(dateKey) {
     const bossWordLen = roundConfig?.wordLength ?? boss.wordLength ?? 5
     if (bossBoardCount > 1) {
       for (let b = 0; b < bossBoardCount; b++) {
-        words[`boss-${round}-board-${b}`] = await fetchWord(bossWordLen)
+        words[`boss-${round}-board-${b}`] = await fetchUnusedWord(bossWordLen)
       }
     } else {
-      words[`boss-${round}`] = await fetchWord(bossWordLen)
+      words[`boss-${round}`] = await fetchUnusedWord(bossWordLen)
     }
   }
 
