@@ -30,13 +30,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import shadowPower from '@/assets/shadow-sorcerer-power.png'
-import cubePower   from '@/assets/gelatinous-cube-power.png'
-
-const BOSS_IMAGES = {
-  'shadow-sorcerer': shadowPower,
-  'gelatinous-cube': cubePower,
-}
+import { POWER_IMAGES } from '@/assets/powerImages.js'
 
 const props = defineProps({
   boss: { type: Object, required: true },
@@ -54,5 +48,5 @@ function skip() {
 
 defineExpose({ allVisible, skip })
 
-const bossImage = computed(() => BOSS_IMAGES[props.boss.id] ?? null)
+const bossImage = computed(() => POWER_IMAGES[props.boss.id] ?? null)
 </script>

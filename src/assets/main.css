@@ -595,11 +595,11 @@ body {
 /* ── Mobile portraits strip ──────────────────────────────────────────────── */
 .mobile-portraits {
   display: flex;
-  justify-content: space-around;
+  justify-content: center;
   align-items: flex-start;
   width: 100%;
   padding: 0.25rem 0 0.5rem;
-  gap: 1rem;
+  gap: 0.5rem;
 }
 
 .portrait-slot {
@@ -607,7 +607,6 @@ body {
   flex-direction: row;
   align-items: flex-start;
   gap: 0.4rem;
-  flex: 1;
 }
 
 .portrait-slot--enemy {
@@ -668,6 +667,52 @@ body {
   margin: 0;
   line-height: 1.4;
   font-style: italic;
+}
+
+/* ── Active buffs (Vorpal Sword / Vampiric Dagger) ───────────────────────────
+   Mobile: sits in the gap between the character and enemy cards.
+   Desktop: sits below the enemy card in the right panel.
+   Plain page background, not a card — text stays dark for contrast. */
+.active-buffs {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.active-buffs--right {
+  margin-top: -0.5rem;
+}
+
+.buff-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.buff-img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+
+.art-placeholder--buff {
+  width: 36px;
+  height: 36px;
+  font-size: 0.4rem;
+}
+
+.buff-label {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--gs-800);
+  margin: 0;
+  text-align: center;
+  white-space: nowrap;
 }
 
 /* ── Changeling test pick modal ────────────────────────────────────────────── */

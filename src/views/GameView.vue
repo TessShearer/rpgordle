@@ -80,6 +80,28 @@
                 </p>
               </div>
             </div>
+            <div v-if="vampiricDaggerStacks > 0 || vorpalSwordActive || damageBlockActive || smokeBombActive" class="active-buffs">
+              <div v-if="vampiricDaggerStacks > 0" class="buff-indicator">
+                <img v-if="ITEM_IMAGES['vampiric-dagger']" :src="ITEM_IMAGES['vampiric-dagger']" alt="Vampiric Dagger" class="buff-img" />
+                <div v-else class="art-placeholder art-placeholder--buff">Vampiric Dagger</div>
+                <p class="buff-label">+{{ vampiricDaggerStacks }} hp when correct</p>
+              </div>
+              <div v-if="vorpalSwordActive" class="buff-indicator">
+                <img v-if="ITEM_IMAGES['vorpalSword']" :src="ITEM_IMAGES['vorpalSword']" alt="Vorpal Sword" class="buff-img" />
+                <div v-else class="art-placeholder art-placeholder--buff">Vorpal Sword</div>
+                <p class="buff-label">+1 to damage</p>
+              </div>
+              <div v-if="damageBlockActive" class="buff-indicator">
+                <img v-if="ITEM_IMAGES['shield']" :src="ITEM_IMAGES['shield']" alt="Shield" class="buff-img" />
+                <div v-else class="art-placeholder art-placeholder--buff">Shield</div>
+                <p class="buff-label">No Damage</p>
+              </div>
+              <div v-if="smokeBombActive" class="buff-indicator">
+                <img v-if="ITEM_IMAGES['smoke-bomb']" :src="ITEM_IMAGES['smoke-bomb']" alt="Smoke Bomb" class="buff-img" />
+                <div v-else class="art-placeholder art-placeholder--buff">Smoke Bomb</div>
+                <p class="buff-label">Hidden from Boss</p>
+              </div>
+            </div>
             <div v-if="currentEnemy" class="portrait-slot portrait-slot--enemy">
               <div class="portrait-img-col small-card" :class="{ 'health-hit': enemyHitAnim }">
                 <img v-if="CHARACTER_IMAGES[currentEnemy.id]" :src="CHARACTER_IMAGES[currentEnemy.id]"
@@ -288,6 +310,28 @@
               <p v-if="currentEnemy.regen > 0" class="monster-text">Player heals {{ currentEnemy.regen }} health on kill</p>
               <p v-if="knowItAllReveal" class="monster-text">{{ knowItAllReveal }}</p>
               <p v-else class="monster-text">{{ currentEnemyEffect }}</p>
+            </div>
+            <div v-if="vampiricDaggerStacks > 0 || vorpalSwordActive || damageBlockActive || smokeBombActive" class="active-buffs active-buffs--right">
+              <div v-if="vampiricDaggerStacks > 0" class="buff-indicator">
+                <img v-if="ITEM_IMAGES['vampiric-dagger']" :src="ITEM_IMAGES['vampiric-dagger']" alt="Vampiric Dagger" class="buff-img" />
+                <div v-else class="art-placeholder art-placeholder--buff">Vampiric Dagger</div>
+                <p class="buff-label">+{{ vampiricDaggerStacks }} hp when correct</p>
+              </div>
+              <div v-if="vorpalSwordActive" class="buff-indicator">
+                <img v-if="ITEM_IMAGES['vorpalSword']" :src="ITEM_IMAGES['vorpalSword']" alt="Vorpal Sword" class="buff-img" />
+                <div v-else class="art-placeholder art-placeholder--buff">Vorpal Sword</div>
+                <p class="buff-label">+1 to damage</p>
+              </div>
+              <div v-if="damageBlockActive" class="buff-indicator">
+                <img v-if="ITEM_IMAGES['shield']" :src="ITEM_IMAGES['shield']" alt="Shield" class="buff-img" />
+                <div v-else class="art-placeholder art-placeholder--buff">Shield</div>
+                <p class="buff-label">No Damage</p>
+              </div>
+              <div v-if="smokeBombActive" class="buff-indicator">
+                <img v-if="ITEM_IMAGES['smoke-bomb']" :src="ITEM_IMAGES['smoke-bomb']" alt="Smoke Bomb" class="buff-img" />
+                <div v-else class="art-placeholder art-placeholder--buff">Smoke Bomb</div>
+                <p class="buff-label">Hidden from Boss</p>
+              </div>
             </div>
           </aside>
 
@@ -733,6 +777,13 @@ function ordinal(n) {
 function hintEnforcementBypassed(board) {
   return currentBoss.value?.id === 'abominable-snowman' && board.abilityBlockedRows.has(board.guesses.length)
 }
+
+// True from the moment Smoke Bomb is used until the next guess is submitted, since it
+// only blocks the boss's ability for that one upcoming guess
+const smokeBombActive = computed(() => {
+  const board = boards.value[0]
+  return !!board && board.abilityBlockedRows.has(board.guesses.length)
+})
 
 function evaluateGuess(guess, secretWord) {
   const status = Array(guess.length).fill('absent')
