@@ -1,7 +1,7 @@
 import { db } from '@/firebase.js'
 import { doc, getDoc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore'
 import {
-  CLASSES, ENEMIES, MINIBOSSES, BOSSES, SHOP_ITEMS, STAGE_SEQUENCE,
+  CLASSES, ENEMIES, MINIBOSSES, BOSSES, SHOP_ITEMS, CHANGELING_POOL, getStageSequence,
 } from '@/data/gameData.js'
 import { fetchGameWord, fetchWordData } from '@/services/words.js'
 
@@ -37,13 +37,23 @@ async function fetchWord(length = 5, extra = {}) {
   }
 }
 
+// Seer reveals one letter that's actually in the word
+function pickSeerLetter(word) {
+  return word[Math.floor(Math.random() * word.length)]
+}
+
+// Fortune Teller reveals 4 letters that aren't in any board's word for this word-load
+function pickFortuneTellerLetters(wordsInLoad) {
+  const usedLetters = new Set(wordsInLoad.flatMap(w => w.split('')))
+  const pool = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').filter(l => !usedLetters.has(l))
+  return pickRandom(pool, 4)
+}
+
 async function getRecentDailies(dateKey) {
   const keys  = [-1, -2, -3].map(n => offsetDayKey(dateKey, n))
   const snaps = await Promise.all(keys.map(k => getDoc(doc(db, 'dailies', k))))
   return snaps.filter(s => s.exists()).map(s => s.data())
 }
-
-const CHANGELING_POOL = ['seer', 'scholar', 'assassin', 'cleric', 'village-idiot', 'thief']
 
 async function generateDaily(dateKey) {
   const recents = await getRecentDailies(dateKey)
@@ -66,22 +76,22 @@ async function generateDaily(dateKey) {
   // Pre-generate Changeling abilities so all players get the same two
   const changelingAbilities = pickRandom([...CHANGELING_POOL], 2).map(id => id)
 
-  // Pre-generate Treasurer starting items (only relevant if Treasurer is a selectable class today)
-  // so all players who pick Treasurer get the same two.
-  const treasurerItemIds = classIds.includes('treasurer')
-    ? pickRandom([...shopPool], 2).map(s => s.id)
-    : []
+  // Pre-generate Treasurer starting items so all players who end up as Treasurer — whether
+  // picked directly or rolled by a Changeling — get the same two. Always generated: even on
+  // days Treasurer isn't one of the 3 selectable classes, a Changeling can still roll it.
+  const treasurerItemIds = pickRandom([...shopPool], 2).map(s => s.id)
 
+  const stageSequence = getStageSequence(boss.id)
   const stageEnemies = {}
-  for (let i = 0; i < STAGE_SEQUENCE.length; i++) {
-    if (STAGE_SEQUENCE[i] === 'miniboss' && boss.id === 'hydra') {
+  for (let i = 0; i < stageSequence.length; i++) {
+    if (stageSequence[i] === 'miniboss' && boss.id === 'hydra') {
       stageEnemies[i] = 'hydra-miniboss'
     } else {
-      let pool = STAGE_SEQUENCE[i] === 'miniboss'
+      let pool = stageSequence[i] === 'miniboss'
         ? MINIBOSSES.filter(m => m.id !== 'hydra-miniboss')
         : ENEMIES
       // Cerberus's 3-board mechanic conflicts with the Abominable Snowman's letter-freezing
-      if (STAGE_SEQUENCE[i] === 'miniboss' && boss.id === 'abominable-snowman') {
+      if (stageSequence[i] === 'miniboss' && boss.id === 'abominable-snowman') {
         pool = pool.filter(m => m.id !== 'cerberus')
       }
       stageEnemies[i] = pickRandom(pool).id
@@ -97,9 +107,14 @@ async function generateDaily(dateKey) {
     return entry
   }
 
+  // Seer/Fortune Teller hints are pre-generated for every word-load (regardless of whether
+  // those classes are selectable today) so a Changeling rolling either one is also covered —
+  // same reasoning as always generating treasurerItemIds above.
   const words = {}
-  for (let i = 0; i < STAGE_SEQUENCE.length; i++) {
-    const stageType = STAGE_SEQUENCE[i]
+  const seerHints = {}
+  const fortuneTellerHints = {}
+  for (let i = 0; i < stageSequence.length; i++) {
+    const stageType = stageSequence[i]
     const pool = stageType === 'miniboss' ? MINIBOSSES : ENEMIES
     const enemy = pool.find(e => e.id === stageEnemies[i])
     const stageBoardCount = enemy?.boardCount ?? 1
@@ -107,13 +122,21 @@ async function generateDaily(dateKey) {
     const wordExtra = {}
     if (enemy?.id === 'mirror-spirit') wordExtra.palindrome = true
     if (enemy?.id === 'know-it-all') wordExtra.difficulty = 2
+    const stageWords = []
     if (stageBoardCount > 1) {
       for (let b = 0; b < stageBoardCount; b++) {
-        words[`stage-${i}-board-${b}`] = await fetchUnusedWord(stageWordLen, wordExtra)
+        const entry = await fetchUnusedWord(stageWordLen, wordExtra)
+        words[`stage-${i}-board-${b}`] = entry
+        stageWords.push(entry.word)
+        seerHints[`stage-${i}-board-${b}`] = pickSeerLetter(entry.word)
       }
     } else {
-      words[`stage-${i}`] = await fetchUnusedWord(stageWordLen, wordExtra)
+      const entry = await fetchUnusedWord(stageWordLen, wordExtra)
+      words[`stage-${i}`] = entry
+      stageWords.push(entry.word)
+      seerHints[`stage-${i}`] = pickSeerLetter(entry.word)
     }
+    fortuneTellerHints[`stage-${i}`] = pickFortuneTellerLetters(stageWords)
 
     // Annoying Kid forces the player's first guess — pre-generate that word too, so it's
     // the same for everyone (it must differ from the stage's own secret word)
@@ -129,13 +152,21 @@ async function generateDaily(dateKey) {
     const roundConfig = boss.rounds?.[round]
     const bossBoardCount = roundConfig?.boardCount ?? boss.boardCount ?? 1
     const bossWordLen = roundConfig?.wordLength ?? boss.wordLength ?? 5
+    const roundWords = []
     if (bossBoardCount > 1) {
       for (let b = 0; b < bossBoardCount; b++) {
-        words[`boss-${round}-board-${b}`] = await fetchUnusedWord(bossWordLen)
+        const entry = await fetchUnusedWord(bossWordLen)
+        words[`boss-${round}-board-${b}`] = entry
+        roundWords.push(entry.word)
+        seerHints[`boss-${round}-board-${b}`] = pickSeerLetter(entry.word)
       }
     } else {
-      words[`boss-${round}`] = await fetchUnusedWord(bossWordLen)
+      const entry = await fetchUnusedWord(bossWordLen)
+      words[`boss-${round}`] = entry
+      roundWords.push(entry.word)
+      seerHints[`boss-${round}`] = pickSeerLetter(entry.word)
     }
+    fortuneTellerHints[`boss-${round}`] = pickFortuneTellerLetters(roundWords)
   }
 
   const config = {
@@ -147,6 +178,8 @@ async function generateDaily(dateKey) {
     changelingAbilities,
     treasurerItemIds,
     words,
+    seerHints,
+    fortuneTellerHints,
     createdAt: serverTimestamp(),
   }
 

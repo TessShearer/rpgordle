@@ -118,12 +118,56 @@
         :loading="submitting.shop" v-model="draft.shop" @add="addNote('shop')" @delete="deleteNote" />
     </section>
 
+    <!-- ── Win/Loss Stats ───────────────────────────────────────────────────── -->
+    <section class="info-section mb-5">
+      <h2 class="info-heading mb-3">Stats</h2>
+      <div class="stats-tables-row">
+        <table class="stats-table">
+          <caption>By Character</caption>
+          <thead>
+            <tr>
+              <th>Character</th>
+              <th>Losses</th>
+              <th>Wins</th>
+              <th>Win Rate</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="cls in CLASSES" :key="cls.id">
+              <td>{{ cls.name }}</td>
+              <td>{{ classStats[cls.id].losses }}</td>
+              <td>{{ classStats[cls.id].wins }}</td>
+              <td>{{ winRate(classStats[cls.id]) }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <table class="stats-table">
+          <caption>By Boss</caption>
+          <thead>
+            <tr>
+              <th>Boss</th>
+              <th>Losses</th>
+              <th>Wins</th>
+              <th>Win Rate</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="boss in BOSSES" :key="boss.id">
+              <td>{{ boss.name }}</td>
+              <td>{{ bossStats[boss.id].losses }}</td>
+              <td>{{ bossStats[boss.id].wins }}</td>
+              <td>{{ winRate(bossStats[boss.id]) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
 
   </main>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { CLASSES, ENEMIES, MINIBOSSES, BOSSES, SHOP_ITEMS } from '@/data/gameData.js'
 import { db } from '@/firebase.js'
 import {
@@ -167,6 +211,40 @@ async function addNote(cat) {
   }
 }
 
-onMounted(subscribeNotes)
+// ── Win/loss stats ────────────────────────────────────────────────────────
+const gameResults = ref([])
+
+function subscribeGameResults() {
+  unsubs.push(onSnapshot(collection(db, 'gameResults'),
+    snap => { gameResults.value = snap.docs.map(d => d.data()) },
+    err => console.error('gameResults:', err),
+  ))
+}
+
+function tallyBy(key, entities) {
+  const tallies = {}
+  for (const entity of entities) tallies[entity.id] = { wins: 0, losses: 0 }
+  for (const result of gameResults.value) {
+    const tally = tallies[result[key]]
+    if (!tally) continue
+    if (result.result === 'won') tally.wins++
+    else if (result.result === 'lost') tally.losses++
+  }
+  return tallies
+}
+
+const classStats = computed(() => tallyBy('classId', CLASSES))
+const bossStats = computed(() => tallyBy('bossId', BOSSES))
+
+function winRate(tally) {
+  const total = tally.wins + tally.losses
+  if (!total) return '—'
+  return `${Math.round((tally.wins / total) * 100)}%`
+}
+
+onMounted(() => {
+  subscribeNotes()
+  subscribeGameResults()
+})
 onUnmounted(() => unsubs.forEach(u => u()))
 </script>

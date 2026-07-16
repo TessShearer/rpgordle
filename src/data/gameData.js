@@ -13,6 +13,10 @@ export const CLASSES = [
   { id: 'changeling', name: 'Changeling', health: 10, description: 'Gain the ability of a random character, and gain another later on' },
 ]
 
+// Abilities the Changeling can roll — kept in one place so freeplay/testing and the
+// daily pre-generation draw from the exact same pool.
+export const CHANGELING_POOL = ['seer', 'scholar', 'assassin', 'cleric', 'village-idiot', 'thief', 'knight', 'treasurer', 'archer']
+
 export const ENEMIES = [
   { id: 'useless-goblin', name: 'Goblin', regen: 2, health: 1, effect: '' },
   { id: 'cave-spider', name: 'Cave Spider', regen: 2, health: 1, effect: '' },
@@ -31,8 +35,8 @@ export const MINIBOSSES = [
   { id: 'cerberus', name: 'Cerberus', regen: 3, health: 1, boardCount: 3, wordLength: 5, effect: 'Should a dog have three heads?' },
   { id: 'mirror-spirit', name: 'Mirror Spirit', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'The answer (and all your guesses) must be the same forwards and backwards!' },
   { id: 'know-it-all', name: 'Know It All', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'The answer is a word he does not think you will know.' },
-  { id: 'slumbering-giant', name: 'Slumbering Giant', regen: 4, health: 1, wordLength: 5, boardCount: 1, effect: 'You won\'t take any damage from a wrong guess...until you wake her up.' },
-  { id: 'hydra-miniboss', name: 'Hydra', regen: 4, health: 1, wordLength: 5, boardCount: 1, effect: 'Cut off its head!' },
+  { id: 'slumbering-giant', name: 'Slumbering Giant', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'You won\'t take any damage from a wrong guess...until you wake her up.' },
+  { id: 'hydra-miniboss', name: 'Hydra', regen: 3, health: 1, wordLength: 5, boardCount: 2, effect: 'Cut off its head!' },
 ]
 
 export const SHOP_ITEMS = [
@@ -111,14 +115,28 @@ export const SPECIAL_ITEMS = [
 
 export const ALL_ITEMS = [...SHOP_ITEMS, ...SPECIAL_ITEMS]
 
-export const STAGE_SEQUENCE = ['enemy', 'miniboss', 'enemy']
+export const STAGE_SEQUENCE = ['enemy', 'enemy', 'miniboss']
 export const JOURNEY_LENGTH = STAGE_SEQUENCE.length + 1
+
+// Giant Slime splits into more pieces, so its journey is shortened by one regular enemy
+// to compensate for the extra boss rounds.
+const STAGE_SEQUENCE_OVERRIDES = {
+  'giant-slime': ['enemy', 'miniboss'],
+}
+
+export function getStageSequence(bossId) {
+  return STAGE_SEQUENCE_OVERRIDES[bossId] ?? STAGE_SEQUENCE
+}
+
+export function getJourneyLength(bossId) {
+  return getStageSequence(bossId).length + 1
+}
 
 export const BOSSES = [
   {
     id: 'shadow-sorcerer',
     name: 'Shadow Sorcerer',
-    health: 3,
+    health: 2,
     regen: 0,
     wordLength: 5,
     effect: 'A random letter on your first guess is hidden in shadow',
@@ -188,6 +206,17 @@ export const BOSSES = [
     announcement: 'Your quest is to defeat the Plague Lord, who will reduce your healing by 1 every time you heal more than 1 health',
     enhancedAnnouncement: 'You found the boss!',
   },
+      {
+    id: 'dragon',
+    name: 'Dragon',
+    health: 2,
+    regen: 0,
+    wordLength: 5,
+    effect: 'A fire that deals +1 damage will spread across your keyboard.',
+    enhancedEffect: 'Be careful of the flames',
+    announcement: 'Your quest is to defeat the Dragon, he will breathe fire that spreads onto your keyboard. If any part of your guess is on fire you will take +1 damage"',
+    enhancedAnnouncement: 'You found the boss! Be careful of the flames.',
+  },
   {
     id: 'key-master',
     name: 'Key Master',
@@ -202,12 +231,11 @@ export const BOSSES = [
   {
     id: 'hydra',
     name: 'Hydra',
-    health: 3,
+    health: 2,
     regen: 0,
     wordLength: 5,
-    boardCount: 2,
+    boardCount: 4,
     rounds: [
-      { boardCount: 2, wordLength: 5 },
       { boardCount: 4, wordLength: 5 },
       { boardCount: 6, wordLength: 5 },
     ],

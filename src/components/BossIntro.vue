@@ -63,14 +63,8 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import shadowPower from '@/assets/shadow-sorcerer-power.png'
-import cubePower   from '@/assets/gelatinuos-cube-power.png'
+import { POWER_IMAGES } from '@/assets/powerImages.js'
 import { CHARACTER_IMAGES } from '@/assets/characterImages.js'
-
-const POWER_IMAGES = {
-  'shadow-sorcerer': shadowPower,
-  'gelatinous-cube': cubePower,
-}
 
 const CLASS_LABELS = {
   peasant: 'Peasant', seer: 'Seer', knight: 'Knight', scholar: 'Scholar',

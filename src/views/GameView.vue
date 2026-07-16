@@ -80,6 +80,28 @@
                 </p>
               </div>
             </div>
+            <div v-if="vampiricDaggerStacks > 0 || vorpalSwordActive || damageBlockActive || smokeBombActive" class="active-buffs">
+              <div v-if="vampiricDaggerStacks > 0" class="buff-indicator">
+                <img v-if="ITEM_IMAGES['vampiric-dagger']" :src="ITEM_IMAGES['vampiric-dagger']" alt="Vampiric Dagger" class="buff-img" />
+                <div v-else class="art-placeholder art-placeholder--buff">Vampiric Dagger</div>
+                <p class="buff-label">+{{ vampiricDaggerStacks }} hp when correct</p>
+              </div>
+              <div v-if="vorpalSwordActive" class="buff-indicator">
+                <img v-if="ITEM_IMAGES['vorpalSword']" :src="ITEM_IMAGES['vorpalSword']" alt="Vorpal Sword" class="buff-img" />
+                <div v-else class="art-placeholder art-placeholder--buff">Vorpal Sword</div>
+                <p class="buff-label">+1 to damage</p>
+              </div>
+              <div v-if="damageBlockActive" class="buff-indicator">
+                <img v-if="ITEM_IMAGES['shield']" :src="ITEM_IMAGES['shield']" alt="Shield" class="buff-img" />
+                <div v-else class="art-placeholder art-placeholder--buff">Shield</div>
+                <p class="buff-label">No Damage</p>
+              </div>
+              <div v-if="smokeBombActive" class="buff-indicator">
+                <img v-if="ITEM_IMAGES['smoke-bomb']" :src="ITEM_IMAGES['smoke-bomb']" alt="Smoke Bomb" class="buff-img" />
+                <div v-else class="art-placeholder art-placeholder--buff">Smoke Bomb</div>
+                <p class="buff-label">Hidden from Boss</p>
+              </div>
+            </div>
             <div v-if="currentEnemy" class="portrait-slot portrait-slot--enemy">
               <div class="portrait-img-col small-card" :class="{ 'health-hit': enemyHitAnim }">
                 <img v-if="CHARACTER_IMAGES[currentEnemy.id]" :src="CHARACTER_IMAGES[currentEnemy.id]"
@@ -161,9 +183,9 @@
           <div class="game-center">
             <!-- Journey progress -->
             <div class="text-center mb-2">
-              <p class="game-meta mb-2">Enemy {{ stage + 1 }} of {{ JOURNEY_LENGTH }}</p>
+              <p class="game-meta mb-2">Enemy {{ stage + 1 }} of {{ journeyLength }}</p>
               <div class="journey-dots mb-2">
-                <span v-for="i in JOURNEY_LENGTH" :key="i" class="journey-dot" :class="dotClass(i - 1)"></span>
+                <span v-for="i in journeyLength" :key="i" class="journey-dot" :class="dotClass(i - 1)"></span>
               </div>
             </div>
 
@@ -186,6 +208,7 @@
                   :shadow-obscured-col="shadowObscuredCol" :board-shaking="boardShaking" :zombie-rising="zombieRising"
                   :graveyard-wobble="graveyardWobble"
                   :compact="false" :bow-targeting="bowTargeting && !board.solved" :danger-letters="dangerLetters"
+                  :fire-letters="fireLetters"
                   @shake-end="boardShaking = false"
                   @bow-target="useBowAtCol($event)" />
               </template>
@@ -219,6 +242,9 @@
                 <span class="sneak-attack-text">Sneak Attack!</span>
               </button>
             </div>
+            <div v-else-if="gameResult" class="submit-row mb-2">
+              <button class="btn btn-press px-4 py-1" @click="modal = 'stats'">View Stats</button>
+            </div>
             <div v-if="gameState === 'playing'" class="keyboard">
               <div v-for="(row, r) in KEY_ROWS" :key="r" class="key-row">
                 <button v-for="key in row" :key="key" class="key"
@@ -228,7 +254,7 @@
             </div>
 
             <div v-if="currentBoss" class="mt-3 text-center">
-              <p class="monster-text mb-0"><strong>The realm has been attacked by the {{ currentBoss.name }}:</strong>
+              <p class="game-meta mb-0"><strong>The realm has been attacked by the {{ currentBoss.name }}:</strong>
                 {{ isBossFight && currentBoss.enhancedEffect ? currentBoss.enhancedEffect : currentBoss.effect }}</p>
             </div>
 
@@ -284,6 +310,28 @@
               <p v-if="currentEnemy.regen > 0" class="monster-text">Player heals {{ currentEnemy.regen }} health on kill</p>
               <p v-if="knowItAllReveal" class="monster-text">{{ knowItAllReveal }}</p>
               <p v-else class="monster-text">{{ currentEnemyEffect }}</p>
+            </div>
+            <div v-if="vampiricDaggerStacks > 0 || vorpalSwordActive || damageBlockActive || smokeBombActive" class="active-buffs active-buffs--right">
+              <div v-if="vampiricDaggerStacks > 0" class="buff-indicator">
+                <img v-if="ITEM_IMAGES['vampiric-dagger']" :src="ITEM_IMAGES['vampiric-dagger']" alt="Vampiric Dagger" class="buff-img" />
+                <div v-else class="art-placeholder art-placeholder--buff">Vampiric Dagger</div>
+                <p class="buff-label">+{{ vampiricDaggerStacks }} hp when correct</p>
+              </div>
+              <div v-if="vorpalSwordActive" class="buff-indicator">
+                <img v-if="ITEM_IMAGES['vorpalSword']" :src="ITEM_IMAGES['vorpalSword']" alt="Vorpal Sword" class="buff-img" />
+                <div v-else class="art-placeholder art-placeholder--buff">Vorpal Sword</div>
+                <p class="buff-label">+1 to damage</p>
+              </div>
+              <div v-if="damageBlockActive" class="buff-indicator">
+                <img v-if="ITEM_IMAGES['shield']" :src="ITEM_IMAGES['shield']" alt="Shield" class="buff-img" />
+                <div v-else class="art-placeholder art-placeholder--buff">Shield</div>
+                <p class="buff-label">No Damage</p>
+              </div>
+              <div v-if="smokeBombActive" class="buff-indicator">
+                <img v-if="ITEM_IMAGES['smoke-bomb']" :src="ITEM_IMAGES['smoke-bomb']" alt="Smoke Bomb" class="buff-img" />
+                <div v-else class="art-placeholder art-placeholder--buff">Smoke Bomb</div>
+                <p class="buff-label">Hidden from Boss</p>
+              </div>
             </div>
           </aside>
 
@@ -404,6 +452,7 @@
               </div>
             </template>
             <template v-else-if="modal === 'stats'">
+              <button class="modal-close-btn" type="button" aria-label="Close" @click="modal = null">✕</button>
               <h2 class="stats-title">{{ gameResult === 'won' ? 'Quest Complete!' : 'Quest Failed' }}</h2>
               <div class="stats-body">
                 <p class="stats-label">Played as:</p>
@@ -433,7 +482,6 @@
                 <button class="btn btn-press px-5 py-2" @click="copyStats">
                   {{ copied ? '✓ Copied!' : 'Copy to Clipboard' }}
                 </button>
-                <button class="btn btn-reset px-5 py-2 mt-2" @click="restartJourney">Play Again</button>
               </div>
             </template>
             <template v-else-if="modal === 'changeling-test-pick'">
@@ -508,7 +556,7 @@
     <div v-if="caltropsFlyingAnim" class="caltrops-projectile" aria-hidden="true"></div>
 
     <!-- Vorpal Sword strike animation -->
-    <div v-if="vorpalSwordAnim" class="vorpal-sword-projectile" aria-hidden="true"></div>
+    <img v-if="vorpalSwordAnim" :src="ITEM_IMAGES['vorpalSword']" alt="" class="vorpal-sword-projectile" aria-hidden="true" />
 
     <!-- Health Potion animation -->
     <img v-if="healthPotionAnim" :src="ITEM_IMAGES['health-potion']" alt="" class="health-potion-projectile" aria-hidden="true" />
@@ -524,7 +572,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
-import { CLASSES, ENEMIES, MINIBOSSES, BOSSES, SHOP_ITEMS, ALL_ITEMS, STAGE_SEQUENCE, JOURNEY_LENGTH } from '@/data/gameData.js'
+import { CLASSES, ENEMIES, MINIBOSSES, BOSSES, SHOP_ITEMS, ALL_ITEMS, CHANGELING_POOL, getStageSequence, getJourneyLength } from '@/data/gameData.js'
 import { useGameNavStore } from '@/stores/gameNav.js'
 import BossIntro from '@/components/BossIntro.vue'
 import BossFightIntro from '@/components/BossFightIntro.vue'
@@ -536,6 +584,7 @@ import { CHARACTER_IMAGES } from '@/assets/characterImages.js'
 import { ITEM_IMAGES } from '@/assets/itemImages.js'
 import { fetchOrCreateDaily } from '@/services/daily.js'
 import { fetchGameWord, fetchWordData } from '@/services/words.js'
+import { recordGameResult } from '@/services/stats.js'
 
 const props = defineProps({
   mode: { type: String, default: 'daily' },
@@ -547,6 +596,36 @@ const KEY_ROWS = [
   ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
   ['ENTER', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', '⌫'],
 ]
+
+// Physically-adjacent keys on a QWERTY keyboard — used by the Dragon's spreading fire
+const KEYBOARD_ADJACENCY = {
+  Q: ['W', 'A'],
+  W: ['Q', 'E', 'A', 'S'],
+  E: ['W', 'R', 'S', 'D'],
+  R: ['E', 'T', 'D', 'F'],
+  T: ['R', 'Y', 'F', 'G'],
+  Y: ['T', 'U', 'G', 'H'],
+  U: ['Y', 'I', 'H', 'J'],
+  I: ['U', 'O', 'J', 'K'],
+  O: ['I', 'P', 'K', 'L'],
+  P: ['O', 'L'],
+  A: ['Q', 'W', 'S', 'Z'],
+  S: ['W', 'E', 'A', 'D', 'Z', 'X'],
+  D: ['E', 'R', 'S', 'F', 'X', 'C'],
+  F: ['R', 'T', 'D', 'G', 'C', 'V'],
+  G: ['T', 'Y', 'F', 'H', 'V', 'B'],
+  H: ['Y', 'U', 'G', 'J', 'B', 'N'],
+  J: ['U', 'I', 'H', 'K', 'N', 'M'],
+  K: ['I', 'O', 'J', 'L', 'M'],
+  L: ['O', 'P', 'K'],
+  Z: ['A', 'S', 'X'],
+  X: ['S', 'D', 'Z', 'C'],
+  C: ['D', 'F', 'X', 'V'],
+  V: ['F', 'G', 'C', 'B'],
+  B: ['G', 'H', 'V', 'N'],
+  N: ['H', 'J', 'B', 'M'],
+  M: ['J', 'K', 'N'],
+}
 
 
 const MODAL_CONTENT = {
@@ -582,6 +661,11 @@ const currentEnemy = ref(null)
 const enemyHealth = ref(0)
 const lastRegen = ref(0)
 const dangerLetters = ref([])
+// Dragon: every guess made this game (across all enemies and the boss fight) stokes the fire.
+// Every 3rd guess ignites another keyboard letter — the first is arbitrary, each one after
+// that must be adjacent (on the physical keyboard) to an already-lit letter.
+const dragonGuessCount = ref(0)
+const fireLetters = ref([])
 const inventory = ref([])
 const inventoryItems = computed(() => inventory.value.map(id => ALL_ITEMS.find(i => i.id === id)).filter(Boolean))
 const pendingUseItem = ref(null)
@@ -598,6 +682,7 @@ const shopPicksRemaining = ref(1)
 const shopTotalPicks = ref(1)
 const selectedShopItemId = ref(null)
 const freeplayShopItems = ref([])
+const purchasedShopItemIds = ref([])
 const validating = ref(false)
 const annoyingKidTyping = ref(false)
 const zombieRising = ref(false)
@@ -605,7 +690,10 @@ const fortuneTellerGreyLetters = ref([])
 const giantSnoreBars = ref(0)
 const giantAwake = ref(false)
 const damageBlockActive = ref(false)
-const vampiricDaggerActive = ref(false)
+// Two Vampiric Daggers can be active at once (e.g. a Treasurer start item plus a shop pickup);
+// each stack adds +1 heal per correct guess. Capped at 2 — there's no way to acquire a third.
+const vampiricDaggerStacks = ref(0)
+const MAX_VAMPIRIC_DAGGER_STACKS = 2
 const changelingRevealPhase = ref(0)
 const changelingRevealFromId = ref(null)
 const changelingRevealToId = ref(null)
@@ -690,6 +778,13 @@ function hintEnforcementBypassed(board) {
   return currentBoss.value?.id === 'abominable-snowman' && board.abilityBlockedRows.has(board.guesses.length)
 }
 
+// True from the moment Smoke Bomb is used until the next guess is submitted, since it
+// only blocks the boss's ability for that one upcoming guess
+const smokeBombActive = computed(() => {
+  const board = boards.value[0]
+  return !!board && board.abilityBlockedRows.has(board.guesses.length)
+})
+
 function evaluateGuess(guess, secretWord) {
   const status = Array(guess.length).fill('absent')
   const pool = secretWord.split('')
@@ -749,9 +844,10 @@ const availableShopItems = computed(() => {
   return noBossBlockItem ? SHOP_ITEMS.filter(s => s.id !== 'smoke-bomb') : SHOP_ITEMS
 })
 
-const currentShopItems = computed(() =>
-  props.mode === 'daily' ? availableShopItems.value : freeplayShopItems.value
-)
+const currentShopItems = computed(() => {
+  const pool = props.mode === 'daily' ? availableShopItems.value : freeplayShopItems.value
+  return pool.filter(item => !purchasedShopItemIds.value.includes(item.id))
+})
 
 function openShop() {
   if (props.mode !== 'daily') {
@@ -761,10 +857,14 @@ function openShop() {
     const shuffled = [...pool].sort(() => Math.random() - 0.5)
     freeplayShopItems.value = shuffled.slice(0, 3)
   }
+  purchasedShopItemIds.value = []
   modal.value = 'shop'
 }
 
-const isBossFight = computed(() => stage.value >= STAGE_SEQUENCE.length)
+const stageSequence = computed(() => getStageSequence(currentBoss.value?.id))
+const journeyLength = computed(() => getJourneyLength(currentBoss.value?.id))
+
+const isBossFight = computed(() => stage.value >= stageSequence.value.length)
 
 // During the boss fight, show the boss's enhanced ability instead of its base one
 const currentEnemyEffect = computed(() => {
@@ -878,10 +978,12 @@ function dotClass(i) {
 function keyClass(key) {
   if (key === 'ENTER' || key === '⌫') return 'key--action'
   const isDanger = dangerLetters.value.length > 0 && dangerLetters.value.includes(key)
+  const isFire = fireLetters.value.length > 0 && fireLetters.value.includes(key)
   const status = keyboardStatuses.value[key]
   const classes = []
   if (status) classes.push(`key--${status}`)
   if (isDanger) classes.push('key--danger')
+  if (isFire) classes.push('key--fire')
   return classes.join(' ')
 }
 
@@ -984,6 +1086,15 @@ function recordCurrentRound() {
       solved: b.solved,
     }))
   })
+}
+
+// Fire-and-forget: records this game's outcome for the Game Info page's win/loss tables
+function recordGameEnd(result) {
+  recordGameResult({
+    classId: playerClass.value,
+    bossId: currentBoss.value?.id,
+    result,
+  }).catch(err => console.error('recordGameResult:', err))
 }
 
 function totalGuessCount(entry) {
@@ -1161,17 +1272,19 @@ async function handleAllBoardsSolved() {
     lastRegen.value = healAmt
     if (healAmt > 0) await animatePlayerHeal(healAmt)
     gameState.value = 'won'
-    const isLast = stage.value === JOURNEY_LENGTH - 1
-    const isMiniboss = MINIBOSSES.some(m => m.id === currentEnemy.value?.id)
+    const isLast = stage.value === journeyLength.value - 1
+    // Shop opens right before the miniboss stage, regardless of where that falls in stageSequence
+    const nextIsMiniboss = stageSequence.value[stage.value + 1] === 'miniboss'
     if (isLast) {
       gameResult.value = 'won'
+      recordGameEnd('won')
       wonDamage.value = 0
       wonMessage.value = true
       setTimeout(() => {
         wonMessage.value = false
         modal.value = 'stats'
       }, 1800)
-    } else if (isMiniboss) {
+    } else if (nextIsMiniboss) {
       wonDamage.value = 0
       wonMessage.value = true
       const needsSecondAbility = playerClass.value === 'changeling' && changelingAbilities.value.length < 2
@@ -1315,6 +1428,12 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
   }
   currentGuess.value = ''
 
+  // Dragon: every guess (correct or not, across the whole game) stokes the fire
+  if (currentBoss.value?.id === 'dragon') {
+    dragonGuessCount.value += 1
+    if (dragonGuessCount.value % 3 === 0) igniteNextLetter()
+  }
+
   // Snapshot absent letters from PREVIOUS guesses before this one is recorded.
   // Used by the Necromancer boss-fight penalty — must be computed here, not after
   // board.guesses is updated, or the current guess would evaluate itself as absent.
@@ -1370,7 +1489,7 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
   const allSolved = boards.value.every(b => b.solved)
 
   if (anyBoardSolvedThisGuess) {
-    if (vampiricDaggerActive.value) await animatePlayerHeal(plagueLordHeal(boardsSolvedThisGuess))
+    if (vampiricDaggerStacks.value > 0) await animatePlayerHeal(plagueLordHeal(boardsSolvedThisGuess * vampiricDaggerStacks.value))
     if (hasAbility('cleric')) {
       const healAmt = plagueLordHeal(playerMaxHealth.value - playerHealth.value)
       if (healAmt > 0) await animatePlayerHeal(healAmt)
@@ -1394,6 +1513,7 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
               recordCurrentRound()
               gameState.value = 'lost'
               gameResult.value = 'lost'
+              recordGameEnd('lost')
               setTimeout(() => { modal.value = 'defeat' }, 1200)
             }
           }
@@ -1406,6 +1526,7 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
           recordCurrentRound()
           gameState.value = 'lost'
           gameResult.value = 'lost'
+          recordGameEnd('lost')
           setTimeout(() => { modal.value = 'defeat' }, 1200)
         }
       }
@@ -1430,11 +1551,16 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
           }
         }
 
-        await animatePlayerDamage((doubleDamage ? 2 : 1) + necroPenalty)
+        const dragonPenalty = (!abilityBlocked
+          && currentBoss.value?.id === 'dragon'
+          && fireLetters.value.some(l => submitted.includes(l))) ? 1 : 0
+
+        await animatePlayerDamage((doubleDamage ? 2 : 1) + necroPenalty + dragonPenalty)
         if (playerHealth.value <= 0) {
           recordCurrentRound()
           gameState.value = 'lost'
           gameResult.value = 'lost'
+          recordGameEnd('lost')
           setTimeout(() => { modal.value = 'defeat' }, 1200)
           return
         }
@@ -1486,6 +1612,8 @@ function handleModalAction() {
     currentEnemy.value = null
     enemyHealth.value = 0
     dangerLetters.value = []
+    dragonGuessCount.value = 0
+    fireLetters.value = []
     inventory.value = []
     boards.value = []
     allGuessedWords.value = []
@@ -1501,11 +1629,12 @@ function handleModalAction() {
     shopPicksRemaining.value = 1
     shopTotalPicks.value = 1
     freeplayShopItems.value = []
+    purchasedShopItemIds.value = []
     validating.value = false
     fortuneTellerGreyLetters.value = []
     giantSnoreBars.value = 0
   damageBlockActive.value = false
-  vampiricDaggerActive.value = false
+  vampiricDaggerStacks.value = 0
     giantAwake.value = false
     gameLog.value = []
     gameResult.value = null
@@ -1529,6 +1658,8 @@ function restartJourney() {
   currentEnemy.value = null
   enemyHealth.value = 0
   dangerLetters.value = []
+  dragonGuessCount.value = 0
+  fireLetters.value = []
   inventory.value = []
   boards.value = []
   allGuessedWords.value = []
@@ -1544,11 +1675,12 @@ function restartJourney() {
   bossWordIndex.value = 0
   shopPicksRemaining.value = 1
   freeplayShopItems.value = []
+  purchasedShopItemIds.value = []
   validating.value = false
   fortuneTellerGreyLetters.value = []
   giantSnoreBars.value = 0
   damageBlockActive.value = false
-  vampiricDaggerActive.value = false
+  vampiricDaggerStacks.value = 0
   giantAwake.value = false
   gameLog.value = []
   gameResult.value = null
@@ -1643,8 +1775,6 @@ function testAddItem(item) {
   testAddedTimer = setTimeout(() => { testAddedItemId.value = null }, 900)
 }
 
-const CHANGELING_POOL = ['seer', 'scholar', 'assassin', 'cleric', 'village-idiot', 'thief', 'knight', 'treasurer', 'archer']
-
 function hasAbility(id) {
   return playerClass.value === id ||
     (playerClass.value === 'changeling' && changelingAbilities.value.includes(id))
@@ -1664,11 +1794,13 @@ function applyChangelingSecondAbilityBonus() {
     playerHealth.value = Math.min(playerHealth.value + 3, playerMaxHealth.value)
     inventory.value.push('shield')
   } else if (latest === 'treasurer') {
-    const pool = props.mode === 'daily' && dailyConfig.value?.shopItemIds
-      ? SHOP_ITEMS.filter(s => dailyConfig.value.shopItemIds.includes(s.id))
-      : SHOP_ITEMS
-    const shuffled = [...pool].sort(() => Math.random() - 0.5)
-    shuffled.slice(0, 2).forEach(item => inventory.value.push(item.id))
+    if (props.mode === 'daily' && dailyConfig.value?.treasurerItemIds?.length) {
+      dailyConfig.value.treasurerItemIds.forEach(id => inventory.value.push(id))
+    } else {
+      const pool = availableShopItems.value
+      const shuffled = [...pool].sort(() => Math.random() - 0.5)
+      shuffled.slice(0, 2).forEach(item => inventory.value.push(item.id))
+    }
   } else if (latest === 'archer') {
     inventory.value.push('bow-and-arrow')
     inventory.value.push('bow-and-arrow')
@@ -1720,7 +1852,9 @@ function showChangelingTestPick(isSecond, callback) {
 }
 
 function pickChangelingAbility(classId) {
-  changelingAbilities.value = [classId]
+  changelingAbilities.value = changelingRevealIsSecond.value
+    ? [...changelingAbilities.value, classId]
+    : [classId]
   applyChangelingSecondAbilityBonus()
   modal.value = null
   const cb = changelingRevealCallback.value
@@ -1791,7 +1925,7 @@ async function startStage(stageNum) {
     bossWordIndex.value = 0
     screen.value = 'boss-fight-intro'
   } else {
-    const stageType = STAGE_SEQUENCE[stageNum]
+    const stageType = stageSequence.value[stageNum]
     if (stageType === 'miniboss') {
       if (selectedMiniboss.value) {
         // Use the forced miniboss chosen on the dev test screen
@@ -1852,6 +1986,25 @@ async function processKeyPopQueue() {
   _keyPopRunning = false
 }
 
+// Dragon: light up one more keyboard letter. The first is arbitrary; every letter after
+// that must be physically adjacent to one already on fire, so the flame visibly spreads.
+function igniteNextLetter() {
+  const alpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
+  const lit = fireLetters.value
+  let candidates
+  if (!lit.length) {
+    candidates = alpha
+  } else {
+    const neighbors = new Set()
+    lit.forEach(letter => (KEYBOARD_ADJACENCY[letter] ?? []).forEach(n => neighbors.add(n)))
+    candidates = [...neighbors].filter(l => !lit.includes(l))
+    if (!candidates.length) candidates = alpha.filter(l => !lit.includes(l))
+  }
+  if (!candidates.length) return
+  const letter = candidates[Math.floor(Math.random() * candidates.length)]
+  queueKeyboardPops([letter], (l) => { fireLetters.value = [...fireLetters.value, l] })
+}
+
 function applyDangerLetters(isBoss) {
   if (currentBoss.value?.id !== 'gelatinous-cube') return
   const alpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -1865,10 +2018,17 @@ function applyDangerLetters(isBoss) {
 
 function applyFortuneTellerHints() {
   if (!hasAbility('fortune-teller')) return
-  const allWordLetters = new Set(boards.value.flatMap(b => b.secretWord.split('')))
-  const pool = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').filter(l => !allWordLetters.has(l))
-  const shuffled = [...pool].sort(() => Math.random() - 0.5)
-  const letters = shuffled.slice(0, 4)
+  let letters
+  if (props.mode === 'daily' && dailyConfig.value?.fortuneTellerHints) {
+    const key = isBossFight.value ? `boss-${bossWordIndex.value}` : `stage-${stage.value}`
+    letters = dailyConfig.value.fortuneTellerHints[key]
+  }
+  if (!letters?.length) {
+    const allWordLetters = new Set(boards.value.flatMap(b => b.secretWord.split('')))
+    const pool = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').filter(l => !allWordLetters.has(l))
+    const shuffled = [...pool].sort(() => Math.random() - 0.5)
+    letters = shuffled.slice(0, 4)
+  }
   for (const letter of letters) {
     _pendingKeyPops.push({ letter, before: () => { fortuneTellerGreyLetters.value = [...fortuneTellerGreyLetters.value, letter] } })
   }
@@ -1914,7 +2074,6 @@ async function loadWord(showModal) {
   fortuneTellerGreyLetters.value = []
   giantSnoreBars.value = 0
   damageBlockActive.value = false
-  vampiricDaggerActive.value = false
   // Necromancer: guessed words stay double-damage and in the graveyard for the whole game
   if (currentBoss.value?.id !== 'necromancer') {
     allGuessedWords.value = []
@@ -1943,7 +2102,8 @@ async function loadWord(showModal) {
       const word = (typeof wordEntry === 'object' ? wordEntry.word : wordEntry).toUpperCase() || ''
       const b = makeBoard(i, word)
       if (hasAbility('seer') && word) {
-        b.hintLetter = word[Math.floor(Math.random() * word.length)]
+        const dailySeerLetter = dailyConfig.value.seerHints?.[wordKey] ?? dailyConfig.value.seerHints?.[fallbackKey]
+        b.hintLetter = dailySeerLetter ?? word[Math.floor(Math.random() * word.length)]
         _pendingKeyPops.push({ letter: b.hintLetter, before: null })
       }
       if (hasAbility('scholar')) b.hintWordType = (typeof wordEntry === 'object' ? wordEntry.partOfSpeech : null) || ''
@@ -1996,6 +2156,7 @@ function buySelectedItem() {
 
 function buyItem(item) {
   inventory.value.push(item.id)
+  purchasedShopItemIds.value = [...purchasedShopItemIds.value, item.id]
   shopPicksRemaining.value -= 1
   if (shopPicksRemaining.value <= 0) {
     modal.value = null
@@ -2086,7 +2247,7 @@ function useItem() {
       board.abilityBlockedRows = new Set([...board.abilityBlockedRows, rowToBlock])
     }
   } else if (item.effect === 'vampiric-dagger') {
-    vampiricDaggerActive.value = true
+    vampiricDaggerStacks.value = Math.min(vampiricDaggerStacks.value + 1, MAX_VAMPIRIC_DAGGER_STACKS)
   } else if (item.effect === 'caltrops') {
     const allWordLetters = new Set(boards.value.flatMap(b => b.secretWord.split('')))
     const already = new Set(fortuneTellerGreyLetters.value)
