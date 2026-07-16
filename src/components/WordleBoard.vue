@@ -26,6 +26,7 @@
             'tile--targeting': bowTargeting && isInputRow(row - 1) && !isHintedCol(col - 1),
             'tile--danger': isDangerAt(row - 1, col - 1),
             'tile--fire': isFireAt(row - 1, col - 1),
+            'tile--key-letter': isKeyLetterAt(row - 1, col - 1),
           }]"
           :style="tileStyle(row - 1, col - 1)"
           :ref="(el) => setTileRef(row - 1, col - 1, el)"
@@ -59,6 +60,7 @@ const props = defineProps({
   bowTargeting:    { type: Boolean, default: false },
   dangerLetters:   { type: Array, default: () => [] },
   fireLetters:     { type: Array, default: () => [] },
+  keyLetters:      { type: Array, default: () => [] },
 })
 
 defineEmits(['shake-end', 'bow-target'])
@@ -132,6 +134,12 @@ function isFireAt(row, col) {
   if (!isInputRow(row) || !props.fireLetters.length) return false
   const typed = props.currentGuess[col]
   return !!typed && props.fireLetters.includes(typed)
+}
+
+function isKeyLetterAt(row, col) {
+  if (!isInputRow(row) || !props.keyLetters.length) return false
+  const typed = props.currentGuess[col]
+  return !!typed && props.keyLetters.includes(typed)
 }
 
 function isObscured(row, col) {

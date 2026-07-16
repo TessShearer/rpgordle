@@ -208,7 +208,7 @@
                   :shadow-obscured-col="shadowObscuredCol" :board-shaking="boardShaking" :zombie-rising="zombieRising"
                   :graveyard-wobble="graveyardWobble"
                   :compact="false" :bow-targeting="bowTargeting && !board.solved" :danger-letters="dangerLetters"
-                  :fire-letters="fireLetters"
+                  :fire-letters="fireLetters" :key-letters="keyLetters"
                   @shake-end="boardShaking = false"
                   @bow-target="useBowAtCol($event)" />
               </template>
@@ -248,8 +248,9 @@
             <div v-if="gameState === 'playing'" class="keyboard">
               <div v-for="(row, r) in KEY_ROWS" :key="r" class="key-row">
                 <button v-for="key in row" :key="key" class="key"
-                  :class="[keyClass(key), { 'key--pop': poppingKey === key }]" @click="handleKey(key)">{{ key
-                  }}</button>
+                  :class="[keyClass(key), { 'key--pop': poppingKey === key, 'h-shake': shakingKey === key }]" @click="handleKey(key)">
+                  <span v-if="lockedLetters.includes(key)" class="lock-icon"></span><img v-if="keyLetters.includes(key)" :src="keyImg" class="key-icon" alt="" /><span class="key-letter">{{ key }}</span>
+                </button>
               </div>
             </div>
 
@@ -582,6 +583,7 @@ import WordleBoard from '@/components/WordleBoard.vue'
 import GraveyardDisplay from '@/components/GraveyardDisplay.vue'
 import { CHARACTER_IMAGES } from '@/assets/characterImages.js'
 import { ITEM_IMAGES } from '@/assets/itemImages.js'
+import keyImg from '@/assets/key.png'
 import { fetchOrCreateDaily } from '@/services/daily.js'
 import { fetchGameWord, fetchWordData } from '@/services/words.js'
 import { recordGameResult } from '@/services/stats.js'
@@ -666,6 +668,11 @@ const dangerLetters = ref([])
 // that must be adjacent (on the physical keyboard) to an already-lit letter.
 const dragonGuessCount = ref(0)
 const fireLetters = ref([])
+// Key Master: 3 locked letters (blue) block typing until a key letter (orange) is guessed,
+// which clears both off the keyboard. Re-rolled every level while he's the boss.
+const lockedLetters = ref([])
+const keyLetters = ref([])
+const shakingKey = ref(null)
 const inventory = ref([])
 const inventoryItems = computed(() => inventory.value.map(id => ALL_ITEMS.find(i => i.id === id)).filter(Boolean))
 const pendingUseItem = ref(null)
@@ -979,11 +986,13 @@ function keyClass(key) {
   if (key === 'ENTER' || key === '⌫') return 'key--action'
   const isDanger = dangerLetters.value.length > 0 && dangerLetters.value.includes(key)
   const isFire = fireLetters.value.length > 0 && fireLetters.value.includes(key)
+  const isLocked = lockedLetters.value.length > 0 && lockedLetters.value.includes(key)
   const status = keyboardStatuses.value[key]
   const classes = []
   if (status) classes.push(`key--${status}`)
   if (isDanger) classes.push('key--danger')
   if (isFire) classes.push('key--fire')
+  if (isLocked) classes.push('key--locked')
   return classes.join(' ')
 }
 
@@ -995,6 +1004,11 @@ function handleKey(key) {
     currentGuess.value = currentGuess.value.slice(0, -1)
   } else if (key === 'ENTER') {
     submitGuess()
+  } else if (currentBoss.value?.id === 'key-master' && lockedLetters.value.includes(key)) {
+    inputError.value = 'Cannot use locked letters, find a key first.'
+    shakingKey.value = null
+    nextTick(() => { shakingKey.value = key })
+    setTimeout(() => { if (shakingKey.value === key) shakingKey.value = null }, 400)
   } else if (currentGuess.value.length < wordLength.value) {
     currentGuess.value += key
   }
@@ -1434,6 +1448,13 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
     if (dragonGuessCount.value % 3 === 0) igniteNextLetter()
   }
 
+  // Key Master: guessing any key letter clears the locks and keys off the keyboard
+  if (currentBoss.value?.id === 'key-master'
+    && keyLetters.value.some(l => submitted.includes(l))) {
+    lockedLetters.value = []
+    keyLetters.value = []
+  }
+
   // Snapshot absent letters from PREVIOUS guesses before this one is recorded.
   // Used by the Necromancer boss-fight penalty — must be computed here, not after
   // board.guesses is updated, or the current guess would evaluate itself as absent.
@@ -1614,6 +1635,8 @@ function handleModalAction() {
     dangerLetters.value = []
     dragonGuessCount.value = 0
     fireLetters.value = []
+    lockedLetters.value = []
+    keyLetters.value = []
     inventory.value = []
     boards.value = []
     allGuessedWords.value = []
@@ -1660,6 +1683,8 @@ function restartJourney() {
   dangerLetters.value = []
   dragonGuessCount.value = 0
   fireLetters.value = []
+  lockedLetters.value = []
+  keyLetters.value = []
   inventory.value = []
   boards.value = []
   allGuessedWords.value = []
@@ -2016,6 +2041,22 @@ function applyDangerLetters(isBoss) {
   }
 }
 
+// Key Master: lock 3 random letters (blue) and mark 2 others as keys (orange). Guessing
+// a key letter clears both sets off the keyboard — see submitGuess.
+function applyKeyMasterLocks() {
+  if (currentBoss.value?.id !== 'key-master') return
+  const alpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+  const picked = new Set()
+  while (picked.size < 5) picked.add(alpha[Math.floor(Math.random() * 26)])
+  const letters = [...picked]
+  for (const letter of letters.slice(0, 3)) {
+    _pendingKeyPops.push({ letter, before: () => { lockedLetters.value = [...lockedLetters.value, letter] } })
+  }
+  for (const letter of letters.slice(3, 5)) {
+    _pendingKeyPops.push({ letter, before: () => { keyLetters.value = [...keyLetters.value, letter] } })
+  }
+}
+
 function applyFortuneTellerHints() {
   if (!hasAbility('fortune-teller')) return
   let letters
@@ -2071,6 +2112,8 @@ async function loadWord(showModal) {
   inputError.value = ''
   modal.value = null
   dangerLetters.value = []
+  lockedLetters.value = []
+  keyLetters.value = []
   fortuneTellerGreyLetters.value = []
   giantSnoreBars.value = 0
   damageBlockActive.value = false
@@ -2111,6 +2154,7 @@ async function loadWord(showModal) {
     }
     applyDangerLetters(isBoss)
     applyFortuneTellerHints()
+    applyKeyMasterLocks()
     finishWordLoad(showModal)
     return
   }
@@ -2140,6 +2184,7 @@ async function loadWord(showModal) {
     }
     applyDangerLetters(isBoss)
     applyFortuneTellerHints()
+    applyKeyMasterLocks()
     finishWordLoad(showModal)
   } catch {
     gameState.value = 'error'

@@ -1136,6 +1136,13 @@ body {
   box-shadow: 0 0 8px 3px rgba(255, 140, 40, 0.7), 0 0 18px 5px rgba(140, 60, 0, 0.4);
 }
 
+/* Key Master key letter: warns the player mid-type that this letter will clear the locks */
+.tile--key-letter {
+  border: 2px solid #f59e0b;
+  box-shadow: 0 0 8px 3px rgba(245, 158, 11, 0.6), 0 0 18px 5px rgba(180, 83, 9, 0.35);
+  background-color: rgba(245, 158, 11, 0.35);
+}
+
 /* Keyboard */
 .keyboard {
   display: flex;
@@ -1150,6 +1157,7 @@ body {
 }
 
 .key {
+  position: relative;
   height: 40px;
   min-width: 30px;
   padding: 0 5px;
@@ -1194,6 +1202,68 @@ body {
   z-index: 0;
   border: 2px solid #ff8a3d;
   box-shadow: 0 0 8px 3px rgba(255, 140, 40, 0.7), 0 0 18px 5px rgba(140, 60, 0, 0.4);
+}
+
+/* Key Master: locked letters (blue) can't be typed. The lock silhouette reuses the
+   layered-border technique from the reference art in assets/fire — a thick asymmetric
+   border draws the rounded, solid-filled body, and a hollow arched border draws the
+   shackle. .lock-icon establishes its own tiny font-size so its em-based measurements
+   scale independently of the key's own text. */
+.key--locked {
+  position: relative;
+  overflow: visible;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.lock-icon {
+  position: absolute;
+  left: 50%;
+  bottom: 2px;
+  transform: translateX(-50%);
+  font-size: 1.45px;
+  width: 18em;
+  height: 18em;
+  box-sizing: border-box;
+  border-radius: 2em;
+  border: 3.5em solid var(--gs-400);
+  border-left-width: 7.5em;
+  border-right-width: 7.5em;
+  background: var(--gs-400);
+  pointer-events: none;
+}
+
+.lock-icon::before {
+  content: '';
+  position: absolute;
+  box-sizing: border-box;
+  left: 50%;
+  top: -12em;
+  margin-left: -7em;
+  width: 14em;
+  height: 12em;
+  border: 2.5em solid var(--gs-400);
+  border-top-left-radius: 7em;
+  border-top-right-radius: 7em;
+}
+
+.key-letter {
+  position: relative;
+  z-index: 1;
+}
+
+/* Key Master: key letters look like an ordinary keyboard tile — the key.png icon
+   overlay is the only thing marking them, rather than a color highlight. */
+.key-icon {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 70%;
+  height: 70%;
+  object-fit: contain;
+  pointer-events: none;
 }
 
 /* ── Dragon fire: small CSS flame licking up behind a lit key/tile ──────────*/
