@@ -508,7 +508,7 @@
     <div v-if="caltropsFlyingAnim" class="caltrops-projectile" aria-hidden="true"></div>
 
     <!-- Vorpal Sword strike animation -->
-    <div v-if="vorpalSwordAnim" class="vorpal-sword-projectile" aria-hidden="true"></div>
+    <img v-if="vorpalSwordAnim" :src="ITEM_IMAGES['vorpalSword']" alt="" class="vorpal-sword-projectile" aria-hidden="true" />
 
     <!-- Health Potion animation -->
     <img v-if="healthPotionAnim" :src="ITEM_IMAGES['health-potion']" alt="" class="health-potion-projectile" aria-hidden="true" />

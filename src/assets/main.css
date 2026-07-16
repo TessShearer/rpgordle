@@ -3047,9 +3047,7 @@ body {
   top: 52%;
   width: 100px;
   height: 100px;
-  background: var(--gs-600);
-  border: 2px solid var(--gs-400);
-  border-radius: 6px;
+  object-fit: contain;
   z-index: 1000;
   pointer-events: none;
   animation: sword-strike 0.70s ease-in forwards;
@@ -3063,12 +3061,12 @@ body {
 
   65% {
     opacity: 1;
-    transform: translate(28vw, -46vh) rotate(20deg) scale(1.2);
+    transform: translate(28vw, -46vh) rotate(65deg) scale(1.2);
   }
 
   100% {
     opacity: 0;
-    transform: translate(32vw, -52vh) rotate(20deg) scale(0.5);
+    transform: translate(32vw, -52vh) rotate(90deg) scale(0.5);
   }
 }
 
