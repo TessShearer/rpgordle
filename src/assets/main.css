@@ -1126,11 +1126,14 @@ body {
   background-color: rgba(88, 237, 205, 0.7);
 }
 
-/* Dragon fire letter: warns the player mid-type, matching .key--fire's glow */
+/* Dragon fire letter: warns the player mid-type, matching .key--fire's glow.
+   Background is left to the animated flame (see "Dragon fire" section below) rather
+   than a flat fill, so the flame shape stays visible against the tile. */
 .tile--fire {
+  position: relative;
+  z-index: 0;
   border: 2px solid #ff8a3d;
   box-shadow: 0 0 8px 3px rgba(255, 140, 40, 0.7), 0 0 18px 5px rgba(140, 60, 0, 0.4);
-  background-color: rgba(255, 140, 40, 0.7);
 }
 
 /* Keyboard */
@@ -1187,8 +1190,70 @@ body {
 }
 
 .key--fire {
+  position: relative;
+  z-index: 0;
   border: 2px solid #ff8a3d;
   box-shadow: 0 0 8px 3px rgba(255, 140, 40, 0.7), 0 0 18px 5px rgba(140, 60, 0, 0.4);
+}
+
+/* ── Dragon fire: small CSS flame licking up behind a lit key/tile ──────────*/
+.key--fire::before,
+.key--fire::after,
+.tile--fire::before,
+.tile--fire::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  z-index: -1;
+  pointer-events: none;
+  transform-origin: 50% 100%;
+}
+
+.key--fire::before,
+.tile--fire::before {
+  bottom: -4px;
+  width: 100%;
+  height: 65%;
+  background: linear-gradient(0deg, #c93a1c 0%, #ff8a3d 55%, #ffd23f 100%);
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 0C74 10 96 34 94 65C93 82 86 94 76 100C68 104 32 104 24 100C14 94 7 82 6 65C4 34 26 10 50 0Z'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 0C74 10 96 34 94 65C93 82 86 94 76 100C68 104 32 104 24 100C14 94 7 82 6 65C4 34 26 10 50 0Z'/%3E%3C/svg%3E");
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  transform: translateX(-50%);
+  animation: flame-flicker 1.6s ease-in-out infinite;
+}
+
+.key--fire::after,
+.tile--fire::after {
+  bottom: -2px;
+  width: 32%;
+  height: 42%;
+  background: radial-gradient(circle at 50% 80%, #fff2b0 0%, #ffcf4d 45%, rgba(255, 140, 40, 0) 100%);
+  border-radius: 50% 50% 60% 40% / 65% 65% 35% 35%;
+  transform: translateX(-50%);
+  animation: flame-lick 2s ease-in infinite;
+}
+
+@keyframes flame-flicker {
+  0%, 100% { transform: translateX(-50%) scaleY(1); }
+  50%      { transform: translateX(-50%) scaleY(1.12); }
+}
+
+@keyframes flame-lick {
+  0%   { transform: translateX(-50%) translateY(0) scale(0.65); opacity: 0.5; }
+  50%  { transform: translateX(-50%) translateY(-5%) scale(.8); opacity: 1; }
+  100% { transform: translateX(-50%) translateY(0) scale(0.65); opacity: .5; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .key--fire::before,
+  .key--fire::after,
+  .tile--fire::before,
+  .tile--fire::after {
+    animation: none;
+  }
 }
 
 .key:hover {
