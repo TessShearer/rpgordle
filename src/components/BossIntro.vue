@@ -64,7 +64,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import shadowPower from '@/assets/shadow-sorcerer-power.png'
-import cubePower   from '@/assets/gelatinuos-cube-power.png'
+import cubePower   from '@/assets/gelatinous-cube-power.png'
 import { CHARACTER_IMAGES } from '@/assets/characterImages.js'
 
 const POWER_IMAGES = {

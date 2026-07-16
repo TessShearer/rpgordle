@@ -219,6 +219,9 @@
                 <span class="sneak-attack-text">Sneak Attack!</span>
               </button>
             </div>
+            <div v-else-if="gameResult" class="submit-row mb-2">
+              <button class="btn btn-press px-4 py-1" @click="modal = 'stats'">View Stats</button>
+            </div>
             <div v-if="gameState === 'playing'" class="keyboard">
               <div v-for="(row, r) in KEY_ROWS" :key="r" class="key-row">
                 <button v-for="key in row" :key="key" class="key"
@@ -598,6 +601,7 @@ const shopPicksRemaining = ref(1)
 const shopTotalPicks = ref(1)
 const selectedShopItemId = ref(null)
 const freeplayShopItems = ref([])
+const purchasedShopItemIds = ref([])
 const validating = ref(false)
 const annoyingKidTyping = ref(false)
 const zombieRising = ref(false)
@@ -605,7 +609,10 @@ const fortuneTellerGreyLetters = ref([])
 const giantSnoreBars = ref(0)
 const giantAwake = ref(false)
 const damageBlockActive = ref(false)
-const vampiricDaggerActive = ref(false)
+// Two Vampiric Daggers can be active at once (e.g. a Treasurer start item plus a shop pickup);
+// each stack adds +1 heal per correct guess. Capped at 2 — there's no way to acquire a third.
+const vampiricDaggerStacks = ref(0)
+const MAX_VAMPIRIC_DAGGER_STACKS = 2
 const changelingRevealPhase = ref(0)
 const changelingRevealFromId = ref(null)
 const changelingRevealToId = ref(null)
@@ -749,9 +756,10 @@ const availableShopItems = computed(() => {
   return noBossBlockItem ? SHOP_ITEMS.filter(s => s.id !== 'smoke-bomb') : SHOP_ITEMS
 })
 
-const currentShopItems = computed(() =>
-  props.mode === 'daily' ? availableShopItems.value : freeplayShopItems.value
-)
+const currentShopItems = computed(() => {
+  const pool = props.mode === 'daily' ? availableShopItems.value : freeplayShopItems.value
+  return pool.filter(item => !purchasedShopItemIds.value.includes(item.id))
+})
 
 function openShop() {
   if (props.mode !== 'daily') {
@@ -761,6 +769,7 @@ function openShop() {
     const shuffled = [...pool].sort(() => Math.random() - 0.5)
     freeplayShopItems.value = shuffled.slice(0, 3)
   }
+  purchasedShopItemIds.value = []
   modal.value = 'shop'
 }
 
@@ -1374,7 +1383,7 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
   const allSolved = boards.value.every(b => b.solved)
 
   if (anyBoardSolvedThisGuess) {
-    if (vampiricDaggerActive.value) await animatePlayerHeal(plagueLordHeal(boardsSolvedThisGuess))
+    if (vampiricDaggerStacks.value > 0) await animatePlayerHeal(plagueLordHeal(boardsSolvedThisGuess * vampiricDaggerStacks.value))
     if (hasAbility('cleric')) {
       const healAmt = plagueLordHeal(playerMaxHealth.value - playerHealth.value)
       if (healAmt > 0) await animatePlayerHeal(healAmt)
@@ -1505,11 +1514,12 @@ function handleModalAction() {
     shopPicksRemaining.value = 1
     shopTotalPicks.value = 1
     freeplayShopItems.value = []
+    purchasedShopItemIds.value = []
     validating.value = false
     fortuneTellerGreyLetters.value = []
     giantSnoreBars.value = 0
   damageBlockActive.value = false
-  vampiricDaggerActive.value = false
+  vampiricDaggerStacks.value = 0
     giantAwake.value = false
     gameLog.value = []
     gameResult.value = null
@@ -1548,11 +1558,12 @@ function restartJourney() {
   bossWordIndex.value = 0
   shopPicksRemaining.value = 1
   freeplayShopItems.value = []
+  purchasedShopItemIds.value = []
   validating.value = false
   fortuneTellerGreyLetters.value = []
   giantSnoreBars.value = 0
   damageBlockActive.value = false
-  vampiricDaggerActive.value = false
+  vampiricDaggerStacks.value = 0
   giantAwake.value = false
   gameLog.value = []
   gameResult.value = null
@@ -1918,7 +1929,6 @@ async function loadWord(showModal) {
   fortuneTellerGreyLetters.value = []
   giantSnoreBars.value = 0
   damageBlockActive.value = false
-  vampiricDaggerActive.value = false
   // Necromancer: guessed words stay double-damage and in the graveyard for the whole game
   if (currentBoss.value?.id !== 'necromancer') {
     allGuessedWords.value = []
@@ -2000,6 +2010,7 @@ function buySelectedItem() {
 
 function buyItem(item) {
   inventory.value.push(item.id)
+  purchasedShopItemIds.value = [...purchasedShopItemIds.value, item.id]
   shopPicksRemaining.value -= 1
   if (shopPicksRemaining.value <= 0) {
     modal.value = null
@@ -2090,7 +2101,7 @@ function useItem() {
       board.abilityBlockedRows = new Set([...board.abilityBlockedRows, rowToBlock])
     }
   } else if (item.effect === 'vampiric-dagger') {
-    vampiricDaggerActive.value = true
+    vampiricDaggerStacks.value = Math.min(vampiricDaggerStacks.value + 1, MAX_VAMPIRIC_DAGGER_STACKS)
   } else if (item.effect === 'caltrops') {
     const allWordLetters = new Set(boards.value.flatMap(b => b.secretWord.split('')))
     const already = new Set(fortuneTellerGreyLetters.value)

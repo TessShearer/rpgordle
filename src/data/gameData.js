@@ -202,6 +202,17 @@ export const BOSSES = [
     announcement: 'Your quest is to defeat the Plague Lord, who will reduce your healing by 1 every time you heal more than 1 health',
     enhancedAnnouncement: 'You found the boss!',
   },
+      {
+    id: 'dragon',
+    name: 'Dragon',
+    health: 2,
+    regen: 0,
+    wordLength: 5,
+    effect: 'A fire that deals +1 damage will spread across your keyboard.',
+    enhancedEffect: 'Be careful of the flames',
+    announcement: 'Your quest is to defeat the Dragon, he will breathe fire that spreads onto your keyboard. If any part of your guess is on fire you will take +1 damage"',
+    enhancedAnnouncement: 'You found the boss! Be careful of the flames.',
+  },
   {
     id: 'hydra',
     name: 'Hydra',
