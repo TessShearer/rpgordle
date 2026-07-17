@@ -208,7 +208,7 @@
                   :shadow-obscured-col="shadowObscuredCol" :board-shaking="boardShaking" :zombie-rising="zombieRising"
                   :graveyard-wobble="graveyardWobble"
                   :compact="false" :bow-targeting="bowTargeting && !board.solved" :danger-letters="dangerLetters"
-                  :fire-letters="fireLetters" :key-letter-colors="keyLetterColors"
+                  :fire-letters="dragonFireBypassed ? [] : fireLetters" :key-letter-colors="keyLetterColors"
                   @shake-end="boardShaking = false"
                   @bow-target="useBowAtCol($event)" />
               </template>
@@ -414,6 +414,28 @@
               </button>
             </template>
 
+            <!-- Scholar's 4th-wrong-guess definition -->
+            <template v-else-if="modal === 'scholar-definition'">
+              <p class="modal-message">
+                <template v-if="scholarDefinitionText">The Scholar has found that this word is defined as "{{ scholarDefinitionText }}"</template>
+                <template v-else>The scholar is studying...</template>
+              </p>
+              <button class="btn btn-press px-5 py-2 mt-3"
+                :disabled="!scholarDefinitionText"
+                @click="dismissScholarDefinitionModal">
+                {{ scholarDefinitionText ? 'Got it' : '...' }}
+              </button>
+            </template>
+
+            <!-- Scholar vs Know-It-All -->
+            <template v-else-if="modal === 'scholar-jealous'">
+              <img v-if="CHARACTER_IMAGES['scholar']" :src="CHARACTER_IMAGES['scholar']"
+                alt="Scholar" class="modal-monster-img my-3" />
+              <div v-else class="art-placeholder art-placeholder--modal-monster my-3">Art of Scholar</div>
+              <p class="modal-message">Hey, that's my job!</p>
+              <button class="btn btn-press px-5 py-2 mt-3" @click="modal = null">Got it</button>
+            </template>
+
             <!-- Test shop -->
             <template v-else-if="modal === 'test-shop'">
               <button class="modal-close-btn" type="button" aria-label="Close" @click="modal = null">✕</button>
@@ -542,7 +564,7 @@
             <template v-else>
               <p class="modal-message">{{ MODAL_CONTENT[modal].message }}</p>
             </template>
-            <button v-if="modal !== 'shop' && modal !== 'use-item' && modal !== 'know-it-all' && modal !== 'test-shop' && modal !== 'defeat' && modal !== 'stats' && modal !== 'changeling-reveal' && modal !== 'changeling-test-pick' && modal !== 'enemy-intro'" class="btn btn-press px-5 py-2 mt-3"
+            <button v-if="modal !== 'shop' && modal !== 'use-item' && modal !== 'know-it-all' && modal !== 'scholar-definition' && modal !== 'scholar-jealous' && modal !== 'test-shop' && modal !== 'defeat' && modal !== 'stats' && modal !== 'changeling-reveal' && modal !== 'changeling-test-pick' && modal !== 'enemy-intro'" class="btn btn-press px-5 py-2 mt-3"
               @click="handleModalAction">
               {{ MODAL_CONTENT[modal].button }}
             </button>
@@ -776,6 +798,14 @@ const lostWords = computed(() => {
 const knowItAllDefinition = ref('')
 const knowItAllModalPhase = ref('taunt')
 const knowItAllCanDismiss = ref(false)
+// Scholar's 4th-wrong-guess perk: queued per board so a multi-board fight (Cerberus,
+// Hydra) where several boards hit 4 wrong guesses on the same turn shows one modal at a
+// time instead of colliding. Suppressed entirely against Know-It-All, who already reveals
+// the definition at guess 3 — see the "Hey, that's my job!" gag in dismissKnowItAllModal.
+const scholarDefinitionQueue = []
+let scholarDefinitionRunning = false
+const scholarDefinitionText = ref('')
+const scholarJealousShown = ref(false)
 
 // ── Board helpers ─────────────────────────────────────────────────────────────
 function makeBoard(id, secretWord) {
@@ -785,6 +815,7 @@ function makeBoard(id, secretWord) {
     guesses: [],
     hintLetter: '',
     hintWordType: '',
+    hintDefinition: '', // Scholar's 4th-wrong-guess perk — persists until this board is solved
     hintSlots: {},    // Abominable Snowman — enforced: must retype the matching letter
     bowSlots: {},     // Bow and Arrow — a clue only, persists, never enforced
     crossbowSlots: {}, // Crossbow — a clue only, lasts one guess, never enforced
@@ -818,6 +849,14 @@ const smokeBombActive = computed(() => {
 // smokeBombActive itself expires then.
 const keyMasterLocksBypassed = computed(() =>
   currentBoss.value?.id === 'key-master' && smokeBombActive.value
+)
+
+// Smoke Bomb puts out the Dragon's fire for one guess: the flames vanish from the
+// keyboard and board for that guess (fireLetters itself is untouched, so the exact same
+// letters are still lit again right after) — the damage penalty for guessing through fire
+// was already gated on abilityBlockedRows in submitGuess, this just matches it visually.
+const dragonFireBypassed = computed(() =>
+  currentBoss.value?.id === 'dragon' && smokeBombActive.value
 )
 
 function evaluateGuess(guess, secretWord) {
@@ -1018,7 +1057,7 @@ function dotClass(i) {
 function keyClass(key) {
   if (key === 'ENTER' || key === '⌫') return 'key--action'
   const isDanger = dangerLetters.value.length > 0 && dangerLetters.value.includes(key)
-  const isFire = fireLetters.value.length > 0 && fireLetters.value.includes(key)
+  const isFire = fireLetters.value.length > 0 && fireLetters.value.includes(key) && !dragonFireBypassed.value
   const isLocked = !!lockedLetterColors.value[key] && !keyMasterLocksBypassed.value
   const status = keyboardStatuses.value[key]
   const classes = []
@@ -1641,6 +1680,12 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
         if (active && active.guesses.length === 3) {
           showKnowItAllModal(active.secretWord)
         }
+      } else if (hasAbility('scholar')) {
+        for (const board of boards.value) {
+          if (!board.solved && board.guesses.length === 4 && !board.hintDefinition) {
+            queueScholarDefinition(board)
+          }
+        }
       }
     }
   }
@@ -1701,6 +1746,7 @@ function handleModalAction() {
     knowItAllDefinition.value = ''
     knowItAllModalPhase.value = 'taunt'
     knowItAllCanDismiss.value = false
+    scholarJealousShown.value = false
   }
 }
 
@@ -1749,6 +1795,7 @@ function restartJourney() {
   knowItAllDefinition.value = ''
   knowItAllModalPhase.value = 'taunt'
   knowItAllCanDismiss.value = false
+  scholarJealousShown.value = false
 }
 
 // ── Know It All modal ─────────────────────────────────────────────────────────
@@ -1774,7 +1821,40 @@ async function showKnowItAllModal(secretWord) {
 
 function dismissKnowItAllModal() {
   if (!knowItAllCanDismiss.value) return
+  // Scholar already does this exact job — Know-It-All beat him to it this once
+  if (hasAbility('scholar') && !scholarJealousShown.value) {
+    scholarJealousShown.value = true
+    modal.value = 'scholar-jealous'
+  } else {
+    modal.value = null
+  }
+}
+
+// ── Scholar's 4th-wrong-guess definition ──────────────────────────────────────
+function queueScholarDefinition(board) {
+  scholarDefinitionQueue.push(board)
+  if (!scholarDefinitionRunning) processScholarDefinitionQueue()
+}
+
+async function processScholarDefinitionQueue() {
+  const board = scholarDefinitionQueue.shift()
+  if (!board) { scholarDefinitionRunning = false; return }
+  scholarDefinitionRunning = true
+  scholarDefinitionText.value = ''
+  modal.value = 'scholar-definition'
+
+  const definition = await fetchWordData(board.secretWord.toLowerCase())
+    .then(data => data?.definition || 'a most sophisticated word')
+    .catch(() => 'a most sophisticated word')
+
+  board.hintDefinition = definition
+  if (modal.value === 'scholar-definition') scholarDefinitionText.value = definition
+}
+
+function dismissScholarDefinitionModal() {
+  if (!scholarDefinitionText.value) return
   modal.value = null
+  processScholarDefinitionQueue()
 }
 
 function showClassSelect() {
