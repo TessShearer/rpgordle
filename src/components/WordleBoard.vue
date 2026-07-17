@@ -31,7 +31,7 @@
           :ref="(el) => setTileRef(row - 1, col - 1, el)"
           @click="bowTargeting && isInputRow(row - 1) && !isHintedCol(col - 1) && $emit('bow-target', col - 1)"
         >
-          <img v-if="isKeyLetterAt(row - 1, col - 1)" :src="keyImg" class="key-icon" alt="" />
+          <img v-if="keyLetterColorAt(row - 1, col - 1)" :src="KEY_IMAGES[keyLetterColorAt(row - 1, col - 1)]" class="key-icon" alt="" />
           <span class="tile-letter">{{ tileChar(row - 1, col - 1) }}</span>
           <div v-if="bowTargeting && isInputRow(row - 1) && !isHintedCol(col - 1)" class="crosshair-overlay">
             <div class="crosshair-ring"></div>
@@ -44,7 +44,11 @@
 
 <script setup>
 import { computed } from 'vue'
-import keyImg from '@/assets/key.png'
+import blueKeyImg from '@/assets/blue-key.png'
+import redKeyImg from '@/assets/red-key.png'
+import purpleKeyImg from '@/assets/purple-key.png'
+
+const KEY_IMAGES = { blue: blueKeyImg, red: redKeyImg, purple: purpleKeyImg }
 
 const props = defineProps({
   board: { type: Object, required: true },
@@ -61,7 +65,7 @@ const props = defineProps({
   bowTargeting:    { type: Boolean, default: false },
   dangerLetters:   { type: Array, default: () => [] },
   fireLetters:     { type: Array, default: () => [] },
-  keyLetters:      { type: Array, default: () => [] },
+  keyLetterColors: { type: Object, default: () => ({}) },
 })
 
 defineEmits(['shake-end', 'bow-target'])
@@ -137,10 +141,10 @@ function isFireAt(row, col) {
   return !!typed && props.fireLetters.includes(typed)
 }
 
-function isKeyLetterAt(row, col) {
-  if (!isInputRow(row) || !props.keyLetters.length) return false
+function keyLetterColorAt(row, col) {
+  if (!isInputRow(row)) return null
   const typed = props.currentGuess[col]
-  return !!typed && props.keyLetters.includes(typed)
+  return typed ? (props.keyLetterColors[typed] ?? null) : null
 }
 
 function isObscured(row, col) {

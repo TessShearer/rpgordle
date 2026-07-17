@@ -1203,11 +1203,14 @@ body {
   box-shadow: 0 0 8px 3px rgba(255, 140, 40, 0.7), 0 0 18px 5px rgba(140, 60, 0, 0.4);
 }
 
-/* Key Master: locked letters (blue) can't be typed. The lock silhouette reuses the
-   layered-border technique from the reference art in assets/fire — a thick asymmetric
-   border draws the rounded, solid-filled body, and a hollow arched border draws the
-   shackle. .lock-icon establishes its own tiny font-size so its em-based measurements
-   scale independently of the key's own text. */
+/* Key Master: locked letters can't be typed. The lock silhouette reuses the layered-border
+   technique from the reference art in assets/fire — a thick asymmetric border draws the
+   rounded, solid-filled body, and a hollow arched border draws the shackle. .lock-icon
+   establishes its own tiny font-size so its em-based measurements scale independently of
+   the key's own text. Color comes from --lock-color, set per color by the .lock-icon--*
+   modifiers below — outside the boss fight only blue is ever used; the boss fight itself
+   layers red and purple on top as two more independent lock/key sets (see GameView.vue's
+   applyKeyMasterLocks). */
 .key--locked {
   position: relative;
   overflow: visible;
@@ -1217,6 +1220,7 @@ body {
 }
 
 .lock-icon {
+  --lock-color: var(--gs-400);
   position: absolute;
   left: 50%;
   bottom: 2px;
@@ -1226,10 +1230,10 @@ body {
   height: 18em;
   box-sizing: border-box;
   border-radius: 2em;
-  border: 3.5em solid var(--gs-400);
+  border: 3.5em solid var(--lock-color);
   border-left-width: 7.5em;
   border-right-width: 7.5em;
-  background: var(--gs-400);
+  background: var(--lock-color);
   pointer-events: none;
 }
 
@@ -1242,25 +1246,30 @@ body {
   margin-left: -7em;
   width: 14em;
   height: 12em;
-  border: 2.5em solid var(--gs-400);
+  border: 2.5em solid var(--lock-color);
   border-top-left-radius: 7em;
   border-top-right-radius: 7em;
 }
+
+.lock-icon--blue { --lock-color: #3b82f6; }
+.lock-icon--red { --lock-color: #ef4444; }
+.lock-icon--purple { --lock-color: #a855f7; }
 
 .key-letter {
   position: relative;
   z-index: 1;
 }
 
-/* Key Master: key letters look like an ordinary keyboard tile — the key.png icon
-   overlay is the only thing marking them, rather than a color highlight. */
+/* Key Master: key letters look like an ordinary keyboard tile — a colored key-icon
+   overlay (blue/red/purple, one per color's key.png variant) is the only thing marking
+   them, rather than a color highlight on the key itself. */
 .key-icon {
   position: absolute;
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: 70%;
-  height: 70%;
+  width: 95%;
+  height: 95%;
   object-fit: contain;
   pointer-events: none;
 }

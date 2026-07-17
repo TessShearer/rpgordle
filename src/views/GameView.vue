@@ -208,7 +208,7 @@
                   :shadow-obscured-col="shadowObscuredCol" :board-shaking="boardShaking" :zombie-rising="zombieRising"
                   :graveyard-wobble="graveyardWobble"
                   :compact="false" :bow-targeting="bowTargeting && !board.solved" :danger-letters="dangerLetters"
-                  :fire-letters="fireLetters" :key-letters="keyLetters"
+                  :fire-letters="fireLetters" :key-letter-colors="keyLetterColors"
                   @shake-end="boardShaking = false"
                   @bow-target="useBowAtCol($event)" />
               </template>
@@ -249,7 +249,7 @@
               <div v-for="(row, r) in KEY_ROWS" :key="r" class="key-row">
                 <button v-for="key in row" :key="key" class="key"
                   :class="[keyClass(key), { 'key--pop': poppingKey === key, 'h-shake': shakingKey === key }]" @click="handleKey(key)">
-                  <span v-if="lockedLetters.includes(key)" class="lock-icon"></span><img v-if="keyLetters.includes(key)" :src="keyImg" class="key-icon" alt="" /><span class="key-letter">{{ key }}</span>
+                  <span v-if="lockedLetterColors[key]" class="lock-icon" :class="`lock-icon--${lockedLetterColors[key]}`"></span><img v-if="keyLetterColors[key]" :src="KEY_IMAGES[keyLetterColors[key]]" class="key-icon" alt="" /><span class="key-letter">{{ key }}</span>
                 </button>
               </div>
             </div>
@@ -583,7 +583,9 @@ import WordleBoard from '@/components/WordleBoard.vue'
 import GraveyardDisplay from '@/components/GraveyardDisplay.vue'
 import { CHARACTER_IMAGES } from '@/assets/characterImages.js'
 import { ITEM_IMAGES } from '@/assets/itemImages.js'
-import keyImg from '@/assets/key.png'
+import blueKeyImg from '@/assets/blue-key.png'
+import redKeyImg from '@/assets/red-key.png'
+import purpleKeyImg from '@/assets/purple-key.png'
 import { fetchOrCreateDaily } from '@/services/daily.js'
 import { fetchGameWord, fetchWordData } from '@/services/words.js'
 import { recordGameResult } from '@/services/stats.js'
@@ -592,6 +594,8 @@ const props = defineProps({
   mode: { type: String, default: 'daily' },
 })
 
+const KEY_MASTER_COLORS = ['blue', 'red', 'purple']
+const KEY_IMAGES = { blue: blueKeyImg, red: redKeyImg, purple: purpleKeyImg }
 
 const KEY_ROWS = [
   ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
@@ -668,10 +672,13 @@ const dangerLetters = ref([])
 // that must be adjacent (on the physical keyboard) to an already-lit letter.
 const dragonGuessCount = ref(0)
 const fireLetters = ref([])
-// Key Master: 3 locked letters (blue) block typing until a key letter (orange) is guessed,
-// which clears both off the keyboard. Re-rolled every level while he's the boss.
-const lockedLetters = ref([])
-const keyLetters = ref([])
+// Key Master: 3 locked letters per color block typing until that color's key letter is
+// guessed, which clears both off the keyboard. Re-rolled every level while he's the boss.
+// Outside the direct boss fight only 'blue' is in play; during the boss fight itself
+// 'red' and 'purple' run alongside it as two more independent lock/key sets.
+// Maps letter -> color, e.g. { A: 'blue', F: 'red' }.
+const lockedLetterColors = ref({})
+const keyLetterColors = ref({})
 const shakingKey = ref(null)
 const inventory = ref([])
 const inventoryItems = computed(() => inventory.value.map(id => ALL_ITEMS.find(i => i.id === id)).filter(Boolean))
@@ -986,7 +993,7 @@ function keyClass(key) {
   if (key === 'ENTER' || key === '⌫') return 'key--action'
   const isDanger = dangerLetters.value.length > 0 && dangerLetters.value.includes(key)
   const isFire = fireLetters.value.length > 0 && fireLetters.value.includes(key)
-  const isLocked = lockedLetters.value.length > 0 && lockedLetters.value.includes(key)
+  const isLocked = !!lockedLetterColors.value[key]
   const status = keyboardStatuses.value[key]
   const classes = []
   if (status) classes.push(`key--${status}`)
@@ -1004,7 +1011,7 @@ function handleKey(key) {
     currentGuess.value = currentGuess.value.slice(0, -1)
   } else if (key === 'ENTER') {
     submitGuess()
-  } else if (currentBoss.value?.id === 'key-master' && lockedLetters.value.includes(key)) {
+  } else if (currentBoss.value?.id === 'key-master' && lockedLetterColors.value[key] && !keyLetterColors.value[key]) {
     inputError.value = 'Cannot use locked letters, find a key first.'
     shakingKey.value = null
     nextTick(() => { shakingKey.value = key })
@@ -1448,11 +1455,11 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
     if (dragonGuessCount.value % 3 === 0) igniteNextLetter()
   }
 
-  // Key Master: guessing any key letter clears the locks and keys off the keyboard
-  if (currentBoss.value?.id === 'key-master'
-    && keyLetters.value.some(l => submitted.includes(l))) {
-    lockedLetters.value = []
-    keyLetters.value = []
+  // Key Master: guessing a color's key letter clears only that color's locks and key
+  if (currentBoss.value?.id === 'key-master') {
+    for (const [letter, color] of Object.entries(keyLetterColors.value)) {
+      if (submitted.includes(letter)) clearKeyMasterColor(color)
+    }
   }
 
   // Snapshot absent letters from PREVIOUS guesses before this one is recorded.
@@ -1635,8 +1642,8 @@ function handleModalAction() {
     dangerLetters.value = []
     dragonGuessCount.value = 0
     fireLetters.value = []
-    lockedLetters.value = []
-    keyLetters.value = []
+    lockedLetterColors.value = {}
+    keyLetterColors.value = {}
     inventory.value = []
     boards.value = []
     allGuessedWords.value = []
@@ -1683,8 +1690,8 @@ function restartJourney() {
   dangerLetters.value = []
   dragonGuessCount.value = 0
   fireLetters.value = []
-  lockedLetters.value = []
-  keyLetters.value = []
+  lockedLetterColors.value = {}
+  keyLetterColors.value = {}
   inventory.value = []
   boards.value = []
   allGuessedWords.value = []
@@ -2041,19 +2048,72 @@ function applyDangerLetters(isBoss) {
   }
 }
 
-// Key Master: lock 3 random letters (blue) and mark 2 others as keys (orange). Guessing
-// a key letter clears both sets off the keyboard — see submitGuess.
+// Clears one Key Master color's locks and key off the keyboard — called from submitGuess
+// once that color's key letter has been guessed.
+function clearKeyMasterColor(color) {
+  const locked = { ...lockedLetterColors.value }
+  for (const letter of Object.keys(locked)) {
+    if (locked[letter] === color) delete locked[letter]
+  }
+  lockedLetterColors.value = locked
+  const keys = { ...keyLetterColors.value }
+  for (const letter of Object.keys(keys)) {
+    if (keys[letter] === color) delete keys[letter]
+  }
+  keyLetterColors.value = keys
+}
+
+// Key Master: lock 3 random letters and mark 1 other as a key, per color. Guessing a
+// color's key letter clears that color's locks and key — see submitGuess and
+// clearKeyMasterColor. Each color's 3 locked letters guarantee exactly one is in the
+// secret word, so the player must find every color's key to win. Outside the direct boss
+// fight only 'blue' is in play; the boss fight itself layers 'red' and 'purple' on top as
+// two more independent sets, all running side by side.
+//
+// A locked letter may double as a *different* color's key — it's still typable, since
+// handleKey only blocks letters that are locked and not themselves a key (a fun little
+// "key hidden behind another lock" wrinkle) — but never its own color's key, and no two
+// colors ever share a key letter, or the player could be locked out for good.
 function applyKeyMasterLocks() {
   if (currentBoss.value?.id !== 'key-master') return
   const alpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-  const picked = new Set()
-  while (picked.size < 5) picked.add(alpha[Math.floor(Math.random() * 26)])
-  const letters = [...picked]
-  for (const letter of letters.slice(0, 3)) {
-    _pendingKeyPops.push({ letter, before: () => { lockedLetters.value = [...lockedLetters.value, letter] } })
-  }
-  for (const letter of letters.slice(3, 5)) {
-    _pendingKeyPops.push({ letter, before: () => { keyLetters.value = [...keyLetters.value, letter] } })
+  const secretLetters = [...new Set(boards.value.flatMap(b => b.secretWord.split('')))]
+    .sort(() => Math.random() - 0.5)
+  const colors = isBossFight.value ? KEY_MASTER_COLORS : ['blue']
+  const usedLocked = new Set()
+  const usedKeys = new Set()
+  let secretIdx = 0
+
+  for (const color of colors) {
+    const locked = new Set()
+    if (secretIdx < secretLetters.length) {
+      locked.add(secretLetters[secretIdx])
+      secretIdx += 1
+    }
+    // Filler letters never come from secretLetters — only the guaranteed slot above may
+    // be a necessary letter, so an earlier color's filler can never starve a later color
+    // of the one necessary letter it's reserved further down the shuffled list.
+    while (locked.size < 3) {
+      const letter = alpha[Math.floor(Math.random() * 26)]
+      if (usedLocked.has(letter) || locked.has(letter) || secretLetters.includes(letter)) continue
+      locked.add(letter)
+    }
+    locked.forEach(l => usedLocked.add(l))
+
+    let key
+    do {
+      key = alpha[Math.floor(Math.random() * 26)]
+    } while (locked.has(key) || usedKeys.has(key))
+    usedKeys.add(key)
+
+    for (const letter of locked) {
+      _pendingKeyPops.push({ letter, before: () => {
+        lockedLetterColors.value = { ...lockedLetterColors.value, [letter]: color }
+      } })
+    }
+    _pendingKeyPops.push({ letter: key, before: () => {
+      keyLetterColors.value = { ...keyLetterColors.value, [key]: color }
+    } })
   }
 }
 
@@ -2112,8 +2172,8 @@ async function loadWord(showModal) {
   inputError.value = ''
   modal.value = null
   dangerLetters.value = []
-  lockedLetters.value = []
-  keyLetters.value = []
+  lockedLetterColors.value = {}
+  keyLetterColors.value = {}
   fortuneTellerGreyLetters.value = []
   giantSnoreBars.value = 0
   damageBlockActive.value = false
