@@ -26,13 +26,13 @@
             'tile--targeting': bowTargeting && isInputRow(row - 1) && !isHintedCol(col - 1),
             'tile--danger': isDangerAt(row - 1, col - 1),
             'tile--fire': isFireAt(row - 1, col - 1),
-            'tile--key-letter': isKeyLetterAt(row - 1, col - 1),
           }]"
           :style="tileStyle(row - 1, col - 1)"
           :ref="(el) => setTileRef(row - 1, col - 1, el)"
           @click="bowTargeting && isInputRow(row - 1) && !isHintedCol(col - 1) && $emit('bow-target', col - 1)"
         >
-          {{ tileChar(row - 1, col - 1) }}
+          <img v-if="isKeyLetterAt(row - 1, col - 1)" :src="keyImg" class="key-icon" alt="" />
+          <span class="tile-letter">{{ tileChar(row - 1, col - 1) }}</span>
           <div v-if="bowTargeting && isInputRow(row - 1) && !isHintedCol(col - 1)" class="crosshair-overlay">
             <div class="crosshair-ring"></div>
           </div>
@@ -44,6 +44,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import keyImg from '@/assets/key.png'
 
 const props = defineProps({
   board: { type: Object, required: true },

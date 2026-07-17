@@ -10,7 +10,7 @@ export const CLASSES = [
   { id: 'thief', name: 'Thief', health: 12, description: 'Thieves take 2 items from the shop instead of 1' },
   { id: 'fortune-teller', name: 'Fortune Teller', health: 12, description: 'Fortune Tellers reveal some letters that are not in the word' },
   { id: 'archer', name: 'Archer', health: 13, description: 'Archers shoot the gameboard to reveal a green letter' },
-  { id: 'changeling', name: 'Changeling', health: 10, description: 'Gain the ability of a random character, and gain another later on' },
+  { id: 'changeling', name: 'Changeling', health: 10, description: 'Gain take on the ability of a random character, and gain another later on' },
 ]
 
 // Abilities the Changeling can roll — kept in one place so freeplay/testing and the
@@ -30,11 +30,11 @@ export const ENEMIES = [
 ]
 
 export const MINIBOSSES = [
-  { id: 'annoying-kid', name: 'Annoying Kid', regen: 3, health: 1, effect: 'He will make your first guess for you' },
+  { id: 'annoying-kid', name: 'Leprechaun', regen: 3, health: 1, effect: 'He will make your first guess for you' },
   { id: 'tricksy-fairy', name: 'Tricksy Fairy', regen: 3, health: 1, effect: 'If your guess is not correct, she will scramble it before submitting.' },
   { id: 'cerberus', name: 'Cerberus', regen: 3, health: 1, boardCount: 3, wordLength: 5, effect: 'Should a dog have three heads?' },
   { id: 'mirror-spirit', name: 'Mirror Spirit', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'The answer (and all your guesses) must be the same forwards and backwards!' },
-  { id: 'know-it-all', name: 'Know It All', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'The answer is a word he does not think you will know.' },
+  { id: 'know-it-all', name: 'Snobby Goblin', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'The answer is a word he does not think you will know.' },
   { id: 'slumbering-giant', name: 'Slumbering Giant', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'You won\'t take any damage from a wrong guess...until you wake her up.' },
   { id: 'hydra-miniboss', name: 'Hydra', regen: 3, health: 1, wordLength: 5, boardCount: 2, effect: 'Cut off its head!' },
 ]

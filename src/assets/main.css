@@ -1052,6 +1052,7 @@ body {
 }
 
 .tile {
+  position: relative;
   width: var(--tile-size);
   height: var(--tile-size);
   display: flex;
@@ -1065,6 +1066,11 @@ body {
   color: var(--gs-900);
   border-radius: 4px;
   user-select: none;
+}
+
+.tile-letter {
+  position: relative;
+  z-index: 1;
 }
 
 .tile--filled {
@@ -1134,13 +1140,6 @@ body {
   z-index: 0;
   border: 2px solid #ff8a3d;
   box-shadow: 0 0 8px 3px rgba(255, 140, 40, 0.7), 0 0 18px 5px rgba(140, 60, 0, 0.4);
-}
-
-/* Key Master key letter: warns the player mid-type that this letter will clear the locks */
-.tile--key-letter {
-  border: 2px solid #f59e0b;
-  box-shadow: 0 0 8px 3px rgba(245, 158, 11, 0.6), 0 0 18px 5px rgba(180, 83, 9, 0.35);
-  background-color: rgba(245, 158, 11, 0.35);
 }
 
 /* Keyboard */
