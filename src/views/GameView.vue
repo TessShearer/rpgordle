@@ -80,11 +80,16 @@
                 </p>
               </div>
             </div>
-            <div v-if="vampiricDaggerStacks > 0 || vorpalSwordActive || damageBlockActive || smokeBombActive" class="active-buffs">
+            <div v-if="vampiricDaggerStacks > 0 || recorderActive || vorpalSwordActive || damageBlockActive || smokeBombActive" class="active-buffs">
               <div v-if="vampiricDaggerStacks > 0" class="buff-indicator">
                 <img v-if="ITEM_IMAGES['vampiric-dagger']" :src="ITEM_IMAGES['vampiric-dagger']" alt="Vampiric Dagger" class="buff-img" />
                 <div v-else class="art-placeholder art-placeholder--buff">Vampiric Dagger</div>
                 <p class="buff-label">+{{ vampiricDaggerStacks }} hp when correct</p>
+              </div>
+              <div v-if="recorderActive" class="buff-indicator">
+                <img v-if="ITEM_IMAGES['recorder']" :src="ITEM_IMAGES['recorder']" alt="Recorder" class="buff-img" />
+                <div v-else class="art-placeholder art-placeholder--buff">Recorder</div>
+                <p class="buff-label">Heal every 4 guesses</p>
               </div>
               <div v-if="vorpalSwordActive" class="buff-indicator">
                 <img v-if="ITEM_IMAGES['vorpalSword']" :src="ITEM_IMAGES['vorpalSword']" alt="Vorpal Sword" class="buff-img" />
@@ -312,11 +317,16 @@
               <p v-if="knowItAllReveal" class="monster-text">{{ knowItAllReveal }}</p>
               <p v-else class="monster-text">{{ currentEnemyEffect }}</p>
             </div>
-            <div v-if="vampiricDaggerStacks > 0 || vorpalSwordActive || damageBlockActive || smokeBombActive" class="active-buffs active-buffs--right">
+            <div v-if="vampiricDaggerStacks > 0 || recorderActive || vorpalSwordActive || damageBlockActive || smokeBombActive" class="active-buffs active-buffs--right">
               <div v-if="vampiricDaggerStacks > 0" class="buff-indicator">
                 <img v-if="ITEM_IMAGES['vampiric-dagger']" :src="ITEM_IMAGES['vampiric-dagger']" alt="Vampiric Dagger" class="buff-img" />
                 <div v-else class="art-placeholder art-placeholder--buff">Vampiric Dagger</div>
                 <p class="buff-label">+{{ vampiricDaggerStacks }} hp when correct</p>
+              </div>
+              <div v-if="recorderActive" class="buff-indicator">
+                <img v-if="ITEM_IMAGES['recorder']" :src="ITEM_IMAGES['recorder']" alt="Recorder" class="buff-img" />
+                <div v-else class="art-placeholder art-placeholder--buff">Recorder</div>
+                <p class="buff-label">Heal every 4 guesses</p>
               </div>
               <div v-if="vorpalSwordActive" class="buff-indicator">
                 <img v-if="ITEM_IMAGES['vorpalSword']" :src="ITEM_IMAGES['vorpalSword']" alt="Vorpal Sword" class="buff-img" />
@@ -343,7 +353,7 @@
       <!-- Modal -->
       <Transition name="modal">
         <div v-if="modal" class="modal-overlay">
-          <div class="modal-card-glow" :class="{ 'modal-card--wide': modal === 'shop' || modal === 'test-shop' || modal === 'stats' || modal === 'changeling-test-pick' }">
+          <div class="modal-card-glow" :class="{ 'modal-card--wide': modal === 'shop' || modal === 'test-shop' || modal === 'stats' || modal === 'changeling-test-pick' || modal === 'dwarven-puzzle-box' }">
           <div class="modal-card">
 
             <!-- Boss announcement -->
@@ -434,6 +444,36 @@
               <div v-else class="art-placeholder art-placeholder--modal-monster my-3">Art of Scholar</div>
               <p class="modal-message">Hey, that's my job!</p>
               <button class="btn btn-press px-5 py-2 mt-3" @click="modal = null">Got it</button>
+            </template>
+
+            <!-- Ancient Tome -->
+            <template v-else-if="modal === 'ancient-tome'">
+              <p class="modal-message">
+                <template v-if="ancientTomeDefinition">The ancient tome reveals this word is defined as "{{ ancientTomeDefinition }}"</template>
+                <template v-else>The tome's pages are turning...</template>
+              </p>
+              <button class="btn btn-press px-5 py-2 mt-3"
+                :disabled="!ancientTomeDefinition"
+                @click="dismissAncientTomeModal">
+                {{ ancientTomeDefinition ? 'Got it' : '...' }}
+              </button>
+            </template>
+
+            <!-- Dwarven Puzzle Box -->
+            <template v-else-if="modal === 'dwarven-puzzle-box'">
+              <p class="modal-message">Your puzzle box has opened</p>
+              <div class="shop-items">
+                <div v-for="item in dwarvenPuzzleBoxItems" :key="item.id" class="shop-item">
+                  <div class="shop-item-inner">
+                    <div class="shop-item-front">
+                      <img v-if="ITEM_IMAGES[item.id]" :src="ITEM_IMAGES[item.id]" :alt="item.name" class="shop-img" />
+                      <div v-else class="art-placeholder art-placeholder--item">{{ item.name }}</div>
+                      <p class="shop-item-name">{{ item.name }}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <button class="btn btn-press px-5 py-2 mt-3" @click="dismissDwarvenPuzzleBoxModal">Got it</button>
             </template>
 
             <!-- Test shop -->
@@ -564,7 +604,7 @@
             <template v-else>
               <p class="modal-message">{{ MODAL_CONTENT[modal].message }}</p>
             </template>
-            <button v-if="modal !== 'shop' && modal !== 'use-item' && modal !== 'know-it-all' && modal !== 'scholar-definition' && modal !== 'scholar-jealous' && modal !== 'test-shop' && modal !== 'defeat' && modal !== 'stats' && modal !== 'changeling-reveal' && modal !== 'changeling-test-pick' && modal !== 'enemy-intro'" class="btn btn-press px-5 py-2 mt-3"
+            <button v-if="modal !== 'shop' && modal !== 'use-item' && modal !== 'know-it-all' && modal !== 'scholar-definition' && modal !== 'scholar-jealous' && modal !== 'ancient-tome' && modal !== 'dwarven-puzzle-box' && modal !== 'test-shop' && modal !== 'defeat' && modal !== 'stats' && modal !== 'changeling-reveal' && modal !== 'changeling-test-pick' && modal !== 'enemy-intro'" class="btn btn-press px-5 py-2 mt-3"
               @click="handleModalAction">
               {{ MODAL_CONTENT[modal].button }}
             </button>
@@ -742,6 +782,16 @@ const damageBlockActive = ref(false)
 // each stack adds +1 heal per correct guess. Capped at 2 — there's no way to acquire a third.
 const vampiricDaggerStacks = ref(0)
 const MAX_VAMPIRIC_DAGGER_STACKS = 2
+// Recorder: once used, heals 1 HP every 4th guess (any guess, correct or not) for the
+// rest of the game — the count is never reset per enemy/stage, only on a full game reset.
+const recorderActive = ref(false)
+const recorderGuessCount = ref(0)
+// Ancient Tome: the definition fetched for its one-off reveal modal
+const ancientTomeDefinition = ref('')
+// Dwarven Puzzle Box: consumed the moment its trigger condition (next enemy defeated)
+// fires, granting these two items and pausing the win flow with a modal until dismissed
+const dwarvenPuzzleBoxItems = ref([])
+let _dwarvenPuzzleBoxContinue = null
 const changelingRevealPhase = ref(0)
 const changelingRevealFromId = ref(null)
 const changelingRevealToId = ref(null)
@@ -1452,24 +1502,30 @@ async function handleAllBoardsSolved() {
       shopTotalPicks.value = shopPicksRemaining.value
       setTimeout(() => {
         wonMessage.value = false
-        if (needsSecondAbility && props.mode === 'testing') {
-          showChangelingTestPick(true, () => {
-            shopPicksRemaining.value = hasAbility('thief') ? 2 : 1
-            shopTotalPicks.value = shopPicksRemaining.value
+        const proceedToShop = () => {
+          if (needsSecondAbility && props.mode === 'testing') {
+            showChangelingTestPick(true, () => {
+              shopPicksRemaining.value = hasAbility('thief') ? 2 : 1
+              shopTotalPicks.value = shopPicksRemaining.value
+              openShop()
+            })
+          } else if (needsSecondAbility) {
+            showChangelingReveal(changelingAbilities.value[0], changelingAbilities.value[1], true, () => openShop())
+          } else {
             openShop()
-          })
-        } else if (needsSecondAbility) {
-          showChangelingReveal(changelingAbilities.value[0], changelingAbilities.value[1], true, () => openShop())
-        } else {
-          openShop()
+          }
         }
+        if (inventory.value.includes('dwarven-puzzle-box')) triggerDwarvenPuzzleBox(proceedToShop)
+        else proceedToShop()
       }, 1800)
     } else {
       wonDamage.value = 0
       wonMessage.value = true
       setTimeout(() => {
         wonMessage.value = false
-        startStage(stage.value + 1)
+        const proceedToNextStage = () => startStage(stage.value + 1)
+        if (inventory.value.includes('dwarven-puzzle-box')) triggerDwarvenPuzzleBox(proceedToNextStage)
+        else proceedToNextStage()
       }, 1800)
     }
   } else {
@@ -1484,6 +1540,28 @@ async function handleAllBoardsSolved() {
       loadWord(false)
     }, 1800)
   }
+}
+
+// Dwarven Puzzle Box: consumed the moment the next enemy (of any kind) is defeated,
+// granting two random items from the same pool the shop offers right now. Pauses whatever
+// win-flow transition (shop/next stage) was about to happen until the modal is dismissed.
+function triggerDwarvenPuzzleBox(onDone) {
+  const idx = inventory.value.indexOf('dwarven-puzzle-box')
+  if (idx === -1) { onDone(); return }
+  inventory.value.splice(idx, 1)
+  const pool = availableShopItems.value.filter(i => i.id !== 'dwarven-puzzle-box')
+  const granted = [...pool].sort(() => Math.random() - 0.5).slice(0, 2)
+  inventory.value = [...inventory.value, ...granted.map(i => i.id)]
+  dwarvenPuzzleBoxItems.value = granted
+  _dwarvenPuzzleBoxContinue = onDone
+  modal.value = 'dwarven-puzzle-box'
+}
+
+function dismissDwarvenPuzzleBoxModal() {
+  modal.value = null
+  const cb = _dwarvenPuzzleBoxContinue
+  _dwarvenPuzzleBoxContinue = null
+  if (cb) cb()
 }
 
 async function submitGuess(skipValidation = false, skipScramble = false) {
@@ -1584,6 +1662,12 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
   if (currentBoss.value?.id === 'dragon') {
     dragonGuessCount.value += 1
     if (dragonGuessCount.value % 3 === 0) igniteNextLetter()
+  }
+
+  // Recorder: every guess (correct or not, across the whole game) counts toward the next heal
+  if (recorderActive.value) {
+    recorderGuessCount.value += 1
+    if (recorderGuessCount.value % 4 === 0) await animatePlayerHeal(plagueLordHeal(1))
   }
 
   // Key Master: guessing a color's key letter clears only that color's locks and key
@@ -1846,6 +1930,8 @@ function handleModalAction() {
     giantSnoreBars.value = 0
   damageBlockActive.value = false
   vampiricDaggerStacks.value = 0
+  recorderActive.value = false
+  recorderGuessCount.value = 0
     giantAwake.value = false
     gameLog.value = []
     gameResult.value = null
@@ -1896,6 +1982,8 @@ function restartJourney() {
   giantSnoreBars.value = 0
   damageBlockActive.value = false
   vampiricDaggerStacks.value = 0
+  recorderActive.value = false
+  recorderGuessCount.value = 0
   giantAwake.value = false
   gameLog.value = []
   gameResult.value = null
@@ -1936,6 +2024,23 @@ function dismissKnowItAllModal() {
   } else {
     modal.value = null
   }
+}
+
+// ── Ancient Tome ───────────────────────────────────────────────────────────────
+async function useAncientTome() {
+  const board = boards.value.find(b => !b.solved)
+  if (!board) return
+  ancientTomeDefinition.value = ''
+  modal.value = 'ancient-tome'
+  const definition = await fetchWordData(board.secretWord.toLowerCase())
+    .then(data => data?.definition || 'a most sophisticated word')
+    .catch(() => 'a most sophisticated word')
+  if (modal.value === 'ancient-tome') ancientTomeDefinition.value = definition
+}
+
+function dismissAncientTomeModal() {
+  if (!ancientTomeDefinition.value) return
+  modal.value = null
 }
 
 // ── Scholar's 4th-wrong-guess definition ──────────────────────────────────────
@@ -2637,6 +2742,14 @@ function useItem() {
     }
   } else if (item.effect === 'vampiric-dagger') {
     vampiricDaggerStacks.value = Math.min(vampiricDaggerStacks.value + 1, MAX_VAMPIRIC_DAGGER_STACKS)
+  } else if (item.effect === 'recorder') {
+    recorderActive.value = true
+  } else if (item.effect === 'ancient-tome') {
+    const idx = inventory.value.indexOf(item.id)
+    if (idx !== -1) inventory.value.splice(idx, 1)
+    pendingUseItem.value = null
+    useAncientTome()
+    return
   } else if (item.effect === 'caltrops') {
     const allWordLetters = new Set(boards.value.flatMap(b => b.secretWord.split('')))
     const already = new Set(fortuneTellerGreyLetters.value)
