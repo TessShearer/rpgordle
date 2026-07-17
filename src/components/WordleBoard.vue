@@ -28,6 +28,8 @@
             'tile--fire': isFireAt(row - 1, col - 1),
             'tile--wily-reveal': isWilyRevealAt(row - 1, col - 1),
             'tile--wily-appear': isWilyAppearAt(row - 1, col - 1),
+            'tile--elf-slide-out': isElfSlideOutAt(row - 1, col - 1),
+            'tile--elf-slide-in': isElfSlideInAt(row - 1, col - 1),
           }]"
           :style="tileStyle(row - 1, col - 1)"
           :ref="(el) => setTileRef(row - 1, col - 1, el)"
@@ -182,11 +184,30 @@ function isObscured(row, col) {
   return false
 }
 
+function isElfSlideOutAt(row, col) {
+  const cell = props.board.littleElfSlideOutCell
+  return !!cell && cell.row === row && cell.col === col
+}
+
+function isElfSlideInAt(row, col) {
+  const cell = props.board.littleElfSlideInCell
+  return !!cell && cell.row === row && cell.col === col
+}
+
+// Little Elf: the tile is blank once it's fully stolen, but visible again the instant it
+// starts sliding back in (isElfSlideInAt), even though littleElfStealCell hasn't cleared yet
+function isElfHidden(row, col) {
+  if (isElfSlideInAt(row, col)) return false
+  const cell = props.board.littleElfStealCell
+  return !!cell && cell.row === row && cell.col === col
+}
+
 function tileChar(row, col) {
   if (props.compact && props.board.solved) {
     return props.board.guesses[props.board.guesses.length - 1]?.[col] ?? ''
   }
   if (isObscured(row, col)) return ''
+  if (isElfHidden(row, col)) return ''
   if (row < props.board.guesses.length) return props.board.guesses[row][col] ?? ''
   if (row === props.board.guesses.length) return props.currentGuess[col] ?? hintLetterAt(col) ?? ''
   return ''

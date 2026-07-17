@@ -37,8 +37,8 @@ export const MINIBOSSES = [
   { id: 'know-it-all', name: 'Sphinx', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'The answer is a word he does not think you will know.' },
   { id: 'slumbering-giant', name: 'Slumbering Giant', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'You won\'t take any damage from a wrong guess...until you wake her up.' },
   { id: 'wily-magician', name: 'Wily Magician', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'He places one piece of false information in every guess' },
-  { id: 'little-elf', name: 'Little Elf', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'Steals a letter from each guess from your keyboard...but always brings it back' },
-  { id: 'mimic', name: 'Mimic', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'Tess is working on it' },
+  { id: 'little-elves', name: 'Little Elves', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'Steals the last letter from your guess...but always brings it back' },
+  { id: 'mimic', name: 'Mimic', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'Tess is working on it - no effect for a couple days' },
   { id: 'hydra-miniboss', name: 'Hydra', regen: 3, health: 1, wordLength: 5, boardCount: 2, effect: 'Cut off its head!' },
 
 ]
@@ -98,6 +98,27 @@ export const SHOP_ITEMS = [
     name: 'Vampiric Dagger',
     description: 'When used, you begin to heal +1 for each correct guess',
     effect: 'vampiric-dagger',
+    cost: 2,
+  },
+    {
+    id: 'ancient-tome',
+    name: 'Ancient Tome',
+    description: 'Reveal the definition of the word.',
+    effect: 'ancient-tome',
+    cost: 2,
+  },
+      {
+    id: 'dwarven-puzzle-box',
+    name: 'Dwarven Puzzle Box',
+    description: 'Gain two items after defeating the next enemy.',
+    effect: 'dwarven-puzzle-box',
+    cost: 2,
+  },
+        {
+    id: 'recorder',
+    name: 'Recorder',
+    description: 'Once used, begin to heal one health every 4 guesses',
+    effect: 'recorder',
     cost: 2,
   },
 ]

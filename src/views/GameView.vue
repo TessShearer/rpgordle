@@ -710,6 +710,9 @@ const fireLetters = ref([])
 // Maps letter -> color, e.g. { A: 'blue', F: 'red' }.
 const lockedLetterColors = ref({})
 const keyLetterColors = ref({})
+// Little Elf: the one letter currently stolen off the keyboard (faded, untypable) until
+// it's handed back on the following guess — see runLittleElfTurn.
+const littleElfStolenLetter = ref(null)
 const shakingKey = ref(null)
 const inventory = ref([])
 const inventoryItems = computed(() => inventory.value.map(id => ALL_ITEMS.find(i => i.id === id)).filter(Boolean))
@@ -825,6 +828,9 @@ function makeBoard(id, secretWord) {
     wilyLieCell: null,    // Wily Magician — { row, col, fakeStatus } for the latest guess's lie
     wilyRevealCell: null, // Wily Magician — previous guess's lie, mid shrink-and-spin reveal
     wilyAppearCell: null, // Wily Magician — { row, col } for the true tile mid grow-in, right after reveal
+    littleElfStealCell: null,   // Little Elf — { row, col, letter } currently stolen (tile hidden)
+    littleElfSlideOutCell: null, // Little Elf — { row, col } tile mid slide-away-and-vanish
+    littleElfSlideInCell: null,  // Little Elf — { row, col } tile mid slide-back-into-place
     solved: false,
   }
 }
@@ -883,8 +889,44 @@ function pickWilyFakeStatus(trueStatus) {
   return others[Math.floor(Math.random() * others.length)]
 }
 // Must match the .tile--wily-reveal / .tile--wily-appear animation durations in main.css
-const WILY_REVEAL_MS = 1000
-const WILY_APPEAR_MS = 350
+const WILY_REVEAL_MS = 800
+const WILY_APPEAR_MS = 800
+
+// Must match the .tile--elf-slide-out / .tile--elf-slide-in animation duration in main.css
+const LITTLE_ELF_SLIDE_MS = 500
+
+// Little Elf: steals the last letter of every guess off the keyboard, returning it (with
+// a reverse slide) the instant the next guess comes in, right before stealing that one's
+// last letter in turn. Fire-and-forget — doesn't block submitGuess like a damage animation
+// would, since nothing else depends on it finishing.
+function runLittleElfTurn(board, guessRowIndex) {
+  const startNewSteal = () => {
+    if (board.solved) return
+    const guess = board.guesses[guessRowIndex]
+    const col = guess.length - 1
+    const letter = guess[col]
+    const stealing = { row: guessRowIndex, col, letter }
+    board.littleElfSlideOutCell = stealing
+    setTimeout(() => {
+      if (board.littleElfSlideOutCell === stealing) board.littleElfSlideOutCell = null
+      board.littleElfStealCell = stealing
+      littleElfStolenLetter.value = letter
+    }, LITTLE_ELF_SLIDE_MS)
+  }
+
+  const prevSteal = board.littleElfStealCell
+  if (prevSteal) {
+    board.littleElfSlideInCell = prevSteal
+    littleElfStolenLetter.value = null
+    setTimeout(() => {
+      if (board.littleElfSlideInCell === prevSteal) board.littleElfSlideInCell = null
+      if (board.littleElfStealCell === prevSteal) board.littleElfStealCell = null
+      startNewSteal()
+    }, LITTLE_ELF_SLIDE_MS)
+  } else {
+    startNewSteal()
+  }
+}
 
 function getUnionLetterStatuses() {
   const priority = { correct: 3, present: 2, absent: 1 }
@@ -910,13 +952,14 @@ const selectableClasses = computed(() => {
 
 // Testing screen's manual miniboss picker — Hydra's own miniboss never shows up here since
 // picking Hydra as the boss skips this screen entirely, Cerberus's 3-board mechanic
-// conflicts with the Abominable Snowman's letter-freezing ability, and the Mirror Spirit
-// forces every guess to be a palindrome, which combined with the Key Master's locked
-// letters can leave too few usable letters to form any valid guess.
+// conflicts with the Abominable Snowman's letter-freezing ability (which also conflicts
+// with Little Elf's letter-stealing, both fighting over the same keyboard letters), and
+// the Mirror Spirit forces every guess to be a palindrome, which combined with the Key
+// Master's locked letters can leave too few usable letters to form any valid guess.
 const testingMinibossOptions = computed(() => {
   let pool = MINIBOSSES.filter(m => m.id !== 'hydra-miniboss')
   if (currentBoss.value?.id === 'abominable-snowman') {
-    pool = pool.filter(m => m.id !== 'cerberus')
+    pool = pool.filter(m => m.id !== 'cerberus' && m.id !== 'little-elf')
   }
   if (currentBoss.value?.id === 'key-master') {
     pool = pool.filter(m => m.id !== 'mirror-spirit')
@@ -1078,12 +1121,14 @@ function keyClass(key) {
   const isDanger = dangerLetters.value.length > 0 && dangerLetters.value.includes(key)
   const isFire = fireLetters.value.length > 0 && fireLetters.value.includes(key) && !dragonFireBypassed.value
   const isLocked = !!lockedLetterColors.value[key] && !keyMasterLocksBypassed.value
+  const isStolen = littleElfStolenLetter.value === key
   const status = keyboardStatuses.value[key]
   const classes = []
   if (status) classes.push(`key--${status}`)
   if (isDanger) classes.push('key--danger')
   if (isFire) classes.push('key--fire')
   if (isLocked) classes.push('key--locked')
+  if (isStolen) classes.push('key--stolen')
   return classes.join(' ')
 }
 
@@ -1100,6 +1145,8 @@ function handleKey(key) {
     shakingKey.value = null
     nextTick(() => { shakingKey.value = key })
     setTimeout(() => { if (shakingKey.value === key) shakingKey.value = null }, 400)
+  } else if (currentEnemy.value?.id === 'little-elf' && littleElfStolenLetter.value === key) {
+    // Stolen letter — does nothing until the elf hands it back
   } else if (currentGuess.value.length < wordLength.value) {
     currentGuess.value += key
   }
@@ -1625,6 +1672,13 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
     }
   }
 
+  // Little Elf: steals the last letter of every guess off the keyboard until the next one
+  if (currentEnemy.value?.id === 'little-elf') {
+    for (const board of boards.value) {
+      runLittleElfTurn(board, board.guesses.length - 1)
+    }
+  }
+
   // Shadow Sorcerer: after first guess clear it; in boss fight re-randomize each guess
   if (currentBoss.value?.id === 'shadow-sorcerer') {
     if (isBossFight.value) {
@@ -1770,6 +1824,7 @@ function handleModalAction() {
     fireLetters.value = []
     lockedLetterColors.value = {}
     keyLetterColors.value = {}
+    littleElfStolenLetter.value = null
     inventory.value = []
     boards.value = []
     allGuessedWords.value = []
@@ -1819,6 +1874,7 @@ function restartJourney() {
   fireLetters.value = []
   lockedLetterColors.value = {}
   keyLetterColors.value = {}
+  littleElfStolenLetter.value = null
   inventory.value = []
   boards.value = []
   allGuessedWords.value = []
@@ -2129,8 +2185,9 @@ async function startStage(stageNum) {
           pool = MINIBOSSES.filter(m => m.id === 'hydra-miniboss')
         } else {
           pool = MINIBOSSES.filter(m => m.id !== 'hydra-miniboss')
-          // Cerberus's 3-board mechanic conflicts with the Abominable Snowman's letter-freezing
-          if (currentBoss.value?.id === 'abominable-snowman') pool = pool.filter(m => m.id !== 'cerberus')
+          // Cerberus's 3-board mechanic conflicts with the Abominable Snowman's letter-freezing,
+          // and so does Little Elf's letter-stealing — both fight over the same keyboard letters
+          if (currentBoss.value?.id === 'abominable-snowman') pool = pool.filter(m => m.id !== 'cerberus' && m.id !== 'little-elf')
           // Mirror Spirit forces every guess to be a palindrome, which combined with the Key
           // Master's locked letters can leave too few usable letters to form any valid guess
           if (currentBoss.value?.id === 'key-master') pool = pool.filter(m => m.id !== 'mirror-spirit')
@@ -2400,6 +2457,7 @@ async function loadWord(showModal) {
   dangerLetters.value = []
   lockedLetterColors.value = {}
   keyLetterColors.value = {}
+  littleElfStolenLetter.value = null
   fortuneTellerGreyLetters.value = []
   giantSnoreBars.value = 0
   damageBlockActive.value = false

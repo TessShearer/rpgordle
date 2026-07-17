@@ -1180,6 +1180,41 @@ body {
   }
 }
 
+/* Little Elf: the last letter of a guess slides off to the right and fades away, then —
+   once the following guess comes in — slides back in from the same side with the reverse
+   animation. Duration must match LITTLE_ELF_SLIDE_MS in GameView.vue. */
+.tile--elf-slide-out {
+  animation: elf-slide-out 0.5s ease-in forwards;
+}
+
+@keyframes elf-slide-out {
+  0% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateX(60px);
+    opacity: 0;
+  }
+}
+
+.tile--elf-slide-in {
+  animation: elf-slide-in 0.5s ease-out forwards;
+}
+
+@keyframes elf-slide-in {
+  0% {
+    transform: translateX(60px);
+    opacity: 0;
+  }
+
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
 /* Keyboard */
 .keyboard {
   display: flex;
@@ -1206,7 +1241,7 @@ body {
   font-weight: 700;
   cursor: pointer;
   user-select: none;
-  transition: filter 0.1s;
+  transition: filter 0.1s, opacity 0.4s;
 }
 
 .key--action {
@@ -1255,6 +1290,12 @@ body {
   border: none;
   background: transparent;
   box-shadow: none;
+}
+
+/* Little Elf: the stolen letter fades out (and back in on return) via the transition
+   already on .key — no separate animation needed for the keyboard side. */
+.key--stolen {
+  opacity: 0.25;
 }
 
 .lock-icon {
