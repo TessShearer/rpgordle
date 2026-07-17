@@ -249,7 +249,7 @@
               <div v-for="(row, r) in KEY_ROWS" :key="r" class="key-row">
                 <button v-for="key in row" :key="key" class="key"
                   :class="[keyClass(key), { 'key--pop': poppingKey === key, 'h-shake': shakingKey === key }]" @click="handleKey(key)">
-                  <span v-if="lockedLetterColors[key]" class="lock-icon" :class="`lock-icon--${lockedLetterColors[key]}`"></span><img v-if="keyLetterColors[key]" :src="KEY_IMAGES[keyLetterColors[key]]" class="key-icon" alt="" /><span class="key-letter">{{ key }}</span>
+                  <span v-if="lockedLetterColors[key] && !keyMasterLocksBypassed" class="lock-icon" :class="`lock-icon--${lockedLetterColors[key]}`"></span><img v-if="keyLetterColors[key]" :src="KEY_IMAGES[keyLetterColors[key]]" class="key-icon" alt="" /><span class="key-letter">{{ key }}</span>
                 </button>
               </div>
             </div>
@@ -799,6 +799,14 @@ const smokeBombActive = computed(() => {
   return !!board && board.abilityBlockedRows.has(board.guesses.length)
 })
 
+// Smoke Bomb blocks the Key Master's locks for one guess: locked letters become typable
+// and stop showing their padlock, but the keys stay on the keyboard and still clear their
+// color's locks as normal if guessed. Reverts the instant that guess is submitted, since
+// smokeBombActive itself expires then.
+const keyMasterLocksBypassed = computed(() =>
+  currentBoss.value?.id === 'key-master' && smokeBombActive.value
+)
+
 function evaluateGuess(guess, secretWord) {
   const status = Array(guess.length).fill('absent')
   const pool = secretWord.split('')
@@ -836,12 +844,17 @@ const selectableClasses = computed(() => {
 })
 
 // Testing screen's manual miniboss picker — Hydra's own miniboss never shows up here since
-// picking Hydra as the boss skips this screen entirely, and Cerberus's 3-board mechanic
-// conflicts with the Abominable Snowman's letter-freezing ability.
+// picking Hydra as the boss skips this screen entirely, Cerberus's 3-board mechanic
+// conflicts with the Abominable Snowman's letter-freezing ability, and the Mirror Spirit
+// forces every guess to be a palindrome, which combined with the Key Master's locked
+// letters can leave too few usable letters to form any valid guess.
 const testingMinibossOptions = computed(() => {
   let pool = MINIBOSSES.filter(m => m.id !== 'hydra-miniboss')
   if (currentBoss.value?.id === 'abominable-snowman') {
     pool = pool.filter(m => m.id !== 'cerberus')
+  }
+  if (currentBoss.value?.id === 'key-master') {
+    pool = pool.filter(m => m.id !== 'mirror-spirit')
   }
   return pool
 })
@@ -993,7 +1006,7 @@ function keyClass(key) {
   if (key === 'ENTER' || key === '⌫') return 'key--action'
   const isDanger = dangerLetters.value.length > 0 && dangerLetters.value.includes(key)
   const isFire = fireLetters.value.length > 0 && fireLetters.value.includes(key)
-  const isLocked = !!lockedLetterColors.value[key]
+  const isLocked = !!lockedLetterColors.value[key] && !keyMasterLocksBypassed.value
   const status = keyboardStatuses.value[key]
   const classes = []
   if (status) classes.push(`key--${status}`)
@@ -1011,7 +1024,7 @@ function handleKey(key) {
     currentGuess.value = currentGuess.value.slice(0, -1)
   } else if (key === 'ENTER') {
     submitGuess()
-  } else if (currentBoss.value?.id === 'key-master' && lockedLetterColors.value[key] && !keyLetterColors.value[key]) {
+  } else if (currentBoss.value?.id === 'key-master' && lockedLetterColors.value[key] && !keyLetterColors.value[key] && !keyMasterLocksBypassed.value) {
     inputError.value = 'Cannot use locked letters, find a key first.'
     shakingKey.value = null
     nextTick(() => { shakingKey.value = key })
@@ -1970,6 +1983,9 @@ async function startStage(stageNum) {
           pool = MINIBOSSES.filter(m => m.id !== 'hydra-miniboss')
           // Cerberus's 3-board mechanic conflicts with the Abominable Snowman's letter-freezing
           if (currentBoss.value?.id === 'abominable-snowman') pool = pool.filter(m => m.id !== 'cerberus')
+          // Mirror Spirit forces every guess to be a palindrome, which combined with the Key
+          // Master's locked letters can leave too few usable letters to form any valid guess
+          if (currentBoss.value?.id === 'key-master') pool = pool.filter(m => m.id !== 'mirror-spirit')
         }
         if (props.mode === 'daily' && dailyConfig.value) {
           const enemyId = dailyConfig.value.stageEnemies[stageNum]
@@ -2063,6 +2079,8 @@ function clearKeyMasterColor(color) {
   keyLetterColors.value = keys
 }
 
+const VOWELS = new Set(['A', 'E', 'I', 'O', 'U'])
+
 // Key Master: lock 3 random letters and mark 1 other as a key, per color. Guessing a
 // color's key letter clears that color's locks and key — see submitGuess and
 // clearKeyMasterColor. Each color's 3 locked letters guarantee exactly one is in the
@@ -2073,7 +2091,14 @@ function clearKeyMasterColor(color) {
 // A locked letter may double as a *different* color's key — it's still typable, since
 // handleKey only blocks letters that are locked and not themselves a key (a fun little
 // "key hidden behind another lock" wrinkle) — but never its own color's key, and no two
-// colors ever share a key letter, or the player could be locked out for good.
+// colors ever share a key letter, or the player could be locked out for good. Two safety
+// caps keep the boss fight from going too far with this, so the player always has at
+// least 2 "clean" (not-locked-away) keys and at least 2 free vowels to work with:
+//   1. That key/lock overlap is allowed to happen at most once per word (reset every time
+//      a new boss word loads, since this function re-runs fresh each time) — `overlapUsed`
+//      tracks whether the one-time allowance has already been spent.
+//   2. At most 3 of the 5 vowels may ever be locked up across all colors combined —
+//      `lockedVowelCount` tracks the running total so the 4th+ vowel is skipped over.
 function applyKeyMasterLocks() {
   if (currentBoss.value?.id !== 'key-master') return
   const alpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -2083,11 +2108,25 @@ function applyKeyMasterLocks() {
   const usedLocked = new Set()
   const usedKeys = new Set()
   let secretIdx = 0
+  let lockedVowelCount = 0
+  let overlapUsed = false
+
+  const vowelCapped = (letter) => VOWELS.has(letter) && lockedVowelCount >= 3
+  const overlapBlocked = (letter) => overlapUsed && usedKeys.has(letter)
+  function lockLetter(locked, letter) {
+    locked.add(letter)
+    if (VOWELS.has(letter)) lockedVowelCount += 1
+    if (usedKeys.has(letter)) overlapUsed = true
+  }
 
   for (const color of colors) {
     const locked = new Set()
+    while (secretIdx < secretLetters.length &&
+      (vowelCapped(secretLetters[secretIdx]) || overlapBlocked(secretLetters[secretIdx]))) {
+      secretIdx += 1
+    }
     if (secretIdx < secretLetters.length) {
-      locked.add(secretLetters[secretIdx])
+      lockLetter(locked, secretLetters[secretIdx])
       secretIdx += 1
     }
     // Filler letters never come from secretLetters — only the guaranteed slot above may
@@ -2096,14 +2135,16 @@ function applyKeyMasterLocks() {
     while (locked.size < 3) {
       const letter = alpha[Math.floor(Math.random() * 26)]
       if (usedLocked.has(letter) || locked.has(letter) || secretLetters.includes(letter)) continue
-      locked.add(letter)
+      if (vowelCapped(letter) || overlapBlocked(letter)) continue
+      lockLetter(locked, letter)
     }
     locked.forEach(l => usedLocked.add(l))
 
     let key
     do {
       key = alpha[Math.floor(Math.random() * 26)]
-    } while (locked.has(key) || usedKeys.has(key))
+    } while (locked.has(key) || usedKeys.has(key) || (overlapUsed && usedLocked.has(key)))
+    if (usedLocked.has(key)) overlapUsed = true
     usedKeys.add(key)
 
     for (const letter of locked) {
