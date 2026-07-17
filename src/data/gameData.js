@@ -36,7 +36,11 @@ export const MINIBOSSES = [
   { id: 'mirror-spirit', name: 'Mirror Spirit', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'The answer (and all your guesses) must be the same forwards and backwards!' },
   { id: 'know-it-all', name: 'Sphinx', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'The answer is a word he does not think you will know.' },
   { id: 'slumbering-giant', name: 'Slumbering Giant', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'You won\'t take any damage from a wrong guess...until you wake her up.' },
+  { id: 'wily-magician', name: 'Wily Magician', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'He places one piece of false information in every guess' },
+  { id: 'little-elf', name: 'Little Elf', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'Steals a letter from each guess from your keyboard...but always brings it back' },
+  { id: 'mimic', name: 'Mimic', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'Tess is working on it' },
   { id: 'hydra-miniboss', name: 'Hydra', regen: 3, health: 1, wordLength: 5, boardCount: 2, effect: 'Cut off its head!' },
+
 ]
 
 export const SHOP_ITEMS = [
@@ -206,7 +210,7 @@ export const BOSSES = [
     announcement: 'Your quest is to defeat the Plague Lord, who will reduce your healing by 1 every time you heal more than 1 health',
     enhancedAnnouncement: 'You found the boss!',
   },
-      {
+  {
     id: 'dragon',
     name: 'Dragon',
     health: 2,

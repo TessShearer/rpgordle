@@ -822,6 +822,9 @@ function makeBoard(id, secretWord) {
     obscuredGuessPositions: [],
     abilityBlockedRows: new Set(),
     crystalHints: [],
+    wilyLieCell: null,    // Wily Magician — { row, col, fakeStatus } for the latest guess's lie
+    wilyRevealCell: null, // Wily Magician — previous guess's lie, mid shrink-and-spin reveal
+    wilyAppearCell: null, // Wily Magician — { row, col } for the true tile mid grow-in, right after reveal
     solved: false,
   }
 }
@@ -872,6 +875,16 @@ function evaluateGuess(guess, secretWord) {
   }
   return guess.split('').map((letter, i) => ({ letter, status: status[i] }))
 }
+
+// Wily Magician: picks one of the two statuses that ISN'T the true one, so the lie is
+// always visibly wrong (green shows as grey/yellow, yellow as green/grey, grey as green/yellow)
+function pickWilyFakeStatus(trueStatus) {
+  const others = ['correct', 'present', 'absent'].filter(s => s !== trueStatus)
+  return others[Math.floor(Math.random() * others.length)]
+}
+// Must match the .tile--wily-reveal / .tile--wily-appear animation durations in main.css
+const WILY_REVEAL_MS = 1000
+const WILY_APPEAR_MS = 350
 
 function getUnionLetterStatuses() {
   const priority = { correct: 3, present: 2, absent: 1 }
@@ -1013,7 +1026,13 @@ const keyboardStatuses = computed(() => {
       const evaluated = evaluateGuess(guess, board.secretWord)
       evaluated.forEach(({ letter, status }, col) => {
         if (col === obscuredCol) return
-        if (!base[letter] || priority[status] > priority[base[letter]]) base[letter] = status
+        // Wily Magician: the keyboard shows the same lie as the tile while it's active
+        const lie = board.wilyLieCell
+        const reveal = board.wilyRevealCell
+        const effectiveStatus = (lie && lie.row === gi && lie.col === col) ? lie.fakeStatus
+          : (reveal && reveal.row === gi && reveal.col === col) ? reveal.fakeStatus
+          : status
+        if (!base[letter] || priority[effectiveStatus] > priority[base[letter]]) base[letter] = effectiveStatus
       })
     })
   }
@@ -1572,6 +1591,40 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
     if (Object.keys(board.crossbowSlots).length) board.crossbowSlots = {}
   }
 
+  // Wily Magician: lies about one tile's color in every guess. The previous guess's lie
+  // (if any) starts its reveal animation now and clears itself once that finishes; a
+  // fresh lie is picked for the guess that was just submitted, unless it won the board —
+  // see WordleBoard.vue's evaluatedRows/isWilyRevealAt for how these get rendered.
+  if (currentEnemy.value?.id === 'wily-magician') {
+    for (const board of boards.value) {
+      const guessRowIndex = board.guesses.length - 1
+      if (board.wilyLieCell) {
+        const prevLie = board.wilyLieCell
+        board.wilyRevealCell = prevLie
+        setTimeout(() => {
+          if (board.wilyRevealCell !== prevLie) return
+          board.wilyRevealCell = null
+          const appearing = { row: prevLie.row, col: prevLie.col }
+          board.wilyAppearCell = appearing
+          setTimeout(() => {
+            if (board.wilyAppearCell === appearing) board.wilyAppearCell = null
+          }, WILY_APPEAR_MS)
+        }, WILY_REVEAL_MS)
+      }
+      if (board.solved) {
+        board.wilyLieCell = null
+      } else {
+        const wordLen = board.secretWord.length
+        const obscuredCol = board.obscuredGuessPositions[guessRowIndex]
+        const candidates = [...Array(wordLen).keys()].filter(c => c !== obscuredCol)
+        const pool = candidates.length ? candidates : [...Array(wordLen).keys()]
+        const col = pool[Math.floor(Math.random() * pool.length)]
+        const trueStatus = evaluateGuess(board.guesses[guessRowIndex], board.secretWord)[col].status
+        board.wilyLieCell = { row: guessRowIndex, col, fakeStatus: pickWilyFakeStatus(trueStatus) }
+      }
+    }
+  }
+
   // Shadow Sorcerer: after first guess clear it; in boss fight re-randomize each guess
   if (currentBoss.value?.id === 'shadow-sorcerer') {
     if (isBossFight.value) {
@@ -1595,35 +1648,54 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
   if (allSolved) {
     handleAllBoardsSolved()
   } else if (!anyBoardSolvedThisGuess) {
+    // Shared by both branches below so the Slumbering Giant's own damage reacts to the
+    // same modifiers as any other guess (gelatinous cube's danger letters, dragon's fire,
+    // necromancer's penalties) instead of being a flat, unmodified number.
+    const guessRow = firstActive.guesses.length - 1
+    const abilityBlocked = firstActive.abilityBlockedRows.has(guessRow)
+    const doubleDamage = !abilityBlocked
+      && currentBoss.value?.id === 'gelatinous-cube'
+      && dangerLetters.value.length > 0
+      && dangerLetters.value.some(l => submitted.includes(l))
+
+    let necroPenalty = 0
+    if (currentBoss.value?.id === 'necromancer') {
+      if (alreadyGuessed && !isCorrectAnswer) necroPenalty += 1
+      if (isBossFight.value) {
+        const hasAbsentLetter = submitted.split('').some(l => prevAbsentLetters.has(l))
+        if (hasAbsentLetter) necroPenalty += 1
+      }
+    }
+
+    const dragonPenalty = (!abilityBlocked
+      && currentBoss.value?.id === 'dragon'
+      && fireLetters.value.some(l => submitted.includes(l))) ? 1 : 0
+
     if (currentEnemy.value?.id === 'slumbering-giant') {
-      // Slumbering Giant: wrong guesses fill snore bars, not player health
+      // Slumbering Giant: wrong guesses fill snore bars while asleep, not player health.
+      // Waking up (guess 4) is a big +5 hit; every guess after is a smaller ongoing +1 —
+      // both stack on top of the modifiers above rather than being a flat number.
+      let justWoke = false
       if (!giantAwake.value) {
         giantSnoreBars.value++
         if (giantSnoreBars.value >= 4) {
           giantAwake.value = true
-          if (damageBlockActive.value) {
-            damageBlockActive.value = false
-          } else {
-            await animatePlayerDamage(7)
-            if (playerHealth.value <= 0) {
-              recordCurrentRound()
-              gameState.value = 'lost'
-              gameResult.value = 'lost'
-              recordGameEnd('lost')
-              setTimeout(() => { modal.value = 'defeat' }, 1200)
-            }
-          }
+          justWoke = true
         }
-      } else if (damageBlockActive.value) {
-        damageBlockActive.value = false
-      } else {
-        await animatePlayerDamage(2)
-        if (playerHealth.value <= 0) {
-          recordCurrentRound()
-          gameState.value = 'lost'
-          gameResult.value = 'lost'
-          recordGameEnd('lost')
-          setTimeout(() => { modal.value = 'defeat' }, 1200)
+      }
+      if (giantAwake.value) {
+        if (damageBlockActive.value) {
+          damageBlockActive.value = false
+        } else {
+          const giantPenalty = justWoke ? 5 : 1
+          await animatePlayerDamage((doubleDamage ? 2 : 1) + necroPenalty + dragonPenalty + giantPenalty)
+          if (playerHealth.value <= 0) {
+            recordCurrentRound()
+            gameState.value = 'lost'
+            gameResult.value = 'lost'
+            recordGameEnd('lost')
+            setTimeout(() => { modal.value = 'defeat' }, 1200)
+          }
         }
       }
     } else {
@@ -1631,26 +1703,6 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
       if (damageBlockActive.value) {
         damageBlockActive.value = false
       } else {
-        const guessRow = firstActive.guesses.length - 1
-        const abilityBlocked = firstActive.abilityBlockedRows.has(guessRow)
-        const doubleDamage = !abilityBlocked
-          && currentBoss.value?.id === 'gelatinous-cube'
-          && dangerLetters.value.length > 0
-          && dangerLetters.value.some(l => submitted.includes(l))
-
-        let necroPenalty = 0
-        if (currentBoss.value?.id === 'necromancer') {
-          if (alreadyGuessed && !isCorrectAnswer) necroPenalty += 1
-          if (isBossFight.value) {
-            const hasAbsentLetter = submitted.split('').some(l => prevAbsentLetters.has(l))
-            if (hasAbsentLetter) necroPenalty += 1
-          }
-        }
-
-        const dragonPenalty = (!abilityBlocked
-          && currentBoss.value?.id === 'dragon'
-          && fireLetters.value.some(l => submitted.includes(l))) ? 1 : 0
-
         await animatePlayerDamage((doubleDamage ? 2 : 1) + necroPenalty + dragonPenalty)
         if (playerHealth.value <= 0) {
           recordCurrentRound()

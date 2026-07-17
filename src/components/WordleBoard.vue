@@ -26,6 +26,8 @@
             'tile--targeting': bowTargeting && isInputRow(row - 1) && !isHintedCol(col - 1),
             'tile--danger': isDangerAt(row - 1, col - 1),
             'tile--fire': isFireAt(row - 1, col - 1),
+            'tile--wily-reveal': isWilyRevealAt(row - 1, col - 1),
+            'tile--wily-appear': isWilyAppearAt(row - 1, col - 1),
           }]"
           :style="tileStyle(row - 1, col - 1)"
           :ref="(el) => setTileRef(row - 1, col - 1, el)"
@@ -114,7 +116,17 @@ function evaluateGuess(guess) {
   return guess.split('').map((letter, i) => ({ letter, status: status[i] }))
 }
 
-const evaluatedRows = computed(() => props.board.guesses.map(evaluateGuess))
+// Wily Magician: overrides one tile's status with a lie for the guess it was just told
+// on, and again (still lying) while the previous guess's lie is mid reveal-animation —
+// see isWilyRevealAt for the animation trigger itself.
+const evaluatedRows = computed(() => props.board.guesses.map((guess, row) => {
+  const evaluated = evaluateGuess(guess)
+  const lie = props.board.wilyLieCell
+  const reveal = props.board.wilyRevealCell
+  if (lie && lie.row === row) evaluated[lie.col] = { ...evaluated[lie.col], status: lie.fakeStatus }
+  if (reveal && reveal.row === row) evaluated[reveal.col] = { ...evaluated[reveal.col], status: reveal.fakeStatus }
+  return evaluated
+}))
 
 const boardRows = computed(() => {
   if (props.compact && props.board.solved) return 1
@@ -139,6 +151,16 @@ function isFireAt(row, col) {
   if (!isInputRow(row) || !props.fireLetters.length) return false
   const typed = props.currentGuess[col]
   return !!typed && props.fireLetters.includes(typed)
+}
+
+function isWilyRevealAt(row, col) {
+  const reveal = props.board.wilyRevealCell
+  return !!reveal && reveal.row === row && reveal.col === col
+}
+
+function isWilyAppearAt(row, col) {
+  const appear = props.board.wilyAppearCell
+  return !!appear && appear.row === row && appear.col === col
 }
 
 function keyLetterColorAt(row, col) {

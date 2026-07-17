@@ -1142,6 +1142,44 @@ body {
   box-shadow: 0 0 8px 3px rgba(255, 140, 40, 0.7), 0 0 18px 5px rgba(140, 60, 0, 0.4);
 }
 
+/* Wily Magician: the previous guess's lied-about tile grows slightly, then shrinks while
+   spinning a full turn down to nothing — at which point .tile--wily-reveal is swapped for
+   .tile--wily-appear (the status itself flips from fake to true at that same moment) and
+   the now-true tile grows back in from scale 0. Durations must match the setTimeouts in
+   submitGuess (WILY_REVEAL_MS / WILY_APPEAR_MS) — see WordleBoard.vue's
+   evaluatedRows/isWilyRevealAt/isWilyAppearAt. */
+.tile--wily-reveal {
+  animation: wily-reveal .8s ease-in forwards;
+}
+
+@keyframes wily-reveal {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+
+  20% {
+    transform: scale(1.2) rotate(0deg);
+  }
+
+  100% {
+    transform: scale(0) rotate(360deg);
+  }
+}
+
+.tile--wily-appear {
+  animation: wily-appear .8s ease-out forwards;
+}
+
+@keyframes wily-appear {
+  0% {
+    transform: scale(0);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
 /* Keyboard */
 .keyboard {
   display: flex;
@@ -1251,9 +1289,17 @@ body {
   border-top-right-radius: 7em;
 }
 
-.lock-icon--blue { --lock-color: #3b82f6; }
-.lock-icon--red { --lock-color: #ef4444; }
-.lock-icon--purple { --lock-color: #a855f7; }
+.lock-icon--blue {
+  --lock-color: #3b82f6;
+}
+
+.lock-icon--red {
+  --lock-color: #ef4444;
+}
+
+.lock-icon--purple {
+  --lock-color: #a855f7;
+}
 
 .key-letter {
   position: relative;
@@ -1315,17 +1361,36 @@ body {
 }
 
 @keyframes flame-flicker {
-  0%, 100% { transform: translateX(-50%) scaleY(1); }
-  50%      { transform: translateX(-50%) scaleY(1.12); }
+
+  0%,
+  100% {
+    transform: translateX(-50%) scaleY(1);
+  }
+
+  50% {
+    transform: translateX(-50%) scaleY(1.12);
+  }
 }
 
 @keyframes flame-lick {
-  0%   { transform: translateX(-50%) translateY(0) scale(0.65); opacity: 0.5; }
-  50%  { transform: translateX(-50%) translateY(-5%) scale(.8); opacity: 1; }
-  100% { transform: translateX(-50%) translateY(0) scale(0.65); opacity: .5; }
+  0% {
+    transform: translateX(-50%) translateY(0) scale(0.65);
+    opacity: 0.5;
+  }
+
+  50% {
+    transform: translateX(-50%) translateY(-5%) scale(.8);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateX(-50%) translateY(0) scale(0.65);
+    opacity: .5;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   .key--fire::before,
   .key--fire::after,
   .tile--fire::before,
@@ -1507,8 +1572,7 @@ body {
 
 /* Wraps .modal-card to hold the filter/drop-shadow glow.*/
 .modal-card-glow {
-  filter: drop-shadow(0 0 1px rgba(180, 150, 90, 0.4)) drop-shadow(0 6px 20px rgba(0, 0, 0, 0.7))
-          drop-shadow(0 0 5px rgba(126, 119, 119, 0.5));
+  filter: drop-shadow(0 0 1px rgba(180, 150, 90, 0.4)) drop-shadow(0 6px 20px rgba(0, 0, 0, 0.7)) drop-shadow(0 0 5px rgba(126, 119, 119, 0.5));
   max-width: 320px;
   width: 90%;
   margin: auto 0;
@@ -1909,7 +1973,9 @@ body {
 /* Necromancer graveyard: live warning wobble while the in-progress guess matches
    an already-guessed word, before the player has a chance to submit it */
 @keyframes tile-wobble {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0) rotate(0deg);
   }
 
@@ -3429,8 +3495,13 @@ body {
 }
 
 @keyframes key-unlock-key-move {
-  0% { transform: translate(calc(-50% - 12vw), -50%); }
-  100% { transform: translate(-50%, -50%); }
+  0% {
+    transform: translate(calc(-50% - 12vw), -50%);
+  }
+
+  100% {
+    transform: translate(-50%, -50%);
+  }
 }
 
 .key-unlock-lock {
@@ -3455,13 +3526,29 @@ body {
 }
 
 @keyframes key-unlock-lock-move {
-  0% { transform: translate(calc(-50% + 12vw), -50%); }
-  100% { transform: translate(-50%, -50%); }
+  0% {
+    transform: translate(calc(-50% + 12vw), -50%);
+  }
+
+  100% {
+    transform: translate(-50%, -50%);
+  }
 }
 
-.key-unlock-lock--blue { border-color: #3b82f6; color: #3b82f6; }
-.key-unlock-lock--red { border-color: #ef4444; color: #ef4444; }
-.key-unlock-lock--purple { border-color: #a855f7; color: #a855f7; }
+.key-unlock-lock--blue {
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+
+.key-unlock-lock--red {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.key-unlock-lock--purple {
+  border-color: #a855f7;
+  color: #a855f7;
+}
 
 .key-unlock-open {
   position: fixed;
@@ -3487,10 +3574,25 @@ body {
 }
 
 @keyframes key-unlock-open-appear {
-  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.7); }
-  30% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
-  75% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-  100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.7);
+  }
+
+  30% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.15);
+  }
+
+  75% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1);
+  }
 }
 
 .decocard {
