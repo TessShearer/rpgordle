@@ -3415,6 +3415,84 @@ body {
   }
 }
 
+/* ── Key Master unlock animation ──────────────────────────────────────────── */
+.key-unlock-key {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 90px;
+  height: 90px;
+  object-fit: contain;
+  z-index: 1000;
+  pointer-events: none;
+  animation: key-unlock-key-move 0.65s ease-in forwards;
+}
+
+@keyframes key-unlock-key-move {
+  0% { transform: translate(calc(-50% - 12vw), -50%); }
+  100% { transform: translate(-50%, -50%); }
+}
+
+.key-unlock-lock {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 90px;
+  height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gs-100);
+  border: 2px dashed var(--gs-400);
+  border-radius: 0.5rem;
+  color: var(--gs-400);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  z-index: 1000;
+  pointer-events: none;
+  animation: key-unlock-lock-move 0.65s ease-in forwards;
+}
+
+@keyframes key-unlock-lock-move {
+  0% { transform: translate(calc(-50% + 12vw), -50%); }
+  100% { transform: translate(-50%, -50%); }
+}
+
+.key-unlock-lock--blue { border-color: #3b82f6; color: #3b82f6; }
+.key-unlock-lock--red { border-color: #ef4444; color: #ef4444; }
+.key-unlock-lock--purple { border-color: #a855f7; color: #a855f7; }
+
+.key-unlock-open {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.7);
+  width: 110px;
+  height: 110px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gs-100);
+  border: 2px dashed var(--gs-400);
+  border-radius: 0.5rem;
+  color: var(--gs-400);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-align: center;
+  z-index: 1000;
+  pointer-events: none;
+  animation: key-unlock-open-appear 0.55s ease-out forwards;
+}
+
+@keyframes key-unlock-open-appear {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.7); }
+  30% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
+  75% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+}
+
 .decocard {
   display: flex;
   flex-direction: column;

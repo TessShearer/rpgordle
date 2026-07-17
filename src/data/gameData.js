@@ -1,7 +1,7 @@
 export const CLASSES = [
   { id: 'peasant', name: 'Peasant', health: 14, description: 'Peasants have no ability' },
   { id: 'seer', name: 'Seer', health: 10, description: 'Seers reveal a yellow letter from each word' },
-  { id: 'knight', name: 'Knight', health: 15, description: 'Knights have extra health and a shield' },
+  { id: 'knight', name: 'Knight', health: 15, description: 'Knights have additional health and start with a shield' },
   { id: 'scholar', name: 'Scholar', health: 13, description: 'Scholars can tell you information about the type of word' },
   { id: 'treasurer', name: 'Treasurer', health: 10, description: 'Treasurers start the game with 2 items' },
   { id: 'assassin', name: 'Assassin', health: 8, description: 'Assassins can sneak attack with 3/5 yellow letters' },
@@ -64,7 +64,7 @@ export const SHOP_ITEMS = [
   {
     id: 'crossbow',
     name: 'Crossbow',
-    description: 'Reveals and autofills the first letter of the word.',
+    description: 'Reveals the first letter of the word.',
     effect: 'crossbow',
     cost: 2,
   },

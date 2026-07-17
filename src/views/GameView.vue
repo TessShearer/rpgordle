@@ -568,6 +568,15 @@
     <!-- Crossbow arrow animation -->
     <div v-if="crossbowAnim" class="crossbow-arrow" aria-hidden="true"></div>
 
+    <!-- Key Master unlock animation -->
+    <template v-if="keyUnlockAnim">
+      <template v-if="keyUnlockAnim.phase === 'meeting'">
+        <img :src="KEY_IMAGES[keyUnlockAnim.color]" alt="" class="key-unlock-key" aria-hidden="true" />
+        <div class="key-unlock-lock" :class="`key-unlock-lock--${keyUnlockAnim.color}`" aria-hidden="true">Lock</div>
+      </template>
+      <div v-else class="key-unlock-open" aria-hidden="true">Unlocked!</div>
+    </template>
+
   </main>
 </template>
 
@@ -725,6 +734,10 @@ const vorpalSwordAnim = ref(false)
 const healthPotionAnim = ref(false)
 const shieldAnim = ref(false)
 const crossbowAnim = ref(false)
+// Key Master unlock animation: { color, phase: 'meeting' | 'open' } while playing, else null
+const keyUnlockAnim = ref(null)
+const _keyUnlockQueue = []
+let _keyUnlockRunning = false
 const bowTargeting = ref(false)
 const shadowObscuredCol = ref(null)
 const _pendingKeyPops = []
@@ -1471,7 +1484,10 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
   // Key Master: guessing a color's key letter clears only that color's locks and key
   if (currentBoss.value?.id === 'key-master') {
     for (const [letter, color] of Object.entries(keyLetterColors.value)) {
-      if (submitted.includes(letter)) clearKeyMasterColor(color)
+      if (submitted.includes(letter)) {
+        clearKeyMasterColor(color)
+        queueKeyUnlockAnim(color)
+      }
     }
   }
 
@@ -2079,7 +2095,33 @@ function clearKeyMasterColor(color) {
   keyLetterColors.value = keys
 }
 
+// Purely visual: a key and its color's padlock slide in from either side and meet in the
+// center, then swap for an "unlocked" placeholder for a beat. Queued so two colors
+// clearing on the same guess play one after another instead of overlapping.
+function queueKeyUnlockAnim(color) {
+  _keyUnlockQueue.push(color)
+  if (!_keyUnlockRunning) processKeyUnlockQueue()
+}
+
+function processKeyUnlockQueue() {
+  const color = _keyUnlockQueue.shift()
+  if (!color) { _keyUnlockRunning = false; return }
+  _keyUnlockRunning = true
+  keyUnlockAnim.value = { color, phase: 'meeting' }
+  setTimeout(() => {
+    keyUnlockAnim.value = { color, phase: 'open' }
+    setTimeout(() => {
+      keyUnlockAnim.value = null
+      processKeyUnlockQueue()
+    }, 550)
+  }, 650)
+}
+
 const VOWELS = new Set(['A', 'E', 'I', 'O', 'U'])
+// Rare/awkward-to-intentionally-guess consonants — during the boss fight these never
+// spawn as a key, since a key letter has to show up in a submitted guess on purpose and
+// these are too easy to end up stranded with no reasonable word to fish them out with.
+const KEY_MASTER_BANNED_KEY_LETTERS = new Set(['M', 'W', 'F', 'G', 'Y', 'P', 'B', 'V', 'K', 'J', 'X', 'Q', 'Z'])
 
 // Key Master: lock 3 random letters and mark 1 other as a key, per color. Guessing a
 // color's key letter clears that color's locks and key — see submitGuess and
@@ -2091,14 +2133,16 @@ const VOWELS = new Set(['A', 'E', 'I', 'O', 'U'])
 // A locked letter may double as a *different* color's key — it's still typable, since
 // handleKey only blocks letters that are locked and not themselves a key (a fun little
 // "key hidden behind another lock" wrinkle) — but never its own color's key, and no two
-// colors ever share a key letter, or the player could be locked out for good. Two safety
-// caps keep the boss fight from going too far with this, so the player always has at
-// least 2 "clean" (not-locked-away) keys and at least 2 free vowels to work with:
-//   1. That key/lock overlap is allowed to happen at most once per word (reset every time
-//      a new boss word loads, since this function re-runs fresh each time) — `overlapUsed`
-//      tracks whether the one-time allowance has already been spent.
-//   2. At most 3 of the 5 vowels may ever be locked up across all colors combined —
-//      `lockedVowelCount` tracks the running total so the 4th+ vowel is skipped over.
+// colors ever share a key letter, or the player could be locked out for good. During the
+// boss fight this wrinkle is forced to happen exactly once: every other lock/key pick
+// unconditionally avoids the opposite set, and only the last color (`forceOverlapAt`) has
+// its key deliberately planted into an earlier color's locked set instead of drawn fresh —
+// it goes last because by then it has the widest pool of earlier locks to draw from,
+// which combined with the banned-letters cap below (rarely, ~1 word in a few hundred) can
+// otherwise leave nothing eligible to force, in which case that one word just quietly
+// skips the guarantee rather than risk an invalid pick. A second safety cap keeps at least
+// 2 vowels free: at most 3 of the 5 vowels may ever be locked up across all colors
+// combined — `lockedVowelCount` tracks the running total so the 4th+ vowel is skipped over.
 function applyKeyMasterLocks() {
   if (currentBoss.value?.id !== 'key-master') return
   const alpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -2109,20 +2153,22 @@ function applyKeyMasterLocks() {
   const usedKeys = new Set()
   let secretIdx = 0
   let lockedVowelCount = 0
-  let overlapUsed = false
+  // The last color gets the widest pool of earlier locked letters to draw an overlap
+  // from (every prior color's locks), which is what makes forcing one nearly always
+  // possible despite the banned-letter restriction below.
+  const forceOverlapAt = colors.length > 1 ? colors.length - 1 : -1
 
   const vowelCapped = (letter) => VOWELS.has(letter) && lockedVowelCount >= 3
-  const overlapBlocked = (letter) => overlapUsed && usedKeys.has(letter)
+  const bannedKey = (letter) => isBossFight.value && KEY_MASTER_BANNED_KEY_LETTERS.has(letter)
   function lockLetter(locked, letter) {
     locked.add(letter)
     if (VOWELS.has(letter)) lockedVowelCount += 1
-    if (usedKeys.has(letter)) overlapUsed = true
   }
 
-  for (const color of colors) {
+  colors.forEach((color, colorIdx) => {
     const locked = new Set()
     while (secretIdx < secretLetters.length &&
-      (vowelCapped(secretLetters[secretIdx]) || overlapBlocked(secretLetters[secretIdx]))) {
+      (vowelCapped(secretLetters[secretIdx]) || usedKeys.has(secretLetters[secretIdx]))) {
       secretIdx += 1
     }
     if (secretIdx < secretLetters.length) {
@@ -2135,16 +2181,23 @@ function applyKeyMasterLocks() {
     while (locked.size < 3) {
       const letter = alpha[Math.floor(Math.random() * 26)]
       if (usedLocked.has(letter) || locked.has(letter) || secretLetters.includes(letter)) continue
-      if (vowelCapped(letter) || overlapBlocked(letter)) continue
+      if (vowelCapped(letter) || usedKeys.has(letter)) continue
       lockLetter(locked, letter)
     }
     locked.forEach(l => usedLocked.add(l))
 
     let key
-    do {
-      key = alpha[Math.floor(Math.random() * 26)]
-    } while (locked.has(key) || usedKeys.has(key) || (overlapUsed && usedLocked.has(key)))
-    if (usedLocked.has(key)) overlapUsed = true
+    const forcingOverlap = colorIdx === forceOverlapAt
+    const overlapCandidates = forcingOverlap
+      ? [...usedLocked].filter(l => !locked.has(l) && !usedKeys.has(l) && !bannedKey(l))
+      : []
+    if (forcingOverlap && overlapCandidates.length > 0) {
+      key = overlapCandidates[Math.floor(Math.random() * overlapCandidates.length)]
+    } else {
+      do {
+        key = alpha[Math.floor(Math.random() * 26)]
+      } while (locked.has(key) || usedKeys.has(key) || usedLocked.has(key) || bannedKey(key))
+    }
     usedKeys.add(key)
 
     for (const letter of locked) {
@@ -2155,7 +2208,7 @@ function applyKeyMasterLocks() {
     _pendingKeyPops.push({ letter: key, before: () => {
       keyLetterColors.value = { ...keyLetterColors.value, [key]: color }
     } })
-  }
+  })
 }
 
 function applyFortuneTellerHints() {
