@@ -1292,10 +1292,12 @@ body {
   box-shadow: none;
 }
 
-/* Little Elf: the stolen letter fades out (and back in on return) via the transition
-   already on .key — no separate animation needed for the keyboard side. */
+/* Little Elf: the stolen letter vanishes entirely (and fades back in on return) via the
+   transition already on .key — no separate animation needed for the keyboard side. Stays
+   pointer-events: none while gone so an invisible key can't still show hover/press states. */
 .key--stolen {
-  opacity: 0.25;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .lock-icon {

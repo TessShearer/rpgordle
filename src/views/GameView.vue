@@ -2,7 +2,7 @@
   <main class="container py-2">
     <div class="game-wrapper">
 
-      <!-- ── Daily loading / error ─────────────────────────────────────── -->
+      <!-- Daily loading -->
       <div v-if="dailyLoading" class="text-center py-5">
         <p class="game-meta">Loading today's adventure…</p>
       </div>
@@ -10,7 +10,7 @@
         <p class="text-danger mb-3">Could not load today's game. Please refresh.</p>
       </div>
 
-      <!-- ── Intro ──────────────────────────────────────────────────────── -->
+      <!-- Intro -->
       <div v-else-if="screen === 'intro'" class="text-center">
         <div class="art-placeholder art-placeholder--hero mb-4">Art goes here</div>
         <button class="btn btn-press px-5 py-3 fs-5" @click="showClassSelect">
@@ -18,29 +18,29 @@
         </button>
       </div>
 
-      <!-- ── Class Select ───────────────────────────────────────────────── -->
+      <!-- Class Select -->
       <ClassSelect v-else-if="screen === 'class-select'" :classes="selectableClasses" :selected-class-id="selectedClass"
         :show-randomize="mode !== 'daily'" @select="selectedClass = $event" @confirm="selectClass($event)" />
 
-      <!-- ── Boss Select (free play) ──────────────────────────────────── -->
+      <!-- Boss Select -->
       <BossSelect v-else-if="screen === 'boss-select'" :bosses="BOSSES" :selected-boss-id="selectedBoss"
         :show-randomize="mode !== 'daily'" @select="selectedBoss = $event" @confirm="confirmBossSelect" />
 
-      <!-- ── Miniboss Test Select ──────────────────────────────────────── -->
-      <div v-else-if="screen === 'miniboss-select' && mode === 'testing'" class="miniboss-test-wrapper">
+      <!-- Miniboss Select -->
+      <div v-else-if="screen === 'miniboss-select' && (mode === 'testing' || mode === 'freeplay')" class="miniboss-test-wrapper">
         <BossSelect :bosses="testingMinibossOptions" :selected-boss-id="selectedMiniboss" :show-randomize="true" label="Miniboss"
           @select="selectedMiniboss = $event" @confirm="confirmMinibossSelect" />
       </div>
 
-      <!-- ── Boss Intro ────────────────────────────────────────────────── -->
+      <!-- Boss Intro Carousel - BossIntro.vue -->
       <BossIntro v-else-if="screen === 'boss-intro'" ref="bossIntroRef" :boss="currentBoss" :player-class="playerClass"
         @begin="beginJourney" />
 
-      <!-- ── Boss Fight Intro ──────────────────────────────────────────── -->
+      <!-- Boss Fight Intro - BossFightIntro.vue -->
       <BossFightIntro v-else-if="screen === 'boss-fight-intro'" ref="bossFightIntroRef" :boss="currentBoss"
         @begin="beginBossFight" />
 
-      <!-- ── Game ───────────────────────────────────────────────────────── -->
+      <!-- Game  -->
       <template v-else>
 
         <div v-if="gameState === 'loading'" class="text-center py-5">
@@ -48,28 +48,35 @@
         </div>
 
         <div v-else-if="gameState === 'error'" class="text-center py-5">
-          <p class="text-danger mb-3">Could not load a word. Make sure the PHP server is running.</p>
+          <p class="text-danger mb-3">There was an issue loading</p>
           <button class="btn btn-press px-4" @click="startStage(stage)">Try Again</button>
         </div>
 
         <div v-else class="game-layout" :class="{ 'bow-targeting-active': bowTargeting }">
 
-          <!-- Mobile-only portraits strip (hidden on desktop) -->
+          <!-- character info on mobile  -->
           <div class="mobile-portraits">
             <div class="portrait-slot">
               <div class="portrait-img-col small-card"
                 :class="{ 'health-hit': playerDamageAnim === 'damage', 'health-heal': playerDamageAnim === 'heal' }">
+                <!-- Damage and Heal in testing -->
                 <div v-if="mode === 'testing'" class="test-health-btns">
                   <button class="btn-test-health btn-test-heal" @click="testHeal">Heal</button>
                   <button class="btn-test-health btn-test-damage" @click="testDamage">Damage</button>
                 </div>
+
+                <!-- character image -->
                 <img v-if="featureArtImage" :src="featureArtImage" :alt="featureArtText" class="portrait-img" />
+                <!-- placeholder image -->
                 <div v-else class="art-placeholder art-placeholder--portrait">{{ featureArtText }}</div>
+                <!-- character health -->
                 <p class="portrait-stat">HP: {{ playerHealth }}/{{ playerMaxHealth }}</p>
                 <div class="player-health-pips portrait-pips">
                   <span v-for="n in playerMaxHealth" :key="n" class="health-pip health-pip--player"
                     :class="{ 'health-pip--lost': n > playerHealth }"></span>
                 </div>
+
+                <!-- character ability -->
                 <template v-if="playerClass === 'changeling' && changelingAbilities.length">
                   <p v-for="ability in changelingAbilities" :key="ability" class="portrait-enemy-effect">
                     {{ CLASSES.find(c => c.id === ability)?.description }}
@@ -80,16 +87,18 @@
                 </p>
               </div>
             </div>
-            <div v-if="vampiricDaggerStacks > 0 || recorderActive || vorpalSwordActive || damageBlockActive || smokeBombActive" class="active-buffs">
+
+            <!-- items that have been used and have ongoing abilities appear here (mobile) -->
+            <div v-if="vampiricDaggerStacks > 0 || recorderStacks > 0 || vorpalSwordActive || damageBlockActive || smokeBombActive" class="active-buffs">
               <div v-if="vampiricDaggerStacks > 0" class="buff-indicator">
                 <img v-if="ITEM_IMAGES['vampiric-dagger']" :src="ITEM_IMAGES['vampiric-dagger']" alt="Vampiric Dagger" class="buff-img" />
                 <div v-else class="art-placeholder art-placeholder--buff">Vampiric Dagger</div>
                 <p class="buff-label">+{{ vampiricDaggerStacks }} hp when correct</p>
               </div>
-              <div v-if="recorderActive" class="buff-indicator">
+              <div v-if="recorderStacks > 0" class="buff-indicator">
                 <img v-if="ITEM_IMAGES['recorder']" :src="ITEM_IMAGES['recorder']" alt="Recorder" class="buff-img" />
                 <div v-else class="art-placeholder art-placeholder--buff">Recorder</div>
-                <p class="buff-label">Heal every 4 guesses</p>
+                <p class="buff-label">+{{ recorderStacks }} hp every 4 guesses</p>
               </div>
               <div v-if="vorpalSwordActive" class="buff-indicator">
                 <img v-if="ITEM_IMAGES['vorpalSword']" :src="ITEM_IMAGES['vorpalSword']" alt="Vorpal Sword" class="buff-img" />
@@ -107,6 +116,8 @@
                 <p class="buff-label">Hidden from Boss</p>
               </div>
             </div>
+
+            <!-- enemy info on mobile -->
             <div v-if="currentEnemy" class="portrait-slot portrait-slot--enemy">
               <div class="portrait-img-col small-card" :class="{ 'health-hit': enemyHitAnim }">
                 <img v-if="CHARACTER_IMAGES[currentEnemy.id]" :src="CHARACTER_IMAGES[currentEnemy.id]"
@@ -131,7 +142,7 @@
             </div>
           </div>
 
-          <!-- Left panel: class character art (desktop only) -->
+          <!-- character and inventory column on browser -->
           <aside class="game-panel game-panel--left">
             <div class="class-feature">
               <div class="class-feature-img-col"
@@ -184,7 +195,7 @@
             </div>
           </aside>
 
-          <!-- Center: game board(s) -->
+          <!-- game board(s) -->
           <div class="game-center">
             <!-- Journey progress -->
             <div class="text-center mb-2">
@@ -194,19 +205,20 @@
               </div>
             </div>
 
-            <!-- Bow targeting message -->
+            <!-- Bow targeting message for archer -->
             <div v-if="bowTargeting" class="bow-target-msg">
               <span>Pick a target!</span>
               <button class="btn btn-reset btn-sm ms-3" @click="bowTargeting = false">Cancel</button>
             </div>
 
-            <!-- Board(s) -->
+            <!-- gameboard(s) -->
             <div class="boards-container" :class="{ 'boards-container--multi': boards.length > 1 }">
               <template v-for="board in boards" :key="board.id">
                 <div v-if="board.solved && boards.length > 1" class="solved-word-chip">
                   <span v-for="(letter, i) in board.secretWord.split('')" :key="i" class="solved-chip-tile">{{ letter
                     }}</span>
                 </div>
+                <!-- this is where I gradually put 1000 effects -->
                 <WordleBoard v-else :ref="(el) => setBoardRef(board.id, el)" :board="board"
                   :current-guess="currentGuess" :game-state="gameState"
                   :has-seer="hasAbility('seer')" :has-scholar="hasAbility('scholar')"
@@ -259,6 +271,7 @@
               </div>
             </div>
 
+            <!-- current boss info and image, mobile inventory, graveyard -->
             <div v-if="currentBoss" class="mt-3 text-center">
               <p class="game-meta mb-0"><strong>The realm has been attacked by the {{ currentBoss.name }}:</strong>
                 {{ isBossFight && currentBoss.enhancedEffect ? currentBoss.enhancedEffect : currentBoss.effect }}</p>
@@ -295,7 +308,7 @@
             </div>
           </div>
 
-          <!-- Right panel: current enemy -->
+          <!-- current enemy and ongoing item abilities -->
           <aside class="game-panel game-panel--right">
             <div v-if="currentEnemy" class="enemy-section small-card" :class="{ 'health-hit': enemyHitAnim }">
               <img v-if="CHARACTER_IMAGES[currentEnemy.id]" :src="CHARACTER_IMAGES[currentEnemy.id]"
@@ -317,16 +330,16 @@
               <p v-if="knowItAllReveal" class="monster-text">{{ knowItAllReveal }}</p>
               <p v-else class="monster-text">{{ currentEnemyEffect }}</p>
             </div>
-            <div v-if="vampiricDaggerStacks > 0 || recorderActive || vorpalSwordActive || damageBlockActive || smokeBombActive" class="active-buffs active-buffs--right">
+            <div v-if="vampiricDaggerStacks > 0 || recorderStacks > 0 || vorpalSwordActive || damageBlockActive || smokeBombActive" class="active-buffs active-buffs--right">
               <div v-if="vampiricDaggerStacks > 0" class="buff-indicator">
                 <img v-if="ITEM_IMAGES['vampiric-dagger']" :src="ITEM_IMAGES['vampiric-dagger']" alt="Vampiric Dagger" class="buff-img" />
                 <div v-else class="art-placeholder art-placeholder--buff">Vampiric Dagger</div>
                 <p class="buff-label">+{{ vampiricDaggerStacks }} hp when correct</p>
               </div>
-              <div v-if="recorderActive" class="buff-indicator">
+              <div v-if="recorderStacks > 0" class="buff-indicator">
                 <img v-if="ITEM_IMAGES['recorder']" :src="ITEM_IMAGES['recorder']" alt="Recorder" class="buff-img" />
                 <div v-else class="art-placeholder art-placeholder--buff">Recorder</div>
-                <p class="buff-label">Heal every 4 guesses</p>
+                <p class="buff-label">+{{ recorderStacks }} hp every 4 guesses</p>
               </div>
               <div v-if="vorpalSwordActive" class="buff-indicator">
                 <img v-if="ITEM_IMAGES['vorpalSword']" :src="ITEM_IMAGES['vorpalSword']" alt="Vorpal Sword" class="buff-img" />
@@ -393,16 +406,24 @@
 
             <!-- Use an item modal -->
             <template v-else-if="modal === 'use-item'">
-              <p class="modal-message">Use {{ pendingUseItem.name }}?</p>
+              <p class="modal-message">
+                <template v-if="pendingUseItem.effect === 'dwarven-puzzle-box'">{{ pendingUseItem.name }}</template>
+                <template v-else>Use {{ pendingUseItem.name }}?</template>
+              </p>
               <p class="modal-submessage">{{ pendingUseItem.description }}</p>
               <div class="modal-actions mt-3">
-                <button v-if="!(pendingUseItem.effect === 'vorpal-sword' && !isBossFight)"
-                  class="btn btn-press px-4 py-2" @click="useItem">Yes</button>
-                <button class="btn btn-reset px-4 py-2"
-                  style="white-space: normal; max-width: 160px; line-height: 1.2;"
-                  @click="cancelUseItem">
-                  {{ pendingUseItem.effect === 'vorpal-sword' && !isBossFight ? 'Wait until boss fight to use' : 'No' }}
-                </button>
+                <!-- Dwarven Puzzle Box triggers itself automatically — nothing to confirm, just a "Got it" -->
+                <button v-if="pendingUseItem.effect === 'dwarven-puzzle-box'"
+                  class="btn btn-press px-4 py-2" @click="cancelUseItem">Got it</button>
+                <template v-else>
+                  <button v-if="!(pendingUseItem.effect === 'vorpal-sword' && !isBossFight)"
+                    class="btn btn-press px-4 py-2" @click="useItem">Yes</button>
+                  <button class="btn btn-press px-4 py-2"
+                    style="white-space: normal; max-width: 160px; line-height: 1.2;"
+                    @click="cancelUseItem">
+                    {{ pendingUseItem.effect === 'vorpal-sword' && !isBossFight ? 'Wait until boss fight to use' : 'No' }}
+                  </button>
+                </template>
               </div>
             </template>
 
@@ -674,7 +695,7 @@ const KEY_ROWS = [
   ['ENTER', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', '⌫'],
 ]
 
-// Physically-adjacent keys on a QWERTY keyboard — used by the Dragon's spreading fire
+// Dragon fire keys. Array of keys that dragon fire can spread to if one key is on fire. Kind of huge but seemed the smallest way to do it
 const KEYBOARD_ADJACENCY = {
   Q: ['W', 'A'],
   W: ['Q', 'E', 'A', 'S'],
@@ -714,7 +735,7 @@ const MODAL_CONTENT = {
 
 const gameNav = useGameNavStore()
 
-// ── Screen / class ────────────────────────────────────────────────────────────
+// Screen / class
 const screen = ref('intro')
 const playerClass = ref(null)
 const changelingAbilities = ref([])
@@ -724,7 +745,7 @@ const bossFightIntroRef = ref(null)
 const wonMessage = ref(false)
 const wonDamage = ref(0)
 
-// ── Game state ────────────────────────────────────────────────────────────────
+// Game state 
 const stage = ref(0)
 const boards = ref([])
 const currentGuess = ref('')
@@ -738,31 +759,23 @@ const currentEnemy = ref(null)
 const enemyHealth = ref(0)
 const lastRegen = ref(0)
 const dangerLetters = ref([])
-// Dragon: every guess made this game (across all enemies and the boss fight) stokes the fire.
-// Every 3rd guess ignites another keyboard letter — the first is arbitrary, each one after
-// that must be adjacent (on the physical keyboard) to an already-lit letter.
+// Dragon guess count and current on fire letters
 const dragonGuessCount = ref(0)
 const fireLetters = ref([])
-// Key Master: 3 locked letters per color block typing until that color's key letter is
-// guessed, which clears both off the keyboard. Re-rolled every level while he's the boss.
-// Outside the direct boss fight only 'blue' is in play; during the boss fight itself
-// 'red' and 'purple' run alongside it as two more independent lock/key sets.
-// Maps letter -> color, e.g. { A: 'blue', F: 'red' }.
+// Key Master locked and keyed letters
 const lockedLetterColors = ref({})
 const keyLetterColors = ref({})
-// Little Elf: the one letter currently stolen off the keyboard (faded, untypable) until
-// it's handed back on the following guess — see runLittleElfTurn.
+// Little Elves stolen letter
 const littleElfStolenLetter = ref(null)
 const shakingKey = ref(null)
 const inventory = ref([])
 const inventoryItems = computed(() => inventory.value.map(id => ALL_ITEMS.find(i => i.id === id)).filter(Boolean))
 const pendingUseItem = ref(null)
 const allGuessedWords = ref([])
-// Every secret word assigned so far this game (freeplay/testing only — daily words are
-// pre-generated and deduped in daily.js), so the same answer never comes up twice
+// Secret words (all together to check they aren't the same)
 const usedSecretWords = ref([])
 
-// ── Class abilities ───────────────────────────────────────────────────────────
+// Class abilities (getting real long)
 const vorpalSwordActive = ref(false)
 const boardShaking = ref(false)
 const bossShaking = ref(false)
@@ -778,18 +791,16 @@ const fortuneTellerGreyLetters = ref([])
 const giantSnoreBars = ref(0)
 const giantAwake = ref(false)
 const damageBlockActive = ref(false)
-// Two Vampiric Daggers can be active at once (e.g. a Treasurer start item plus a shop pickup);
-// each stack adds +1 heal per correct guess. Capped at 2 — there's no way to acquire a third.
+// Counting vampiric daggers
 const vampiricDaggerStacks = ref(0)
 const MAX_VAMPIRIC_DAGGER_STACKS = 2
-// Recorder: once used, heals 1 HP every 4th guess (any guess, correct or not) for the
-// rest of the game — the count is never reset per enemy/stage, only on a full game reset.
-const recorderActive = ref(false)
+// Counting recorders
+const recorderStacks = ref(0)
+const MAX_RECORDER_STACKS = 2
 const recorderGuessCount = ref(0)
-// Ancient Tome: the definition fetched for its one-off reveal modal
+// Ancient tome
 const ancientTomeDefinition = ref('')
-// Dwarven Puzzle Box: consumed the moment its trigger condition (next enemy defeated)
-// fires, granting these two items and pausing the win flow with a modal until dismissed
+// Dwarven Puzzle Box
 const dwarvenPuzzleBoxItems = ref([])
 let _dwarvenPuzzleBoxContinue = null
 const changelingRevealPhase = ref(0)
@@ -798,7 +809,7 @@ const changelingRevealToId = ref(null)
 const changelingRevealIsSecond = ref(false)
 const changelingRevealCallback = ref(null)
 let _changelingRevealTimers = []
-const playerDamageAnim = ref(null)  // 'damage' | 'heal' | null
+const playerDamageAnim = ref(null)
 const enemyHitAnim = ref(false)
 const animatingHealth = ref(false)
 const poppingKey = ref(null)
@@ -809,7 +820,8 @@ const vorpalSwordAnim = ref(false)
 const healthPotionAnim = ref(false)
 const shieldAnim = ref(false)
 const crossbowAnim = ref(false)
-// Key Master unlock animation: { color, phase: 'meeting' | 'open' } while playing, else null
+
+// Key Master unlock animation
 const keyUnlockAnim = ref(null)
 const _keyUnlockQueue = []
 let _keyUnlockRunning = false
@@ -817,10 +829,10 @@ const bowTargeting = ref(false)
 const shadowObscuredCol = ref(null)
 const _pendingKeyPops = []
 
-// ── Boss / miniboss selection ─────────────────────────────────────────────────
+// Boss / miniboss selection ─────────────────────────────────────────────────
 const selectedMiniboss = ref(null)
 
-// ── Board component refs (plain object — not reactive) ────────────────────────
+// Board component refs 
 const boardRefs = {}
 
 function setBoardRef(id, el) {
@@ -828,14 +840,14 @@ function setBoardRef(id, el) {
   else delete boardRefs[id]
 }
 
-// ── Daily / freeplay ──────────────────────────────────────────────────────────
+// Daily / freeplay
 const dailyConfig = ref(null)
 const dailyLoading = ref(props.mode === 'daily')
 const dailyError = ref(false)
 const selectedBoss = ref(null)
 const bossWordIndex = ref(0)
 
-// ── Stats ─────────────────────────────────────────────────────────────────────
+// Stats
 const gameLog = ref([])
 const gameResult = ref(null)
 const copied = ref(false)
@@ -847,7 +859,7 @@ const lostWords = computed(() => {
   return lastEntry.boards.filter(b => !b.solved).map(b => b.secretWord)
 })
 
-// ── Know It All modal ─────────────────────────────────────────────────────────
+// Know It All modal - sphinx modal but original name know-it-all, visual name sphinx
 const knowItAllDefinition = ref('')
 const knowItAllModalPhase = ref('taunt')
 const knowItAllCanDismiss = ref(false)
@@ -860,7 +872,7 @@ let scholarDefinitionRunning = false
 const scholarDefinitionText = ref('')
 const scholarJealousShown = ref(false)
 
-// ── Board helpers ─────────────────────────────────────────────────────────────
+// Board helpers 
 function makeBoard(id, secretWord) {
   return {
     id,
@@ -890,33 +902,24 @@ function ordinal(n) {
   return ORDINALS[n - 1] ?? `${n}th`
 }
 
-// Smoke Bomb blocks the Abominable Snowman's forced-green-letter effect for one guess
+// Some smoke bomb logic
 function hintEnforcementBypassed(board) {
   return currentBoss.value?.id === 'abominable-snowman' && board.abilityBlockedRows.has(board.guesses.length)
 }
 
-// True from the moment Smoke Bomb is used until the next guess is submitted, since it
-// only blocks the boss's ability for that one upcoming guess
 const smokeBombActive = computed(() => {
   const board = boards.value[0]
   return !!board && board.abilityBlockedRows.has(board.guesses.length)
 })
 
-// Smoke Bomb blocks the Key Master's locks for one guess: locked letters become typable
-// and stop showing their padlock, but the keys stay on the keyboard and still clear their
-// color's locks as normal if guessed. Reverts the instant that guess is submitted, since
-// smokeBombActive itself expires then.
 const keyMasterLocksBypassed = computed(() =>
   currentBoss.value?.id === 'key-master' && smokeBombActive.value
 )
 
-// Smoke Bomb puts out the Dragon's fire for one guess: the flames vanish from the
-// keyboard and board for that guess (fireLetters itself is untouched, so the exact same
-// letters are still lit again right after) — the damage penalty for guessing through fire
-// was already gated on abilityBlockedRows in submitGuess, this just matches it visually.
 const dragonFireBypassed = computed(() =>
   currentBoss.value?.id === 'dragon' && smokeBombActive.value
 )
+// End smoke bomb logic
 
 function evaluateGuess(guess, secretWord) {
   const status = Array(guess.length).fill('absent')
@@ -1009,7 +1012,7 @@ const selectableClasses = computed(() => {
 const testingMinibossOptions = computed(() => {
   let pool = MINIBOSSES.filter(m => m.id !== 'hydra-miniboss')
   if (currentBoss.value?.id === 'abominable-snowman') {
-    pool = pool.filter(m => m.id !== 'cerberus' && m.id !== 'little-elf')
+    pool = pool.filter(m => m.id !== 'cerberus' && m.id !== 'little-elves')
   }
   if (currentBoss.value?.id === 'key-master') {
     pool = pool.filter(m => m.id !== 'mirror-spirit')
@@ -1195,7 +1198,7 @@ function handleKey(key) {
     shakingKey.value = null
     nextTick(() => { shakingKey.value = key })
     setTimeout(() => { if (shakingKey.value === key) shakingKey.value = null }, 400)
-  } else if (currentEnemy.value?.id === 'little-elf' && littleElfStolenLetter.value === key) {
+  } else if (currentEnemy.value?.id === 'little-elves' && littleElfStolenLetter.value === key) {
     // Stolen letter — does nothing until the elf hands it back
   } else if (currentGuess.value.length < wordLength.value) {
     currentGuess.value += key
@@ -1290,8 +1293,11 @@ function recordCurrentRound() {
   })
 }
 
-// Fire-and-forget: records this game's outcome for the Game Info page's win/loss tables
+// Fire-and-forget: records this game's outcome for the Game Info page's win/loss tables.
+// Testing-tab games are skipped — they're not real playthroughs (dev-only boss/miniboss/item
+// picks), so counting them would skew the win/loss stats.
 function recordGameEnd(result) {
+  if (props.mode === 'testing') return
   recordGameResult({
     classId: playerClass.value,
     bossId: currentBoss.value?.id,
@@ -1664,10 +1670,11 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
     if (dragonGuessCount.value % 3 === 0) igniteNextLetter()
   }
 
-  // Recorder: every guess (correct or not, across the whole game) counts toward the next heal
-  if (recorderActive.value) {
+  // Recorder: every guess (correct or not, across the whole game) counts toward the next
+  // heal — each stack adds +1 to how much that heal restores
+  if (recorderStacks.value > 0) {
     recorderGuessCount.value += 1
-    if (recorderGuessCount.value % 4 === 0) await animatePlayerHeal(plagueLordHeal(1))
+    if (recorderGuessCount.value % 4 === 0) await animatePlayerHeal(plagueLordHeal(recorderStacks.value))
   }
 
   // Key Master: guessing a color's key letter clears only that color's locks and key
@@ -1756,8 +1763,8 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
     }
   }
 
-  // Little Elf: steals the last letter of every guess off the keyboard until the next one
-  if (currentEnemy.value?.id === 'little-elf') {
+  // Little Elves: steals the last letter of every guess off the keyboard until the next one
+  if (currentEnemy.value?.id === 'little-elves') {
     for (const board of boards.value) {
       runLittleElfTurn(board, board.guesses.length - 1)
     }
@@ -1930,7 +1937,7 @@ function handleModalAction() {
     giantSnoreBars.value = 0
   damageBlockActive.value = false
   vampiricDaggerStacks.value = 0
-  recorderActive.value = false
+  recorderStacks.value = 0
   recorderGuessCount.value = 0
     giantAwake.value = false
     gameLog.value = []
@@ -1982,7 +1989,7 @@ function restartJourney() {
   giantSnoreBars.value = 0
   damageBlockActive.value = false
   vampiricDaggerStacks.value = 0
-  recorderActive.value = false
+  recorderStacks.value = 0
   recorderGuessCount.value = 0
   giantAwake.value = false
   gameLog.value = []
@@ -2098,7 +2105,7 @@ function confirmBossSelect(bossId) {
   if (bossId === 'hydra') {
     selectedMiniboss.value = 'hydra-miniboss'
     beginJourney()
-  } else if (props.mode === 'testing') {
+  } else if (props.mode === 'testing' || props.mode === 'freeplay') {
     selectedMiniboss.value = null
     screen.value = 'miniboss-select'
   } else {
@@ -2292,7 +2299,7 @@ async function startStage(stageNum) {
           pool = MINIBOSSES.filter(m => m.id !== 'hydra-miniboss')
           // Cerberus's 3-board mechanic conflicts with the Abominable Snowman's letter-freezing,
           // and so does Little Elf's letter-stealing — both fight over the same keyboard letters
-          if (currentBoss.value?.id === 'abominable-snowman') pool = pool.filter(m => m.id !== 'cerberus' && m.id !== 'little-elf')
+          if (currentBoss.value?.id === 'abominable-snowman') pool = pool.filter(m => m.id !== 'cerberus' && m.id !== 'little-elves')
           // Mirror Spirit forces every guess to be a palindrome, which combined with the Key
           // Master's locked letters can leave too few usable letters to form any valid guess
           if (currentBoss.value?.id === 'key-master') pool = pool.filter(m => m.id !== 'mirror-spirit')
@@ -2743,7 +2750,7 @@ function useItem() {
   } else if (item.effect === 'vampiric-dagger') {
     vampiricDaggerStacks.value = Math.min(vampiricDaggerStacks.value + 1, MAX_VAMPIRIC_DAGGER_STACKS)
   } else if (item.effect === 'recorder') {
-    recorderActive.value = true
+    recorderStacks.value = Math.min(recorderStacks.value + 1, MAX_RECORDER_STACKS)
   } else if (item.effect === 'ancient-tome') {
     const idx = inventory.value.indexOf(item.id)
     if (idx !== -1) inventory.value.splice(idx, 1)
