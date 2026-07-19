@@ -20,8 +20,8 @@ const routes = [
     props: { mode: 'testing' },
   },
   {
-    path: '/game-info',
-    name: 'game-info',
+    path: '/info',
+    name: 'info',
     component: () => import('@/views/GameInfoView.vue'),
   },
 ]
