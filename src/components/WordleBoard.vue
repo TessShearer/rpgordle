@@ -26,6 +26,7 @@
             'tile--targeting': bowTargeting && isInputRow(row - 1) && !isHintedCol(col - 1),
             'tile--danger': isDangerAt(row - 1, col - 1),
             'tile--fire': isFireAt(row - 1, col - 1),
+            'tile--mimic': isMimicDangerAt(row - 1, col - 1),
             'tile--wily-reveal': isWilyRevealAt(row - 1, col - 1),
             'tile--wily-appear': isWilyAppearAt(row - 1, col - 1),
             'tile--elf-slide-out': isElfSlideOutAt(row - 1, col - 1),
@@ -70,6 +71,7 @@ const props = defineProps({
   dangerLetters:   { type: Array, default: () => [] },
   fireLetters:     { type: Array, default: () => [] },
   keyLetterColors: { type: Object, default: () => ({}) },
+  mimicDangerLetters: { type: Array, default: () => [] },
 })
 
 defineEmits(['shake-end', 'bow-target'])
@@ -153,6 +155,12 @@ function isFireAt(row, col) {
   if (!isInputRow(row) || !props.fireLetters.length) return false
   const typed = props.currentGuess[col]
   return !!typed && props.fireLetters.includes(typed)
+}
+
+function isMimicDangerAt(row, col) {
+  if (!isInputRow(row) || !props.mimicDangerLetters.length) return false
+  const typed = props.currentGuess[col]
+  return !!typed && props.mimicDangerLetters.includes(typed)
 }
 
 function isWilyRevealAt(row, col) {

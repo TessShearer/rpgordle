@@ -1132,6 +1132,13 @@ body {
   background-color: rgba(88, 237, 205, 0.7);
 }
 
+/* Mimic danger letter: warns the player mid-type, matching .key--mimic's glow */
+.tile--mimic {
+  border: 2px solid #db2777;
+  box-shadow: 0 0 8px 3px rgba(219, 39, 119, 0.7), 0 0 18px 5px rgba(131, 24, 71, 0.4);
+  background-color: rgba(219, 39, 119, 0.7);
+}
+
 /* Dragon fire letter: warns the player mid-type, matching .key--fire's glow.
    Background is left to the animated flame (see "Dragon fire" section below) rather
    than a flat fill, so the flame shape stays visible against the tile. */
@@ -1336,6 +1343,12 @@ body {
 .key--stolen {
   opacity: 0;
   pointer-events: none;
+}
+
+/* Mimic: a letter reused from the last guess — retyping it deals +1 damage this guess */
+.key--mimic {
+  border: 2px solid #db2777;
+  box-shadow: 0 0 8px 3px rgba(219, 39, 119, 0.5), 0 0 18px 5px rgba(131, 24, 71, 0.3);
 }
 
 .lock-icon {

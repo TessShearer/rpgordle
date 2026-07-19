@@ -226,6 +226,7 @@
                   :graveyard-wobble="graveyardWobble"
                   :compact="false" :bow-targeting="bowTargeting && !board.solved" :danger-letters="dangerLetters"
                   :fire-letters="dragonFireBypassed ? [] : fireLetters" :key-letter-colors="keyLetterColors"
+                  :mimic-danger-letters="mimicDangerLetters"
                   @shake-end="boardShaking = false"
                   @bow-target="useBowAtCol($event)" />
               </template>
@@ -767,6 +768,8 @@ const lockedLetterColors = ref({})
 const keyLetterColors = ref({})
 // Little Elves stolen letter
 const littleElfStolenLetter = ref(null)
+// Mimic: letters from the last guess, reusing one deals +1 damage on the next guess
+const mimicDangerLetters = computed(() => boards.value.find(b => !b.solved)?.mimicDangerLetters ?? [])
 const shakingKey = ref(null)
 const inventory = ref([])
 const inventoryItems = computed(() => inventory.value.map(id => ALL_ITEMS.find(i => i.id === id)).filter(Boolean))
@@ -1176,6 +1179,7 @@ function keyClass(key) {
   const isFire = fireLetters.value.length > 0 && fireLetters.value.includes(key) && !dragonFireBypassed.value
   const isLocked = !!lockedLetterColors.value[key] && !keyMasterLocksBypassed.value
   const isStolen = littleElfStolenLetter.value === key
+  const isMimicDanger = mimicDangerLetters.value.length > 0 && mimicDangerLetters.value.includes(key)
   const status = keyboardStatuses.value[key]
   const classes = []
   if (status) classes.push(`key--${status}`)
@@ -1183,6 +1187,7 @@ function keyClass(key) {
   if (isFire) classes.push('key--fire')
   if (isLocked) classes.push('key--locked')
   if (isStolen) classes.push('key--stolen')
+  if (isMimicDanger) classes.push('key--mimic')
   return classes.join(' ')
 }
 
