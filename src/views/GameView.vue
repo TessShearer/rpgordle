@@ -267,7 +267,7 @@
               <div v-for="(row, r) in KEY_ROWS" :key="r" class="key-row">
                 <button v-for="key in row" :key="key" class="key"
                   :class="[keyClass(key), { 'key--pop': poppingKey === key, 'h-shake': shakingKey === key }]" @click="handleKey(key)">
-                  <span v-if="lockedLetterColors[key] && !keyMasterLocksBypassed" class="lock-icon" :class="`lock-icon--${lockedLetterColors[key]}`"></span><img v-if="keyLetterColors[key]" :src="KEY_IMAGES[keyLetterColors[key]]" class="key-icon" alt="" /><span v-if="dangerLetters.includes(key)" class="slime-icon"></span><span class="key-letter">{{ key }}</span>
+                  <span v-if="lockedLetterColors[key] && !keyMasterLocksBypassed" class="lock-icon" :class="`lock-icon--${lockedLetterColors[key]}`"></span><img v-if="keyLetterColors[key]" :src="KEY_IMAGES[keyLetterColors[key]]" class="key-icon" alt="" /><span v-if="dangerLetters.includes(key)" class="slime-icon"></span><template v-if="mimicDangerLetters.includes(key)"><span class="mimic-teeth mimic-teeth--top"></span><span class="mimic-teeth mimic-teeth--bottom"></span></template><span class="key-letter">{{ key }}</span>
                 </button>
               </div>
             </div>
@@ -1179,7 +1179,6 @@ function keyClass(key) {
   const isFire = fireLetters.value.length > 0 && fireLetters.value.includes(key) && !dragonFireBypassed.value
   const isLocked = !!lockedLetterColors.value[key] && !keyMasterLocksBypassed.value
   const isStolen = littleElfStolenLetter.value === key
-  const isMimicDanger = mimicDangerLetters.value.length > 0 && mimicDangerLetters.value.includes(key)
   const status = keyboardStatuses.value[key]
   const classes = []
   if (status) classes.push(`key--${status}`)
@@ -1187,7 +1186,6 @@ function keyClass(key) {
   if (isFire) classes.push('key--fire')
   if (isLocked) classes.push('key--locked')
   if (isStolen) classes.push('key--stolen')
-  if (isMimicDanger) classes.push('key--mimic')
   return classes.join(' ')
 }
 
@@ -1773,7 +1771,8 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
     }
   }
 
-  // Mimic: reusing a letter from the previous guess deals +1 damage.
+  // Mimic: reusing a letter from the previous guess deals +1 damage. Green (correct-position)
+  // letters are excluded from the danger set — they're confirmed correct, not a risky reuse.
   if (currentEnemy.value?.id === 'mimic') {
     for (const board of boards.value) {
       const guessRowIndex = board.guesses.length - 1
@@ -1782,7 +1781,14 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
         && board.mimicDangerLetters.some(l => submitted.includes(l))) {
         mimicPenalty = 1
       }
-      board.mimicDangerLetters = board.solved ? [] : [...new Set(submitted.split(''))]
+      if (board.solved) {
+        board.mimicDangerLetters = []
+      } else {
+        const nonGreenLetters = evaluateGuess(submitted, board.secretWord)
+          .filter(c => c.status !== 'correct')
+          .map(c => c.letter)
+        board.mimicDangerLetters = [...new Set(nonGreenLetters)]
+      }
     }
   }
 
