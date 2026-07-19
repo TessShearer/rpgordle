@@ -1668,8 +1668,17 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
   }
   currentGuess.value = ''
 
-  // Dragon: every guess (correct or not, across the whole game) stokes the fire
+  // Dragon: guessing an on-fire letter puts it out — snapshot which fire letters this
+  // guess actually touches (dragonFireHitLetters, used by the damage penalty further
+  // down) before extinguishing them, then stoke the guess counter. igniteNextLetter
+  // already starts fresh from the whole alphabet when fireLetters is empty, so spreading
+  // still works correctly on the guess right after the last flame gets put out.
+  let dragonFireHitLetters = []
   if (currentBoss.value?.id === 'dragon') {
+    dragonFireHitLetters = fireLetters.value.filter(l => submitted.includes(l))
+    if (dragonFireHitLetters.length) {
+      fireLetters.value = fireLetters.value.filter(l => !submitted.includes(l))
+    }
     dragonGuessCount.value += 1
     if (dragonGuessCount.value % 3 === 0) igniteNextLetter()
   }
@@ -1841,9 +1850,11 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
       }
     }
 
-    const dragonPenalty = (!abilityBlocked
-      && currentBoss.value?.id === 'dragon'
-      && fireLetters.value.some(l => submitted.includes(l))) ? 1 : 0
+    // Every on-fire letter actually typed in this guess deals its own point of damage
+    // (a repeated on-fire letter counts once per occurrence), not just a flat +1.
+    const dragonPenalty = (!abilityBlocked && currentBoss.value?.id === 'dragon')
+      ? submitted.split('').filter(l => dragonFireHitLetters.includes(l)).length
+      : 0
 
     if (currentEnemy.value?.id === 'slumbering-giant') {
       // Slumbering Giant: wrong guesses fill snore bars while asleep, not player health.

@@ -38,7 +38,7 @@ export const MINIBOSSES = [
   { id: 'slumbering-giant', name: 'Slumbering Giant', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'You won\'t take any damage from a wrong guess...until you wake her up.' },
   { id: 'wily-magician', name: 'Wily Magician', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'He places one piece of false information in every guess' },
   { id: 'little-elves', name: 'Little Elves', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: ' the last letter from your guess...but always bring it back' },
-  { id: 'mimic', name: 'Mimic', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'Unless you are correct, using letters two guesses in a row will deal an extra damage' },
+  { id: 'mimic', name: 'Mimic', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'Using a letter two guesses in a row will do extra damage, unless you put it in the right place.' },
   { id: 'hydra-miniboss', name: 'Hydra', regen: 3, health: 1, wordLength: 5, boardCount: 2, effect: 'Cut off its head!' },
 
 ]
@@ -237,9 +237,9 @@ export const BOSSES = [
     health: 2,
     regen: 0,
     wordLength: 5,
-    effect: 'A fire that deals +1 damage will spread across your keyboard.',
+    effect: 'Guessing an on fire letter will deal an extra damage and douse the flame.',
     enhancedEffect: 'Be careful of the flames',
-    announcement: 'Your quest is to defeat the Dragon, he will breathe fire that spreads onto your keyboard. If any part of your guess is on fire you will take +1 damage"',
+    announcement: 'Your quest is to defeat the Dragon, he will breathe fire that spreads onto your keyboard. Every burning letter in your guess will deal an extra damager"',
     enhancedAnnouncement: 'You found the boss! Be careful of the flames.',
   },
   {
