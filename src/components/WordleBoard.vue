@@ -188,17 +188,23 @@ function beetleColorAt(row, col) {
   return typed ? (props.beetleColors[typed] ?? null) : null
 }
 
-function isObscured(row, col) {
+// Shadow Sorcerer, already-submitted row: fully hidden, letter never rendered.
+function isObscuredCommitted(row, col) {
   if (props.board.solved) return false
   if (props.board.abilityBlockedRows.has(row)) return false
-  if (row < props.board.guesses.length) {
-    return props.board.obscuredGuessPositions?.[row] === col &&
-           props.board.obscuredGuessPositions[row] !== null
-  }
-  if (row === props.board.guesses.length) {
-    return props.shadowObscuredCol !== null && props.shadowObscuredCol === col
-  }
-  return false
+  if (row >= props.board.guesses.length) return false
+  return props.board.obscuredGuessPositions?.[row] === col &&
+         props.board.obscuredGuessPositions[row] !== null
+}
+
+// Shadow Sorcerer, current input row: the letter still renders (so the player can check
+// what they typed) but at reduced opacity — it only goes fully dark once submitted, at
+// which point isObscuredCommitted takes over for that same column.
+function isObscuredTyping(row, col) {
+  if (props.board.solved) return false
+  if (props.board.abilityBlockedRows.has(row)) return false
+  if (row !== props.board.guesses.length) return false
+  return props.shadowObscuredCol !== null && props.shadowObscuredCol === col
 }
 
 function isElfSlideOutAt(row, col) {
@@ -223,7 +229,7 @@ function tileChar(row, col) {
   if (props.compact && props.board.solved) {
     return props.board.guesses[props.board.guesses.length - 1]?.[col] ?? ''
   }
-  if (isObscured(row, col)) return ''
+  if (isObscuredCommitted(row, col)) return ''
   if (isElfHidden(row, col)) return ''
   if (row < props.board.guesses.length) return props.board.guesses[row][col] ?? ''
   if (row === props.board.guesses.length) return props.currentGuess[col] ?? hintLetterAt(col) ?? ''
@@ -232,7 +238,8 @@ function tileChar(row, col) {
 
 function tileClass(row, col) {
   if (props.compact && props.board.solved) return 'tile--correct tile--compact-shrink'
-  if (isObscured(row, col)) return 'tile--obscured'
+  if (isObscuredCommitted(row, col)) return 'tile--obscured'
+  if (isObscuredTyping(row, col)) return 'tile--filled tile--obscured-typing'
   if (row < props.board.guesses.length) return `tile--${evaluatedRows.value[row][col].status}`
   if (row === props.board.guesses.length && props.gameState === 'playing' && !props.board.solved) {
     const typed = props.currentGuess[col]
