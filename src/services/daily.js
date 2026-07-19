@@ -58,10 +58,11 @@ async function getRecentDailies(dateKey) {
 async function generateDaily(dateKey) {
   const recents = await getRecentDailies(dateKey)
 
-  // Boss: exclude any boss used in the last 3 days
+  // Boss: exclude any boss used in the last 3 days, and any testing-only boss
   const recentBossIds = recents.map(r => r.bossId).filter(Boolean)
-  const bossPool      = BOSSES.filter(b => !recentBossIds.includes(b.id))
-  const boss          = pickRandom(bossPool.length ? bossPool : BOSSES)
+  const dailyEligible  = BOSSES.filter(b => !b.testOnly)
+  const bossPool      = dailyEligible.filter(b => !recentBossIds.includes(b.id))
+  const boss          = pickRandom(bossPool.length ? bossPool : dailyEligible)
 
   // Classes: exclude any class offered yesterday
   const yesterdayClassIds = recents[0]?.classIds ?? []

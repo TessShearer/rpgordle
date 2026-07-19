@@ -93,7 +93,7 @@
     <section class="info-section mb-5">
       <h2 class="info-heading mb-3">Bosses</h2>
       <div class="info-grid mb-4">
-        <div v-for="boss in BOSSES" :key="boss.id" class="info-card">
+        <div v-for="boss in visibleBosses" :key="boss.id" class="info-card">
           <div class="art-placeholder art-placeholder--class mb-3">Art for {{ boss.name }}</div>
           <p class="info-name">{{ boss.name }}</p>
           <p class="info-desc">{{ boss.effect }}</p>
@@ -152,7 +152,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="boss in BOSSES" :key="boss.id">
+            <tr v-for="boss in visibleBosses" :key="boss.id">
               <td>{{ boss.name }}</td>
               <td>{{ bossStats[boss.id].losses }}</td>
               <td>{{ bossStats[boss.id].wins }}</td>
@@ -233,8 +233,11 @@ function tallyBy(key, entities) {
   return tallies
 }
 
+// Testing-only bosses (e.g. Bug Guy, still in progress) are hidden from this reference page
+const visibleBosses = computed(() => BOSSES.filter(b => !b.testOnly))
+
 const classStats = computed(() => tallyBy('classId', CLASSES))
-const bossStats = computed(() => tallyBy('bossId', BOSSES))
+const bossStats = computed(() => tallyBy('bossId', visibleBosses.value))
 
 function winRate(tally) {
   const total = tally.wins + tally.losses

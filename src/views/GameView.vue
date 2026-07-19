@@ -23,7 +23,7 @@
         :show-randomize="mode !== 'daily'" @select="selectedClass = $event" @confirm="selectClass($event)" />
 
       <!-- Boss Select -->
-      <BossSelect v-else-if="screen === 'boss-select'" :bosses="BOSSES" :selected-boss-id="selectedBoss"
+      <BossSelect v-else-if="screen === 'boss-select'" :bosses="selectableBosses" :selected-boss-id="selectedBoss"
         :show-randomize="mode !== 'daily'" @select="selectedBoss = $event" @confirm="confirmBossSelect" />
 
       <!-- Miniboss Select -->
@@ -226,7 +226,7 @@
                   :graveyard-wobble="graveyardWobble"
                   :compact="false" :bow-targeting="bowTargeting && !board.solved" :danger-letters="dangerLetters"
                   :fire-letters="dragonFireBypassed ? [] : fireLetters" :key-letter-colors="keyLetterColors"
-                  :mimic-danger-letters="mimicDangerLetters"
+                  :mimic-danger-letters="mimicDangerLetters" :beetle-colors="beetleColors"
                   @shake-end="boardShaking = false"
                   @bow-target="useBowAtCol($event)" />
               </template>
@@ -265,9 +265,9 @@
             </div>
             <div v-if="gameState === 'playing'" class="keyboard">
               <div v-for="(row, r) in KEY_ROWS" :key="r" class="key-row">
-                <button v-for="key in row" :key="key" class="key"
+                <button v-for="key in row" :key="key" class="key" :ref="(el) => setKeyRef(key, el)"
                   :class="[keyClass(key), { 'key--pop': poppingKey === key, 'h-shake': shakingKey === key }]" @click="handleKey(key)">
-                  <span v-if="lockedLetterColors[key] && !keyMasterLocksBypassed" class="lock-icon" :class="`lock-icon--${lockedLetterColors[key]}`"></span><img v-if="keyLetterColors[key]" :src="KEY_IMAGES[keyLetterColors[key]]" class="key-icon" alt="" /><span v-if="dangerLetters.includes(key)" class="slime-icon"></span><template v-if="mimicDangerLetters.includes(key)"><span class="mimic-teeth mimic-teeth--top"></span><span class="mimic-teeth mimic-teeth--bottom"></span></template><span class="key-letter">{{ key }}</span>
+                  <span v-if="lockedLetterColors[key] && !keyMasterLocksBypassed" class="lock-icon" :class="`lock-icon--${lockedLetterColors[key]}`"></span><img v-if="keyLetterColors[key]" :src="KEY_IMAGES[keyLetterColors[key]]" class="key-icon" alt="" /><span v-if="dangerLetters.includes(key)" class="slime-icon"></span><template v-if="mimicDangerLetters.includes(key)"><span class="mimic-teeth mimic-teeth--top"></span><span class="mimic-teeth mimic-teeth--bottom"></span></template><span v-if="beetleColors[key]" class="beetle-icon" :class="`beetle-icon--${beetleColors[key]}`" :ref="(el) => setBeetleRef(key, el)"></span><span class="key-letter">{{ key }}</span>
                 </button>
               </div>
             </div>
@@ -770,6 +770,9 @@ const keyLetterColors = ref({})
 const littleElfStolenLetter = ref(null)
 // Mimic: letters from the last guess, reusing one deals +1 damage on the next guess
 const mimicDangerLetters = computed(() => boards.value.find(b => !b.solved)?.mimicDangerLetters ?? [])
+// Bug Guy: letter -> 'green' (heals 1 when guessed) | 'red' (damages 1 when guessed).
+// Re-rolled fresh each new word, then scattered to new letters after every guess.
+const beetleColors = ref({})
 const shakingKey = ref(null)
 const inventory = ref([])
 const inventoryItems = computed(() => inventory.value.map(id => ALL_ITEMS.find(i => i.id === id)).filter(Boolean))
@@ -835,12 +838,27 @@ const _pendingKeyPops = []
 // Boss / miniboss selection ─────────────────────────────────────────────────
 const selectedMiniboss = ref(null)
 
-// Board component refs 
+// Board component refs
 const boardRefs = {}
 
 function setBoardRef(id, el) {
   if (el) boardRefs[id] = el
   else delete boardRefs[id]
+}
+
+// Keyboard key button refs (by letter) and Bug Guy beetle icon refs (by letter) — used
+// by relocateBugGuyBeetles' FLIP slide to measure old/new positions
+const keyRefs = {}
+const beetleRefs = {}
+
+function setKeyRef(key, el) {
+  if (el) keyRefs[key] = el
+  else delete keyRefs[key]
+}
+
+function setBeetleRef(key, el) {
+  if (el) beetleRefs[key] = el
+  else delete beetleRefs[key]
 }
 
 // Daily / freeplay
@@ -1005,6 +1023,12 @@ const selectableClasses = computed(() => {
     return CLASSES.filter(c => dailyConfig.value.classIds.includes(c.id))
   }
   return CLASSES
+})
+
+// Bug Guy (and any future testOnly boss) is hidden from Daily/Custom Play — testing mode only
+const selectableBosses = computed(() => {
+  if (props.mode === 'testing') return BOSSES
+  return BOSSES.filter(b => !b.testOnly)
 })
 
 // Testing screen's manual miniboss picker — Hydra's own miniboss never shows up here since
@@ -1421,6 +1445,75 @@ async function doFairyScramble(board) {
   })
 }
 
+// ── Bug Guy FLIP beetle slide ─────────────────────────────────────────────────
+// Scatters the beetles to a fresh set of letters (never reusing any letter that was
+// just occupied) and slides each one from its old keyboard key to its new one, using
+// the same FLIP technique as doFairyScramble above — except here the "tile" being
+// animated is a freshly-created element (the v-if'd beetle icon on the new key), not a
+// persistent one, so the invert step measures the OLD key's rect rather than the
+// element's own previous rect.
+async function relocateBugGuyBeetles() {
+  const isBoss = isBossFight.value
+  const greenCount = isBoss ? 4 : 1
+  const redCount = isBoss ? 9 : 3
+  const oldColors = beetleColors.value
+  const oldLetters = Object.keys(oldColors)
+
+  const oldRects = {}
+  for (const letter of oldLetters) {
+    const el = keyRefs[letter]
+    if (el) oldRects[letter] = el.getBoundingClientRect()
+  }
+
+  const alpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').filter(l => !oldLetters.includes(l))
+  const shuffled = [...alpha].sort(() => Math.random() - 0.5)
+  const newLetters = shuffled.slice(0, greenCount + redCount)
+  const newColors = {}
+  newLetters.slice(0, greenCount).forEach(l => { newColors[l] = 'green' })
+  newLetters.slice(greenCount).forEach(l => { newColors[l] = 'red' })
+
+  // Pair old → new within each color group. All beetles of the same color look
+  // identical, so it doesn't matter which specific old one "becomes" which new one —
+  // only that the counts line up.
+  const oldGreens = oldLetters.filter(l => oldColors[l] === 'green')
+  const oldReds = oldLetters.filter(l => oldColors[l] === 'red')
+  const newGreens = newLetters.slice(0, greenCount)
+  const newReds = newLetters.slice(greenCount)
+  const fromLetterFor = {}
+  newGreens.forEach((l, i) => { if (oldGreens[i]) fromLetterFor[l] = oldGreens[i] })
+  newReds.forEach((l, i) => { if (oldReds[i]) fromLetterFor[l] = oldReds[i] })
+
+  beetleColors.value = newColors
+  await nextTick()
+
+  const moved = []
+  for (const [newLetter, oldLetter] of Object.entries(fromLetterFor)) {
+    const oldRect = oldRects[oldLetter]
+    const newEl = beetleRefs[newLetter]
+    if (!oldRect || !newEl) continue
+    const newRect = newEl.getBoundingClientRect()
+    const dx = oldRect.left - newRect.left
+    const dy = oldRect.top - newRect.top
+    if (dx === 0 && dy === 0) continue
+    newEl.style.transition = 'none'
+    newEl.style.transform = `translate(${dx}px, ${dy}px)`
+    moved.push(newEl)
+  }
+
+  if (moved.length) {
+    document.body.getBoundingClientRect() // force reflow so the inverted position registers
+    moved.forEach(el => {
+      el.style.transition = 'transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1)'
+      el.style.transform = ''
+    })
+    await new Promise(r => setTimeout(r, 450))
+    moved.forEach(el => {
+      el.style.transition = ''
+      el.style.transform = ''
+    })
+  }
+}
+
 async function animatePlayerDamage(amount) {
   animatingHealth.value = true
   for (let i = 0; i < amount; i++) {
@@ -1670,17 +1763,15 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
 
   // Dragon: guessing an on-fire letter puts it out — snapshot which fire letters this
   // guess actually touches (dragonFireHitLetters, used by the damage penalty further
-  // down) before extinguishing them, then stoke the guess counter. igniteNextLetter
-  // already starts fresh from the whole alphabet when fireLetters is empty, so spreading
-  // still works correctly on the guess right after the last flame gets put out.
+  // down) before extinguishing them. The guess counter/spread trigger itself happens at
+  // the very end of this function, AFTER damage is applied — a newly-spread letter must
+  // never be blamed for damage from the same guess that lit it.
   let dragonFireHitLetters = []
   if (currentBoss.value?.id === 'dragon') {
     dragonFireHitLetters = fireLetters.value.filter(l => submitted.includes(l))
     if (dragonFireHitLetters.length) {
       fireLetters.value = fireLetters.value.filter(l => !submitted.includes(l))
     }
-    dragonGuessCount.value += 1
-    if (dragonGuessCount.value % 3 === 0) igniteNextLetter()
   }
 
   // Recorder: every guess (correct or not, across the whole game) counts toward the next
@@ -1856,6 +1947,17 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
       ? submitted.split('').filter(l => dragonFireHitLetters.includes(l)).length
       : 0
 
+    // Bug Guy: every green beetle typed heals 1, every red beetle typed deals 1 — both
+    // stack per occurrence, same counting rule as the dragon's fire above. A smoke bomb
+    // silences the beetles entirely for the guess (neither bite nor heal).
+    let bugGuyHeal = 0
+    let bugGuyDamage = 0
+    if (!abilityBlocked && currentBoss.value?.id === 'bug-guy') {
+      bugGuyHeal = submitted.split('').filter(l => beetleColors.value[l] === 'green').length
+      bugGuyDamage = submitted.split('').filter(l => beetleColors.value[l] === 'red').length
+    }
+    if (bugGuyHeal > 0) await animatePlayerHeal(plagueLordHeal(bugGuyHeal))
+
     if (currentEnemy.value?.id === 'slumbering-giant') {
       // Slumbering Giant: wrong guesses fill snore bars while asleep, not player health.
       // Waking up (guess 4) is a big +5 hit; every guess after is a smaller ongoing +1 —
@@ -1873,7 +1975,7 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
           damageBlockActive.value = false
         } else {
           const giantPenalty = justWoke ? 5 : 1
-          await animatePlayerDamage((doubleDamage ? 2 : 1) + necroPenalty + dragonPenalty + giantPenalty + mimicPenalty)
+          await animatePlayerDamage((doubleDamage ? 2 : 1) + necroPenalty + dragonPenalty + giantPenalty + mimicPenalty + bugGuyDamage)
           if (playerHealth.value <= 0) {
             recordCurrentRound()
             gameState.value = 'lost'
@@ -1888,7 +1990,7 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
       if (damageBlockActive.value) {
         damageBlockActive.value = false
       } else {
-        await animatePlayerDamage((doubleDamage ? 2 : 1) + necroPenalty + dragonPenalty + mimicPenalty)
+        await animatePlayerDamage((doubleDamage ? 2 : 1) + necroPenalty + dragonPenalty + mimicPenalty + bugGuyDamage)
         if (playerHealth.value <= 0) {
           recordCurrentRound()
           gameState.value = 'lost'
@@ -1927,6 +2029,22 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
     }
   }
   // If anyBoardSolvedThisGuess but not allSolved: game continues, no damage
+
+  // Dragon: every guess (correct or not, across the whole game) stokes the fire — this
+  // runs last, after this guess's own fire damage has already been applied, so the
+  // letter it ignites can only ever be blamed for damage on the NEXT guess.
+  // igniteNextLetter already starts fresh from the whole alphabet when fireLetters is
+  // empty, so spreading still works correctly right after the last flame gets put out.
+  if (currentBoss.value?.id === 'dragon') {
+    dragonGuessCount.value += 1
+    if (dragonGuessCount.value % 3 === 0) igniteNextLetter()
+  }
+
+  // Bug Guy: scatter the beetles to new letters after every guess (skipped when this
+  // guess just won the round — a fresh set gets placed for the next word anyway).
+  if (currentBoss.value?.id === 'bug-guy' && !allSolved) {
+    await relocateBugGuyBeetles()
+  }
 }
 
 // ── Modal ─────────────────────────────────────────────────────────────────────
@@ -1956,6 +2074,7 @@ function handleModalAction() {
     lockedLetterColors.value = {}
     keyLetterColors.value = {}
     littleElfStolenLetter.value = null
+    beetleColors.value = {}
     inventory.value = []
     boards.value = []
     allGuessedWords.value = []
@@ -2008,6 +2127,7 @@ function restartJourney() {
   lockedLetterColors.value = {}
   keyLetterColors.value = {}
   littleElfStolenLetter.value = null
+  beetleColors.value = {}
   inventory.value = []
   boards.value = []
   allGuessedWords.value = []
@@ -2410,6 +2530,25 @@ function igniteNextLetter() {
   queueKeyboardPops([letter], (l) => { fireLetters.value = [...fireLetters.value, l] })
 }
 
+// Bug Guy: scatter fresh green/red beetles across the keyboard for this new word. Only the
+// initial placement pops in via _pendingKeyPops — repositioning after each guess instead
+// slides the beetles from their old letters to their new ones (see relocateBugGuyBeetles).
+function applyBugGuyBeetles(isBoss) {
+  if (currentBoss.value?.id !== 'bug-guy') return
+  const alpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+  const greenCount = isBoss ? 4 : 1
+  const redCount = isBoss ? 9 : 3
+  const picked = new Set()
+  while (picked.size < greenCount + redCount) picked.add(alpha[Math.floor(Math.random() * 26)])
+  const letters = [...picked]
+  letters.slice(0, greenCount).forEach(letter => {
+    _pendingKeyPops.push({ letter, before: () => { beetleColors.value = { ...beetleColors.value, [letter]: 'green' } } })
+  })
+  letters.slice(greenCount).forEach(letter => {
+    _pendingKeyPops.push({ letter, before: () => { beetleColors.value = { ...beetleColors.value, [letter]: 'red' } } })
+  })
+}
+
 function applyDangerLetters(isBoss) {
   if (currentBoss.value?.id !== 'gelatinous-cube') return
   const alpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -2610,6 +2749,7 @@ async function loadWord(showModal) {
   lockedLetterColors.value = {}
   keyLetterColors.value = {}
   littleElfStolenLetter.value = null
+  beetleColors.value = {}
   fortuneTellerGreyLetters.value = []
   giantSnoreBars.value = 0
   damageBlockActive.value = false
@@ -2651,6 +2791,7 @@ async function loadWord(showModal) {
     applyDangerLetters(isBoss)
     applyFortuneTellerHints()
     applyKeyMasterLocks()
+    applyBugGuyBeetles(isBoss)
     finishWordLoad(showModal)
     return
   }
@@ -2681,6 +2822,7 @@ async function loadWord(showModal) {
     applyDangerLetters(isBoss)
     applyFortuneTellerHints()
     applyKeyMasterLocks()
+    applyBugGuyBeetles(isBoss)
     finishWordLoad(showModal)
   } catch {
     gameState.value = 'error'

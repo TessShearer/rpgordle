@@ -1437,6 +1437,29 @@ body {
   pointer-events: none;
 }
 
+/* Bug Guy: a small colored circle marking a beetle-occupied letter, shown on both the
+   keyboard key and the matching input tile — green heals 1 when guessed, red damages 1. */
+.beetle-icon {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 55%;
+  height: 55%;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.beetle-icon--green {
+  background: #22c55e;
+  box-shadow: 0 0 6px 2px rgba(34, 197, 94, 0.7);
+}
+
+.beetle-icon--red {
+  background: #ef4444;
+  box-shadow: 0 0 6px 2px rgba(239, 68, 68, 0.7);
+}
+
 /* ── Dragon fire: small CSS flame licking up behind a lit key/tile ──────────*/
 .key--fire::before,
 .key--fire::after,

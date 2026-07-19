@@ -37,6 +37,7 @@
           @click="bowTargeting && isInputRow(row - 1) && !isHintedCol(col - 1) && $emit('bow-target', col - 1)"
         >
           <img v-if="keyLetterColorAt(row - 1, col - 1)" :src="KEY_IMAGES[keyLetterColorAt(row - 1, col - 1)]" class="key-icon" alt="" />
+          <span v-if="beetleColorAt(row - 1, col - 1)" class="beetle-icon" :class="`beetle-icon--${beetleColorAt(row - 1, col - 1)}`"></span>
           <span class="tile-letter">{{ tileChar(row - 1, col - 1) }}</span>
           <div v-if="bowTargeting && isInputRow(row - 1) && !isHintedCol(col - 1)" class="crosshair-overlay">
             <div class="crosshair-ring"></div>
@@ -72,6 +73,7 @@ const props = defineProps({
   fireLetters:     { type: Array, default: () => [] },
   keyLetterColors: { type: Object, default: () => ({}) },
   mimicDangerLetters: { type: Array, default: () => [] },
+  beetleColors:    { type: Object, default: () => ({}) },
 })
 
 defineEmits(['shake-end', 'bow-target'])
@@ -177,6 +179,12 @@ function keyLetterColorAt(row, col) {
   if (!isInputRow(row)) return null
   const typed = props.currentGuess[col]
   return typed ? (props.keyLetterColors[typed] ?? null) : null
+}
+
+function beetleColorAt(row, col) {
+  if (!isInputRow(row)) return null
+  const typed = props.currentGuess[col]
+  return typed ? (props.beetleColors[typed] ?? null) : null
 }
 
 function isObscured(row, col) {

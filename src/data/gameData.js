@@ -268,4 +268,16 @@ export const BOSSES = [
     announcement: 'Your quest is to defeat the Hydra by cutting off its head(s?)',
     enhancedAnnouncement: 'The Hydra grew more heads and returned! Give it another go.',
   },
+    {
+    id: 'bug-guy',
+    name: 'Dev Version of Beetle Guy',
+    health: 2,
+    regen: 0,
+    testOnly: true,
+    wordLength: 5,
+    effect: 'Beetles on the board can heal or harm you',
+    enhancedEffect: 'So...many...beetles',
+    announcement: 'Your quest is to defeat mr. evil beetle man. Each health beetle heals you each poison beetle harms you."',
+    enhancedAnnouncement: 'You found the boss! eheheheh...more beetles. Many more beetles.',
+  },
 ]
