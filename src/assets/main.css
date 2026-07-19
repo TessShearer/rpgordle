@@ -1125,11 +1125,11 @@ body {
   background: rgba(83, 141, 78, 0.07);
 }
 
-/* Gelatinous cube danger letter: warns the player mid-type, matching .key--danger's glow */
+/* Gelatinous cube danger letter: warns the player mid-type, matching .key--danger's glow
+   and topped with the same .slime-icon puddle-and-drip overlay used on the keyboard. */
 .tile--danger {
-  border: 2px solid #45c5a9;
-  box-shadow: 0 0 8px 3px rgba(88, 237, 205, 0.7), 0 0 18px 5px rgba(13, 115, 119, 0.4);
-  background-color: rgba(88, 237, 205, 0.7);
+  border: 2px solid #73f076;
+  box-shadow: 0 0 8px 3px rgba(136, 234, 160, 0.7), 0 0 18px 5px rgba(13, 115, 119, 0.4);
 }
 
 /* Mimic danger letter: warns the player mid-type with the same pink used by the

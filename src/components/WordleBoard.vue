@@ -38,6 +38,7 @@
         >
           <img v-if="keyLetterColorAt(row - 1, col - 1)" :src="KEY_IMAGES[keyLetterColorAt(row - 1, col - 1)]" class="key-icon" alt="" />
           <span v-if="beetleColorAt(row - 1, col - 1)" class="beetle-icon" :class="`beetle-icon--${beetleColorAt(row - 1, col - 1)}`"></span>
+          <span v-if="isDangerAt(row - 1, col - 1)" class="slime-icon"></span>
           <span class="tile-letter">{{ tileChar(row - 1, col - 1) }}</span>
           <div v-if="bowTargeting && isInputRow(row - 1) && !isHintedCol(col - 1)" class="crosshair-overlay">
             <div class="crosshair-ring"></div>
