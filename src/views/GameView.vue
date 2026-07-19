@@ -266,7 +266,7 @@
               <div v-for="(row, r) in KEY_ROWS" :key="r" class="key-row">
                 <button v-for="key in row" :key="key" class="key"
                   :class="[keyClass(key), { 'key--pop': poppingKey === key, 'h-shake': shakingKey === key }]" @click="handleKey(key)">
-                  <span v-if="lockedLetterColors[key] && !keyMasterLocksBypassed" class="lock-icon" :class="`lock-icon--${lockedLetterColors[key]}`"></span><img v-if="keyLetterColors[key]" :src="KEY_IMAGES[keyLetterColors[key]]" class="key-icon" alt="" /><span class="key-letter">{{ key }}</span>
+                  <span v-if="lockedLetterColors[key] && !keyMasterLocksBypassed" class="lock-icon" :class="`lock-icon--${lockedLetterColors[key]}`"></span><img v-if="keyLetterColors[key]" :src="KEY_IMAGES[keyLetterColors[key]]" class="key-icon" alt="" /><span v-if="dangerLetters.includes(key)" class="slime-icon"></span><span class="key-letter">{{ key }}</span>
                 </button>
               </div>
             </div>
@@ -893,6 +893,7 @@ function makeBoard(id, secretWord) {
     littleElfStealCell: null,   // Little Elf — { row, col, letter } currently stolen (tile hidden)
     littleElfSlideOutCell: null, // Little Elf — { row, col } tile mid slide-away-and-vanish
     littleElfSlideInCell: null,  // Little Elf — { row, col } tile mid slide-back-into-place
+    mimicDangerLetters: [], // Mimic — unique letters from the last guess; reusing one deals +1 damage next guess
     solved: false,
   }
 }
@@ -1687,6 +1688,10 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
     }
   }
 
+  // Mimic: set below, once the guess just submitted is checked against the danger
+  // letters left over from the previous guess. Combined into the damage total further down.
+  let mimicPenalty = 0
+
   // Snapshot absent letters from PREVIOUS guesses before this one is recorded.
   // Used by the Necromancer boss-fight penalty — must be computed here, not after
   // board.guesses is updated, or the current guess would evaluate itself as absent.
@@ -1763,6 +1768,19 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
     }
   }
 
+  // Mimic: reusing a letter from the previous guess deals +1 damage.
+  if (currentEnemy.value?.id === 'mimic') {
+    for (const board of boards.value) {
+      const guessRowIndex = board.guesses.length - 1
+      if (board === firstActive
+        && !board.abilityBlockedRows.has(guessRowIndex)
+        && board.mimicDangerLetters.some(l => submitted.includes(l))) {
+        mimicPenalty = 1
+      }
+      board.mimicDangerLetters = board.solved ? [] : [...new Set(submitted.split(''))]
+    }
+  }
+
   // Little Elves: steals the last letter of every guess off the keyboard until the next one
   if (currentEnemy.value?.id === 'little-elves') {
     for (const board of boards.value) {
@@ -1833,7 +1851,7 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
           damageBlockActive.value = false
         } else {
           const giantPenalty = justWoke ? 5 : 1
-          await animatePlayerDamage((doubleDamage ? 2 : 1) + necroPenalty + dragonPenalty + giantPenalty)
+          await animatePlayerDamage((doubleDamage ? 2 : 1) + necroPenalty + dragonPenalty + giantPenalty + mimicPenalty)
           if (playerHealth.value <= 0) {
             recordCurrentRound()
             gameState.value = 'lost'
@@ -1848,7 +1866,7 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
       if (damageBlockActive.value) {
         damageBlockActive.value = false
       } else {
-        await animatePlayerDamage((doubleDamage ? 2 : 1) + necroPenalty + dragonPenalty)
+        await animatePlayerDamage((doubleDamage ? 2 : 1) + necroPenalty + dragonPenalty + mimicPenalty)
         if (playerHealth.value <= 0) {
           recordCurrentRound()
           gameState.value = 'lost'

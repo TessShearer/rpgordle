@@ -1269,6 +1269,44 @@ body {
   box-shadow: 0 0 8px 3px rgba(88, 237, 205, 0.7), 0 0 18px 5px rgba(13, 115, 119, 0.4);
 }
 
+/* Gelatinous Cube: a static coat of slime clinging to the top of a danger letter, with
+   two uneven drips hanging down — no animation, just a still puddle-and-drip silhouette. */
+.slime-icon {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 60%;
+  background: #45c5a9;
+  border-radius: 0 0 45% 45% / 0 0 55% 55%;
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.slime-icon::before {
+  content: '';
+  position: absolute;
+  left: 10%;
+  top: 45%;
+  width: 24%;
+  height: 60%;
+  background: #45c5a9;
+  border-radius: 0 0 50% 50% / 0 0 100% 100%;
+  opacity: 0.9;
+}
+
+.slime-icon::after {
+  content: '';
+  position: absolute;
+  right: 18%;
+  top: 55%;
+  width: 16%;
+  height: 42%;
+  background: #45c5a9;
+  border-radius: 0 0 50% 50% / 0 0 100% 100%;
+  opacity: 0.9;
+}
+
 .key--fire {
   position: relative;
   z-index: 0;
