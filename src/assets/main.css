@@ -1682,8 +1682,10 @@ body {
 /* Journey progress dots */
 .journey-dots {
   display: flex;
+  align-items: center;
   justify-content: center;
   gap: 8px;
+  margin-bottom: 1.25rem;
 }
 
 .journey-dot {
@@ -1704,6 +1706,73 @@ body {
 .dot--pending {
   background: var(--gs-200);
   border: 1px solid var(--gs-400);
+}
+
+/* Miniboss dot: an outlined question mark instead of a filled circle */
+.journey-dot--miniboss {
+  width: 10px;
+  height: 10px;
+  background: none;
+  border: none;
+  border-radius: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  line-height: 1;
+  font-weight: 700;
+  color: transparent;
+  -webkit-text-stroke: 1px var(--gs-400);
+}
+.journey-dot--miniboss.dot--active { -webkit-text-stroke-color: var(--gs-800); }
+.journey-dot--miniboss.dot--done   { -webkit-text-stroke-color: #538d4e; }
+
+/* Boss dot: one outlined skull per health point, clustered tightly so it reads
+   as a single enemy's health rather than several separate stages */
+.journey-dot--boss {
+  /* .journey-dot sets width/height: 10px; override both, or the flex row here
+     stays pinned to that 10px box and shrinks its skull children to fit it */
+  width: auto;
+  height: auto;
+  background: none;
+  border: none;
+  border-radius: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.boss-skull {
+  flex-shrink: 0;
+  color: var(--gs-400);
+  display: block;
+}
+.journey-dot--boss.dot--active .boss-skull { color: var(--gs-800); }
+.journey-dot--boss.dot--done   .boss-skull { color: #538d4e; }
+
+/* A skull fills in solid green as soon as that round of the boss fight is won,
+   even while the group overall is still "active" (fight still in progress) */
+.journey-dot--boss.dot--active .boss-skull.boss-skull--filled { color: #538d4e; }
+
+.journey-dot--boss-1 .boss-skull {
+  width: 10px;
+  height: 10px;
+}
+
+.journey-dot--boss-2 {
+  gap: 3px;
+}
+.journey-dot--boss-2 .boss-skull {
+  width: 10px;
+  height: 10px;
+}
+
+.journey-dot--boss-3 {
+  gap: 3px;
+}
+.journey-dot--boss-3 .boss-skull {
+  width: 10px;
+  height: 10px;
 }
 
 /* Modal */
