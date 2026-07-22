@@ -2605,7 +2605,10 @@ async function startStage(stageNum) {
         }
       }
     } else {
-      const pool = ENEMIES
+      // Exclude whichever enemy was just fought so two regular-enemy stages in a row can
+      // never repeat the same one — harmless no-op if the previous stage was a miniboss,
+      // since its id never matches anything in ENEMIES anyway.
+      const pool = ENEMIES.filter(e => e.id !== currentEnemy.value?.id)
       if (props.mode === 'daily' && dailyConfig.value) {
         const enemyId = dailyConfig.value.stageEnemies[stageNum]
         currentEnemy.value = pool.find(e => e.id === enemyId) ?? pool[Math.floor(Math.random() * pool.length)]

@@ -93,6 +93,10 @@ async function generateDaily(dateKey) {
     if (stageSequence[i] === 'miniboss' && boss.id === 'abominable-snowman') {
       pool = pool.filter(m => m.id !== 'cerberus' && m.id !== 'little-elves')
     }
+    // Two regular-enemy stages in a row should never repeat the same enemy
+    if (stageSequence[i] === 'enemy' && stageSequence[i - 1] === 'enemy') {
+      pool = pool.filter(e => e.id !== stageEnemies[i - 1])
+    }
     stageEnemies[i] = pickRandom(pool).id
   }
 
