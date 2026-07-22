@@ -39,8 +39,6 @@ export const MINIBOSSES = [
   { id: 'wily-magician', name: 'Wily Magician', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'He places one piece of false information in every guess' },
   { id: 'little-elves', name: 'Little Elves', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: ' the last letter from your guess...but always bring it back' },
   { id: 'mimic', name: 'Mimic', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'Using a letter two guesses in a row will do extra damage, unless you put it in the right place.' },
-  { id: 'hydra-miniboss', name: 'Hydra', regen: 3, health: 1, wordLength: 5, boardCount: 2, effect: 'Cut off its head!' },
-
 ]
 
 export const SHOP_ITEMS = [
@@ -144,9 +142,13 @@ export const STAGE_SEQUENCE = ['enemy', 'enemy', 'miniboss']
 export const JOURNEY_LENGTH = STAGE_SEQUENCE.length + 1
 
 // Giant Slime splits into more pieces, so its journey is shortened by one regular enemy
-// to compensate for the extra boss rounds.
+// to compensate for the extra boss rounds. Hydra has no miniboss at all — just two regular
+// enemies before its 3-round boss fight (see the shop-timing note in GameView.vue's
+// handleAllBoardsSolved, which opens the shop before the boss fight instead of a miniboss
+// whenever a boss's sequence has no 'miniboss' stage).
 const STAGE_SEQUENCE_OVERRIDES = {
   'giant-slime': ['enemy', 'miniboss'],
+  'hydra': ['enemy', 'enemy'],
 }
 
 export function getStageSequence(bossId) {
@@ -256,13 +258,14 @@ export const BOSSES = [
   {
     id: 'hydra',
     name: 'Hydra',
-    health: 2,
+    health: 3,
     regen: 0,
     wordLength: 5,
-    boardCount: 4,
+    boardCount: 1,
     rounds: [
+      { boardCount: 1, wordLength: 5 },
+      { boardCount: 2, wordLength: 5 },
       { boardCount: 4, wordLength: 5 },
-      { boardCount: 6, wordLength: 5 },
     ],
     effect: 'The Hydra grows more heads as you cut them off',
     announcement: 'Your quest is to defeat the Hydra by cutting off its head(s?)',

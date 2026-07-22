@@ -1034,14 +1034,14 @@ const selectableBosses = computed(() => {
   return BOSSES.filter(b => !b.testOnly)
 })
 
-// Testing screen's manual miniboss picker — Hydra's own miniboss never shows up here since
-// picking Hydra as the boss skips this screen entirely, Cerberus's 3-board mechanic
-// conflicts with the Abominable Snowman's letter-freezing ability (which also conflicts
-// with Little Elf's letter-stealing, both fighting over the same keyboard letters), and
-// the Mirror Spirit forces every guess to be a palindrome, which combined with the Key
-// Master's locked letters can leave too few usable letters to form any valid guess.
+// Testing screen's manual miniboss picker — Hydra has no miniboss at all so picking it as
+// the boss skips this screen entirely, Cerberus's 3-board mechanic conflicts with the
+// Abominable Snowman's letter-freezing ability (which also conflicts with Little Elf's
+// letter-stealing, both fighting over the same keyboard letters), and the Mirror Spirit
+// forces every guess to be a palindrome, which combined with the Key Master's locked
+// letters can leave too few usable letters to form any valid guess.
 const testingMinibossOptions = computed(() => {
-  let pool = MINIBOSSES.filter(m => m.id !== 'hydra-miniboss')
+  let pool = MINIBOSSES
   if (currentBoss.value?.id === 'abominable-snowman') {
     pool = pool.filter(m => m.id !== 'cerberus' && m.id !== 'little-elves')
   }
@@ -1575,6 +1575,12 @@ async function handleAllBoardsSolved() {
 
   await animateEnemyDamage(hitDamage)
 
+  // Hydra and Giant Slime both take 3 hits to bring down — heal the player 2 HP for each
+  // one landed (including the killing blow), to offset the length of their boss fights.
+  if (isBossFight.value && ['hydra', 'giant-slime'].includes(currentBoss.value?.id)) {
+    await animatePlayerHeal(plagueLordHeal(2))
+  }
+
   if (enemyHealth.value <= 0) {
     recordCurrentRound()
     const regen = currentEnemy.value.regen
@@ -1583,8 +1589,13 @@ async function handleAllBoardsSolved() {
     if (healAmt > 0) await animatePlayerHeal(healAmt)
     gameState.value = 'won'
     const isLast = stage.value === journeyLength.value - 1
-    // Shop opens right before the miniboss stage, regardless of where that falls in stageSequence
+    // Shop opens right before the miniboss stage, regardless of where that falls in
+    // stageSequence — or, for a boss like Hydra whose sequence has no miniboss at all,
+    // right before the boss fight itself instead.
     const nextIsMiniboss = stageSequence.value[stage.value + 1] === 'miniboss'
+    const nextIsBossWithNoMiniboss = !stageSequence.value.includes('miniboss')
+      && stage.value + 1 === stageSequence.value.length
+    const shopOpensNext = nextIsMiniboss || nextIsBossWithNoMiniboss
     if (isLast) {
       gameResult.value = 'won'
       recordGameEnd('won')
@@ -1594,7 +1605,7 @@ async function handleAllBoardsSolved() {
         wonMessage.value = false
         modal.value = 'stats'
       }, 1800)
-    } else if (nextIsMiniboss) {
+    } else if (shopOpensNext) {
       wonDamage.value = 0
       wonMessage.value = true
       const needsSecondAbility = playerClass.value === 'changeling' && changelingAbilities.value.length < 2
@@ -2277,10 +2288,10 @@ function selectClass(cls) {
 
 function confirmBossSelect(bossId) {
   currentBoss.value = BOSSES.find(b => b.id === bossId)
-  // The Hydra and its miniboss are a package deal — one implies the other, so Hydra
-  // skips the testing miniboss screen entirely rather than asking a moot question.
+  // Hydra has no miniboss at all — just two regular enemies before its boss fight — so it
+  // skips the miniboss-select screen entirely rather than asking a moot question.
   if (bossId === 'hydra') {
-    selectedMiniboss.value = 'hydra-miniboss'
+    selectedMiniboss.value = null
     beginJourney()
   } else if (props.mode === 'testing' || props.mode === 'freeplay') {
     selectedMiniboss.value = null
@@ -2469,18 +2480,14 @@ async function startStage(stageNum) {
         // Use the forced miniboss chosen on the dev test screen
         currentEnemy.value = MINIBOSSES.find(m => m.id === selectedMiniboss.value)
       } else {
-        let pool
-        if (currentBoss.value?.id === 'hydra') {
-          pool = MINIBOSSES.filter(m => m.id === 'hydra-miniboss')
-        } else {
-          pool = MINIBOSSES.filter(m => m.id !== 'hydra-miniboss')
-          // Cerberus's 3-board mechanic conflicts with the Abominable Snowman's letter-freezing,
-          // and so does Little Elf's letter-stealing — both fight over the same keyboard letters
-          if (currentBoss.value?.id === 'abominable-snowman') pool = pool.filter(m => m.id !== 'cerberus' && m.id !== 'little-elves')
-          // Mirror Spirit forces every guess to be a palindrome, which combined with the Key
-          // Master's locked letters can leave too few usable letters to form any valid guess
-          if (currentBoss.value?.id === 'key-master') pool = pool.filter(m => m.id !== 'mirror-spirit')
-        }
+        // Hydra never reaches this branch at all — its stage sequence has no 'miniboss' entry
+        let pool = MINIBOSSES
+        // Cerberus's 3-board mechanic conflicts with the Abominable Snowman's letter-freezing,
+        // and so does Little Elf's letter-stealing — both fight over the same keyboard letters
+        if (currentBoss.value?.id === 'abominable-snowman') pool = pool.filter(m => m.id !== 'cerberus' && m.id !== 'little-elves')
+        // Mirror Spirit forces every guess to be a palindrome, which combined with the Key
+        // Master's locked letters can leave too few usable letters to form any valid guess
+        if (currentBoss.value?.id === 'key-master') pool = pool.filter(m => m.id !== 'mirror-spirit')
         if (props.mode === 'daily' && dailyConfig.value) {
           const enemyId = dailyConfig.value.stageEnemies[stageNum]
           currentEnemy.value = pool.find(e => e.id === enemyId) ?? pool[Math.floor(Math.random() * pool.length)]

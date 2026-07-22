@@ -85,18 +85,15 @@ async function generateDaily(dateKey) {
   const stageSequence = getStageSequence(boss.id)
   const stageEnemies = {}
   for (let i = 0; i < stageSequence.length; i++) {
-    if (stageSequence[i] === 'miniboss' && boss.id === 'hydra') {
-      stageEnemies[i] = 'hydra-miniboss'
-    } else {
-      let pool = stageSequence[i] === 'miniboss'
-        ? MINIBOSSES.filter(m => m.id !== 'hydra-miniboss')
-        : ENEMIES
-      // Cerberus's 3-board mechanic conflicts with the Abominable Snowman's letter-freezing
-      if (stageSequence[i] === 'miniboss' && boss.id === 'abominable-snowman') {
-        pool = pool.filter(m => m.id !== 'cerberus')
-      }
-      stageEnemies[i] = pickRandom(pool).id
+    // Hydra has no miniboss at all — its sequence is just two 'enemy' stages, so this
+    // always draws from ENEMIES for it, same as any other regular-enemy stage.
+    let pool = stageSequence[i] === 'miniboss' ? MINIBOSSES : ENEMIES
+    // Cerberus's 3-board mechanic conflicts with the Abominable Snowman's letter-freezing,
+    // and so does Little Elves' letter-stealing — both fight over the same keyboard letters
+    if (stageSequence[i] === 'miniboss' && boss.id === 'abominable-snowman') {
+      pool = pool.filter(m => m.id !== 'cerberus' && m.id !== 'little-elves')
     }
+    stageEnemies[i] = pickRandom(pool).id
   }
 
   // Tracks every secret word assigned so far so the same word never comes up twice
