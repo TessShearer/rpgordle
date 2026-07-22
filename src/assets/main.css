@@ -2526,30 +2526,19 @@ body {
   padding: 0.5rem 0;
 }
 
-.won-progress-track {
-  margin-top: 0.6rem;
-  height: 4px;
-  border-radius: 2px;
-  background: var(--gs-200);
-  overflow: hidden;
+/* Continue button: pulses so it's impossible to miss while waiting to advance */
+.won-continue-btn {
+  animation: won-continue-pulse 1s ease-in-out infinite;
 }
 
-@keyframes progress-fill {
-  from {
-    width: 0;
+@keyframes won-continue-pulse {
+  0%, 100% {
+    transform: scale(1);
   }
 
-  to {
-    width: 100%;
+  50% {
+    transform: scale(1.12);
   }
-}
-
-.won-progress-fill {
-  height: 100%;
-  width: 0;
-  background: var(--gs-800);
-  border-radius: 2px;
-  animation: progress-fill 1.5s ease forwards;
 }
 
 .won-message-text {
@@ -2657,6 +2646,38 @@ body {
 }
 
 /* ── Game Info page ──────────────────────────────────────────────────────── */
+.info-tabs {
+  max-width: 860px;
+  margin: 0 auto;
+  display: flex;
+  gap: 0.5rem;
+  border-bottom: 2px solid var(--gs-200);
+}
+
+.info-tab {
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  padding: 0.6rem 0.25rem;
+  margin-bottom: -2px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--gs-500);
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.info-tab:hover {
+  color: var(--gs-700);
+}
+
+.info-tab--active {
+  color: var(--gs-900);
+  border-bottom-color: var(--gs-900);
+}
+
 .info-section {
   max-width: 860px;
   margin: 0 auto;
@@ -3009,6 +3030,13 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
+}
+
+.notes-list--2col {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.4rem 0.75rem;
+  align-items: start;
 }
 
 .note-item {

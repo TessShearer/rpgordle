@@ -109,7 +109,7 @@
               <div v-if="recorderStacks > 0" class="buff-indicator">
                 <img v-if="ITEM_IMAGES['recorder']" :src="ITEM_IMAGES['recorder']" alt="Recorder" class="buff-img" />
                 <div v-else class="art-placeholder art-placeholder--buff">Recorder</div>
-                <p class="buff-label">+{{ recorderStacks }} hp every 4 guesses</p>
+                <p class="buff-label">+{{ recorderStacks }} hp every 5 guesses</p>
               </div>
               <div v-if="vorpalSwordActive" class="buff-indicator">
                 <img v-if="ITEM_IMAGES['vorpalSword']" :src="ITEM_IMAGES['vorpalSword']" alt="Vorpal Sword" class="buff-img" />
@@ -296,9 +296,6 @@ c-30 269 -53 363 -170 695 -158 448 -189 566 -244 938 -67 443 -86 687 -86
                 <p class="won-message-text"><span v-if="wonDamage > 0">{{ wonDamage }} damage!</span><span v-else>{{
         currentEnemy?.name }} defeated!</span></p>
                 <p v-if="lastRegen > 0" class="won-message-sub">{{ lastRegen }} healed!</p>
-                <div class="won-progress-track">
-                  <div class="won-progress-fill"></div>
-                </div>
               </div>
             </Transition>
 
@@ -312,7 +309,10 @@ c-30 269 -53 363 -170 695 -158 448 -189 566 -244 938 -67 443 -86 687 -86
             </p>
 
             <!-- Submit + Keyboard -->
-            <div v-if="gameState === 'playing'" class="submit-row mb-2">
+            <div v-if="wonMessage" class="submit-row mb-2">
+              <button class="btn btn-press won-continue-btn px-4 py-1" @click="continueAfterWin">Continue</button>
+            </div>
+            <div v-else-if="gameState === 'playing'" class="submit-row mb-2">
               <button class="btn btn-press px-4 py-1" @click="handleKey('ENTER')">Submit</button>
               <button v-if="inventory.includes('sneak-attack')" class="btn btn-sneak-attack px-4 py-1"
                 @click="triggerSneakAttack">
@@ -399,7 +399,7 @@ c-30 269 -53 363 -170 695 -158 448 -189 566 -244 938 -67 443 -86 687 -86
               <div v-if="recorderStacks > 0" class="buff-indicator">
                 <img v-if="ITEM_IMAGES['recorder']" :src="ITEM_IMAGES['recorder']" alt="Recorder" class="buff-img" />
                 <div v-else class="art-placeholder art-placeholder--buff">Recorder</div>
-                <p class="buff-label">+{{ recorderStacks }} hp every 4 guesses</p>
+                <p class="buff-label">+{{ recorderStacks }} hp every 5 guesses</p>
               </div>
               <div v-if="vorpalSwordActive" class="buff-indicator">
                 <img v-if="ITEM_IMAGES['vorpalSword']" :src="ITEM_IMAGES['vorpalSword']" alt="Vorpal Sword" class="buff-img" />
@@ -559,12 +559,17 @@ c-30 269 -53 363 -170 695 -158 448 -189 566 -244 938 -67 443 -86 687 -86
             <template v-else-if="modal === 'dwarven-puzzle-box'">
               <p class="modal-message">Your puzzle box has opened</p>
               <div class="shop-items">
-                <div v-for="item in dwarvenPuzzleBoxItems" :key="item.id" class="shop-item">
+                <div v-for="item in dwarvenPuzzleBoxItems" :key="item.id" class="shop-item"
+                  :class="{ 'shop-item--flipped': puzzleBoxFlippedId === item.id }"
+                  @click="puzzleBoxFlippedId = item.id">
                   <div class="shop-item-inner">
                     <div class="shop-item-front">
                       <img v-if="ITEM_IMAGES[item.id]" :src="ITEM_IMAGES[item.id]" :alt="item.name" class="shop-img" />
                       <div v-else class="art-placeholder art-placeholder--item">{{ item.name }}</div>
                       <p class="shop-item-name">{{ item.name }}</p>
+                    </div>
+                    <div class="shop-item-back">
+                      <p class="shop-item-desc">{{ item.description }}</p>
                     </div>
                   </div>
                 </div>
@@ -862,6 +867,7 @@ const bossShaking = ref(false)
 const shopPicksRemaining = ref(1)
 const shopTotalPicks = ref(1)
 const selectedShopItemId = ref(null)
+const puzzleBoxFlippedId = ref(null)
 const freeplayShopItems = ref([])
 const purchasedShopItemIds = ref([])
 const validating = ref(false)
@@ -1718,10 +1724,9 @@ async function handleAllBoardsSolved() {
       recordGameEnd('won')
       wonDamage.value = 0
       wonMessage.value = true
-      setTimeout(() => {
-        wonMessage.value = false
+      _wonContinue = () => {
         modal.value = 'stats'
-      }, 1800)
+      }
     } else if (shopOpensNext) {
       wonDamage.value = 0
       wonMessage.value = true
@@ -1736,8 +1741,7 @@ async function handleAllBoardsSolved() {
       }
       shopPicksRemaining.value = hasAbility('thief') ? 2 : 1
       shopTotalPicks.value = shopPicksRemaining.value
-      setTimeout(() => {
-        wonMessage.value = false
+      _wonContinue = () => {
         const proceedToShop = () => {
           if (needsSecondAbility && props.mode === 'testing') {
             showChangelingTestPick(true, () => {
@@ -1753,16 +1757,15 @@ async function handleAllBoardsSolved() {
         }
         if (inventory.value.includes('dwarven-puzzle-box')) triggerDwarvenPuzzleBox(proceedToShop)
         else proceedToShop()
-      }, 1800)
+      }
     } else {
       wonDamage.value = 0
       wonMessage.value = true
-      setTimeout(() => {
-        wonMessage.value = false
+      _wonContinue = () => {
         const proceedToNextStage = () => startStage(stage.value + 1)
         if (inventory.value.includes('dwarven-puzzle-box')) triggerDwarvenPuzzleBox(proceedToNextStage)
         else proceedToNextStage()
-      }, 1800)
+      }
     }
   } else {
     recordCurrentRound()
@@ -1770,12 +1773,22 @@ async function handleAllBoardsSolved() {
     wonDamage.value = hitDamage
     wonMessage.value = true
     const advancing = isBossFight.value
-    setTimeout(() => {
-      wonMessage.value = false
+    _wonContinue = () => {
       if (advancing) bossWordIndex.value++
       loadWord(false)
-    }, 1800)
+    }
   }
+}
+
+// The player advances past a win with a "Continue" button now, rather than an
+// auto-advancing timer — see the submit-row template for where it renders.
+let _wonContinue = null
+function continueAfterWin() {
+  if (!_wonContinue) return
+  const proceed = _wonContinue
+  _wonContinue = null
+  wonMessage.value = false
+  proceed()
 }
 
 // Dwarven Puzzle Box: consumed the moment the next enemy (of any kind) is defeated,
@@ -1787,8 +1800,9 @@ function triggerDwarvenPuzzleBox(onDone) {
   inventory.value.splice(idx, 1)
   const pool = availableShopItems.value.filter(i => i.id !== 'dwarven-puzzle-box')
   const granted = [...pool].sort(() => Math.random() - 0.5).slice(0, 2)
-  inventory.value = [...inventory.value, ...granted.map(i => i.id)]
+  granted.forEach(i => grantItem(i.id))
   dwarvenPuzzleBoxItems.value = granted
+  puzzleBoxFlippedId.value = null
   _dwarvenPuzzleBoxContinue = onDone
   modal.value = 'dwarven-puzzle-box'
 }
@@ -2050,7 +2064,7 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
     && enemyHealth.value - hitDamageForBlowCheck <= 0
 
   if (!isGameEndingBlow) {
-    if (recorderStacks.value > 0 && recorderGuessCount.value % 4 === 0) {
+    if (recorderStacks.value > 0 && recorderGuessCount.value % 5 === 0) {
       await animatePlayerHeal(plagueLordHeal(recorderStacks.value))
     }
     if (anyBoardSolvedThisGuess) {
@@ -2224,6 +2238,7 @@ function handleModalAction() {
     usedSecretWords.value = []
     vorpalSwordActive.value = false
     wonMessage.value = false
+    _wonContinue = null
     wonDamage.value = 0
     lastRegen.value = 0
     selectedBoss.value = null
@@ -2280,6 +2295,7 @@ function restartJourney() {
   vorpalSwordActive.value = false
   bowTargeting.value = false
   wonMessage.value = false
+  _wonContinue = null
   wonDamage.value = 0
   lastRegen.value = 0
   selectedBoss.value = null
@@ -2465,7 +2481,7 @@ function testDamage() {
 const testAddedItemId = ref(null)
 let testAddedTimer = null
 function testAddItem(item) {
-  inventory.value.push(item.id)
+  grantItem(item.id)
   testAddedItemId.value = item.id
   clearTimeout(testAddedTimer)
   testAddedTimer = setTimeout(() => { testAddedItemId.value = null }, 900)
@@ -2488,18 +2504,18 @@ function applyChangelingSecondAbilityBonus() {
   if (latest === 'knight') {
     playerMaxHealth.value += 3
     playerHealth.value = Math.min(playerHealth.value + 3, playerMaxHealth.value)
-    inventory.value.push('shield')
+    grantItem('shield')
   } else if (latest === 'treasurer') {
     if (props.mode === 'daily' && dailyConfig.value?.treasurerItemIds?.length) {
-      dailyConfig.value.treasurerItemIds.forEach(id => inventory.value.push(id))
+      dailyConfig.value.treasurerItemIds.forEach(id => grantItem(id))
     } else {
       const pool = availableShopItems.value
       const shuffled = [...pool].sort(() => Math.random() - 0.5)
-      shuffled.slice(0, 2).forEach(item => inventory.value.push(item.id))
+      shuffled.slice(0, 2).forEach(item => grantItem(item.id))
     }
   } else if (latest === 'archer') {
-    inventory.value.push('bow-and-arrow')
-    inventory.value.push('bow-and-arrow')
+    grantItem('bow-and-arrow')
+    grantItem('bow-and-arrow')
   }
 }
 
@@ -2563,7 +2579,7 @@ function beginJourney() {
   allGuessedWords.value = []
   usedSecretWords.value = []
   if (playerClass.value === 'knight') {
-    inventory.value.push('shield')
+    grantItem('shield')
   }
   if (playerClass.value === 'archer') {
     inventory.value.push('bow-and-arrow')
@@ -2577,11 +2593,11 @@ function beginJourney() {
   }
   if (playerClass.value === 'treasurer') {
     if (props.mode === 'daily' && dailyConfig.value?.treasurerItemIds?.length) {
-      dailyConfig.value.treasurerItemIds.forEach(id => inventory.value.push(id))
+      dailyConfig.value.treasurerItemIds.forEach(id => grantItem(id))
     } else {
       const pool = availableShopItems.value
       const shuffled = [...pool].sort(() => Math.random() - 0.5)
-      shuffled.slice(0, 2).forEach(item => inventory.value.push(item.id))
+      shuffled.slice(0, 2).forEach(item => grantItem(item.id))
     }
   }
   if (playerClass.value === 'changeling') {
@@ -2649,7 +2665,10 @@ async function startStage(stageNum) {
         }
       }
     } else {
-      const pool = ENEMIES
+      // Exclude whichever enemy was just fought so two regular-enemy stages in a row can
+      // never repeat the same one — harmless no-op if the previous stage was a miniboss,
+      // since its id never matches anything in ENEMIES anyway.
+      const pool = ENEMIES.filter(e => e.id !== currentEnemy.value?.id)
       if (props.mode === 'daily' && dailyConfig.value) {
         const enemyId = dailyConfig.value.stageEnemies[stageNum]
         currentEnemy.value = pool.find(e => e.id === enemyId) ?? pool[Math.floor(Math.random() * pool.length)]
@@ -3017,7 +3036,7 @@ function buySelectedItem() {
 }
 
 function buyItem(item) {
-  inventory.value.push(item.id)
+  grantItem(item.id)
   purchasedShopItemIds.value = [...purchasedShopItemIds.value, item.id]
   shopPicksRemaining.value -= 1
   if (shopPicksRemaining.value <= 0) {

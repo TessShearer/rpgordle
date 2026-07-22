@@ -39,7 +39,7 @@ export const MINIBOSSES = [
   { id: 'know-it-all', name: 'Sphinx', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'The answer is a word he does not think you will know.' },
   { id: 'slumbering-giant', name: 'Slumbering Giant', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'You won\'t take any damage from a wrong guess...until you wake her up.' },
   { id: 'wily-magician', name: 'Wily Magician', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'He places one piece of false information in every guess' },
-  { id: 'little-elves', name: 'Little Elves', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: ' the last letter from your guess...but always bring it back' },
+  { id: 'little-elves', name: 'Little Elves', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'They steal the last letter from your guess...but always bring it back' },
   { id: 'mimic', name: 'Mimic', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'Using a letter two guesses in a row will do extra damage, unless you put it in the right place.' },
 ]
 
@@ -96,7 +96,7 @@ export const SHOP_ITEMS = [
   {
     id: 'vampiric-dagger',
     name: 'Vampiric Dagger',
-    description: 'When used, you begin to heal +1 for each correct guess',
+    description: 'Automatically heals +1 for each correct guess',
     effect: 'vampiric-dagger',
     cost: 2,
   },
@@ -117,7 +117,7 @@ export const SHOP_ITEMS = [
   {
     id: 'recorder',
     name: 'Recorder',
-    description: 'Once used, begin to heal one health every 4 guesses',
+    description: 'Automatically heals one health every 5 guesses',
     effect: 'recorder',
     cost: 2,
   },

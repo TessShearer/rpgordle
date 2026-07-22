@@ -12,8 +12,18 @@
         HELLO
       </h3>
     </div> -->
-    
 
+    <!-- ── Tabs ─────────────────────────────────────────────────────────── -->
+    <div class="info-tabs mb-4">
+      <button type="button" class="info-tab" :class="{ 'info-tab--active': activeTab === 'notes' }"
+        @click="activeTab = 'notes'">Notes</button>
+      <button type="button" class="info-tab" :class="{ 'info-tab--active': activeTab === 'people' }"
+        @click="activeTab = 'people'">Carter / Brynn</button>
+      <button type="button" class="info-tab" :class="{ 'info-tab--active': activeTab === 'stats' }"
+        @click="activeTab = 'stats'">Stats</button>
+    </div>
+
+    <template v-if="activeTab === 'notes'">
     <!-- ── Game ─────────────────────────────────────────────────────────── -->
     <section class="info-section mb-5">
       <h2 class="info-heading mb-3">Game</h2>
@@ -28,22 +38,25 @@
       <NoteSection title="Game Notes" :notes="notes.game" :loading="submitting.game" v-model="draft.game"
         @add="addNote('game')" @delete="deleteNote" />
     </section>
+    </template>
 
-
+    <template v-else-if="activeTab === 'people'">
     <!-- ── Needed from Brynn ─────────────────────────────────────────────── -->
     <section class="info-section mb-5">
       <h2 class="info-heading mb-3">Needed from Brynn</h2>
       <NoteSection title="Needed from Brynn" placeholder="Add a note for Brynn..." :notes="notes.brynn"
-        :loading="submitting.brynn" v-model="draft.brynn" @add="addNote('brynn')" @delete="deleteNote" />
+        :loading="submitting.brynn" v-model="draft.brynn" :columns="2" @add="addNote('brynn')" @delete="deleteNote" />
     </section>
 
     <!-- ── Needed from Carter ────────────────────────────────────────────── -->
     <section class="info-section mb-5">
       <h2 class="info-heading mb-3">Needed from Carter</h2>
       <NoteSection title="Needed from Carter" placeholder="Add a note for Carter..." :notes="notes.carter"
-        :loading="submitting.carter" v-model="draft.carter" @add="addNote('carter')" @delete="deleteNote" />
+        :loading="submitting.carter" v-model="draft.carter" :columns="2" @add="addNote('carter')" @delete="deleteNote" />
     </section>
+    </template>
 
+    <template v-if="activeTab === 'notes'">
     <!-- ── Characters ────────────────────────────────────────────────────── -->
     <section class="info-section mb-5">
       <h2 class="info-heading mb-3">Characters</h2>
@@ -117,7 +130,9 @@
       <NoteSection title="Suggest a Shop Item" placeholder="Describe a shop item idea..." :notes="notes.shop"
         :loading="submitting.shop" v-model="draft.shop" @add="addNote('shop')" @delete="deleteNote" />
     </section>
+    </template>
 
+    <template v-if="activeTab === 'stats'">
     <!-- ── Win/Loss Stats ───────────────────────────────────────────────────── -->
     <section class="info-section mb-5">
       <h2 class="info-heading mb-3">Stats</h2>
@@ -162,6 +177,7 @@
         </table>
       </div>
     </section>
+    </template>
 
   </main>
 </template>
@@ -175,6 +191,8 @@ import {
   onSnapshot, query, where, serverTimestamp,
 } from 'firebase/firestore'
 import NoteSection from '@/components/NoteSection.vue'
+
+const activeTab = ref('notes')
 
 const draft = ref({ game: '', character: '', enemy: '', miniboss: '', boss: '', shop: '', brynn: '', carter: '' })
 const submitting = ref({ game: false, character: false, enemy: false, miniboss: false, boss: false, shop: false, brynn: false, carter: false })
