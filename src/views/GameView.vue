@@ -544,12 +544,17 @@ c-30 269 -53 363 -170 695 -158 448 -189 566 -244 938 -67 443 -86 687 -86
             <template v-else-if="modal === 'dwarven-puzzle-box'">
               <p class="modal-message">Your puzzle box has opened</p>
               <div class="shop-items">
-                <div v-for="item in dwarvenPuzzleBoxItems" :key="item.id" class="shop-item">
+                <div v-for="item in dwarvenPuzzleBoxItems" :key="item.id" class="shop-item"
+                  :class="{ 'shop-item--flipped': puzzleBoxFlippedId === item.id }"
+                  @click="puzzleBoxFlippedId = item.id">
                   <div class="shop-item-inner">
                     <div class="shop-item-front">
                       <img v-if="ITEM_IMAGES[item.id]" :src="ITEM_IMAGES[item.id]" :alt="item.name" class="shop-img" />
                       <div v-else class="art-placeholder art-placeholder--item">{{ item.name }}</div>
                       <p class="shop-item-name">{{ item.name }}</p>
+                    </div>
+                    <div class="shop-item-back">
+                      <p class="shop-item-desc">{{ item.description }}</p>
                     </div>
                   </div>
                 </div>
@@ -847,6 +852,7 @@ const bossShaking = ref(false)
 const shopPicksRemaining = ref(1)
 const shopTotalPicks = ref(1)
 const selectedShopItemId = ref(null)
+const puzzleBoxFlippedId = ref(null)
 const freeplayShopItems = ref([])
 const purchasedShopItemIds = ref([])
 const validating = ref(false)
@@ -1748,6 +1754,7 @@ function triggerDwarvenPuzzleBox(onDone) {
   const granted = [...pool].sort(() => Math.random() - 0.5).slice(0, 2)
   inventory.value = [...inventory.value, ...granted.map(i => i.id)]
   dwarvenPuzzleBoxItems.value = granted
+  puzzleBoxFlippedId.value = null
   _dwarvenPuzzleBoxContinue = onDone
   modal.value = 'dwarven-puzzle-box'
 }
