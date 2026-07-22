@@ -805,6 +805,8 @@ const recorderStacks = ref(0)
 const MAX_RECORDER_STACKS = 2
 const recorderGuessCount = ref(0)
 // Ancient tome
+const ancientTomeQueue = []
+let ancientTomeRunning = false
 const ancientTomeDefinition = ref('')
 // Dwarven Puzzle Box
 const dwarvenPuzzleBoxItems = ref([])
@@ -902,9 +904,10 @@ function makeBoard(id, secretWord) {
     hintLetter: '',
     hintWordType: '',
     hintDefinition: '', // Scholar's 4th-wrong-guess perk — persists until this board is solved
+    tomeDefinition: '', // Ancient Tome — persists until this board is solved
     hintSlots: {},    // Abominable Snowman — enforced: must retype the matching letter
     bowSlots: {},     // Bow and Arrow — a clue only, persists, never enforced
-    crossbowSlots: {}, // Crossbow — a clue only, lasts one guess, never enforced
+    crossbowSlots: {}, // Crossbow — a clue only, persists, never enforced
     obscuredGuessPositions: [],
     abilityBlockedRows: new Set(),
     crystalHints: [],
@@ -1161,9 +1164,10 @@ const keyboardStatuses = computed(() => {
     })
   }
 
-  // Seer hint from all boards
+  // Seer hint from all boards (skip boards that have already been solved and minimized)
   if (hasAbility('seer')) {
     for (const board of boards.value) {
+      if (board.solved && boards.value.length > 1) continue
       const seerLetter = board.hintLetter
       if (seerLetter && base[seerLetter] !== 'correct') {
         if (!base[seerLetter] || base[seerLetter] === 'absent') base[seerLetter] = 'present'
@@ -1171,8 +1175,9 @@ const keyboardStatuses = computed(() => {
     }
   }
 
-  // Crystal hints from all boards
+  // Crystal hints from all boards (skip boards that have already been solved and minimized)
   for (const board of boards.value) {
+    if (board.solved && boards.value.length > 1) continue
     for (const letter of board.crystalHints) {
       if (!base[letter] || base[letter] === 'absent') base[letter] = 'present'
     }
@@ -1832,11 +1837,6 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
     }
   }
 
-  // Clear temporary crossbow slots — they only last for one guess
-  for (const board of boards.value) {
-    if (Object.keys(board.crossbowSlots).length) board.crossbowSlots = {}
-  }
-
   // Wily Magician: lies about one tile's color in every guess. The previous guess's lie
   // (if any) starts its reveal animation now and clears itself once that finishes; a
   // fresh lie is picked for the guess that was just submitted, unless it won the board —
@@ -2194,20 +2194,37 @@ function dismissKnowItAllModal() {
 }
 
 // ── Ancient Tome ───────────────────────────────────────────────────────────────
-async function useAncientTome() {
-  const board = boards.value.find(b => !b.solved)
-  if (!board) return
+// Reveals every unsolved board's definition, one at a time (same sequential-modal
+// pattern as Scholar's 4th-wrong-guess perk), persisting each board's own text
+// afterward so it stays visible above that board — see board.tomeDefinition.
+function useAncientTome() {
+  for (const board of boards.value) {
+    if (!board.solved) queueAncientTomeReveal(board)
+  }
+}
+
+function queueAncientTomeReveal(board) {
+  ancientTomeQueue.push(board)
+  if (!ancientTomeRunning) processAncientTomeQueue()
+}
+
+async function processAncientTomeQueue() {
+  const board = ancientTomeQueue.shift()
+  if (!board) { ancientTomeRunning = false; return }
+  ancientTomeRunning = true
   ancientTomeDefinition.value = ''
   modal.value = 'ancient-tome'
   const definition = await fetchWordData(board.secretWord.toLowerCase())
     .then(data => data?.definition || 'a most sophisticated word')
     .catch(() => 'a most sophisticated word')
+  board.tomeDefinition = definition
   if (modal.value === 'ancient-tome') ancientTomeDefinition.value = definition
 }
 
 function dismissAncientTomeModal() {
   if (!ancientTomeDefinition.value) return
   modal.value = null
+  processAncientTomeQueue()
 }
 
 // ── Scholar's 4th-wrong-guess definition ──────────────────────────────────────
