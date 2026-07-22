@@ -59,7 +59,7 @@ export const SHOP_ITEMS = [
   {
     id: 'crystal-ball',
     name: 'Crystal Ball',
-    description: 'Reveals 2 letters in the current word.',
+    description: 'Reveals 2 letters that are in the current word.',
     effect: 'crystal-ball',
     cost: 3,
   },

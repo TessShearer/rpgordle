@@ -581,7 +581,7 @@ c-30 269 -53 363 -170 695 -158 448 -189 566 -244 938 -67 443 -86 687 -86
               </p>
               <div class="modal-actions mt-3">
                 <button class="btn btn-press px-5 py-2" @click="modal = 'stats'">View Stats</button>
-                <button class="btn btn-reset px-5 py-2 mt-2" @click="restartJourney">Try Again</button>
+                <button class="btn btn-press px-5 py-2 mt-2" @click="restartJourney">Try Again</button>
               </div>
             </template>
             <template v-else-if="modal === 'stats'">
@@ -1849,10 +1849,10 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
   }
 
   // Recorder: every guess (correct or not, across the whole game) counts toward the next
-  // heal — each stack adds +1 to how much that heal restores
+  // heal — each stack adds +1 to how much that heal restores. The heal itself is applied
+  // further down, once isGameEndingBlow is known.
   if (recorderStacks.value > 0) {
     recorderGuessCount.value += 1
-    if (recorderGuessCount.value % 4 === 0) await animatePlayerHeal(plagueLordHeal(recorderStacks.value))
   }
 
   // Key Master: guessing a color's key letter clears only that color's locks and key
@@ -1980,11 +1980,24 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
 
   const allSolved = boards.value.every(b => b.solved)
 
-  if (anyBoardSolvedThisGuess) {
-    if (vampiricDaggerStacks.value > 0) await animatePlayerHeal(plagueLordHeal(boardsSolvedThisGuess * vampiricDaggerStacks.value))
-    if (hasAbility('cleric')) {
-      const healAmt = plagueLordHeal(playerMaxHealth.value - playerHealth.value)
-      if (healAmt > 0) await animatePlayerHeal(healAmt)
+  // If this guess lands the killing blow on the final boss round, skip every heal-on-guess
+  // ability/item below — otherwise the end-of-game stats show health the player never really
+  // had left (e.g. Cleric topping off to full on the very guess that ends the fight).
+  const hitDamageForBlowCheck = vorpalSwordActive.value ? 2 : 1
+  const isGameEndingBlow = allSolved
+    && stage.value === journeyLength.value - 1
+    && enemyHealth.value - hitDamageForBlowCheck <= 0
+
+  if (!isGameEndingBlow) {
+    if (recorderStacks.value > 0 && recorderGuessCount.value % 4 === 0) {
+      await animatePlayerHeal(plagueLordHeal(recorderStacks.value))
+    }
+    if (anyBoardSolvedThisGuess) {
+      if (vampiricDaggerStacks.value > 0) await animatePlayerHeal(plagueLordHeal(boardsSolvedThisGuess * vampiricDaggerStacks.value))
+      if (hasAbility('cleric')) {
+        const healAmt = plagueLordHeal(playerMaxHealth.value - playerHealth.value)
+        if (healAmt > 0) await animatePlayerHeal(healAmt)
+      }
     }
   }
 
