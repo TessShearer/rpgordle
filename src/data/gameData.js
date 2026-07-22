@@ -136,6 +136,12 @@ export const SPECIAL_ITEMS = [
     description: 'Reveal any one letter in the current word.',
     effect: 'bow-and-arrow',
   },
+  {
+    id: 'ouija-board',
+    name: 'Ouija Board',
+    description: 'Reveal all the letters used in the previous fight on your keyboard now.',
+    effect: 'ouija-board',
+  },
 ]
 
 export const ALL_ITEMS = [...SHOP_ITEMS, ...SPECIAL_ITEMS]

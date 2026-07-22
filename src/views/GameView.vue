@@ -476,12 +476,12 @@ c-30 269 -53 363 -170 695 -158 448 -189 566 -244 938 -67 443 -86 687 -86
                 <button v-if="pendingUseItem.effect === 'dwarven-puzzle-box'"
                   class="btn btn-press px-4 py-2" @click="cancelUseItem">Got it</button>
                 <template v-else>
-                  <button v-if="!(pendingUseItem.effect === 'vorpal-sword' && !isBossFight)"
+                  <button v-if="!itemUseBlockedReason"
                     class="btn btn-press px-4 py-2" @click="useItem">Yes</button>
                   <button class="btn btn-press px-4 py-2"
                     style="white-space: normal; max-width: 160px; line-height: 1.2;"
                     @click="cancelUseItem">
-                    {{ pendingUseItem.effect === 'vorpal-sword' && !isBossFight ? 'Wait until boss fight to use' : 'No' }}
+                    {{ itemUseBlockedReason || 'No' }}
                   </button>
                 </template>
               </div>
@@ -853,6 +853,11 @@ const validating = ref(false)
 const annoyingKidTyping = ref(false)
 const zombieRising = ref(false)
 const fortuneTellerGreyLetters = ref([])
+// Medium: letters from the fight before last, ready for the Ouija Board to reveal.
+// Refilled from allGuessedWords whenever an enemy is defeated (see handleAllBoardsSolved) —
+// stays put across stage transitions until the next enemy defeat overwrites it.
+const mediumReadyLetters = ref([])
+const ouijaRevealed = ref(false)
 const giantSnoreBars = ref(0)
 const giantAwake = ref(false)
 const damageBlockActive = ref(false)
@@ -1144,6 +1149,15 @@ const journeyLength = computed(() => getJourneyLength(currentBoss.value?.id))
 
 const isBossFight = computed(() => stage.value >= stageSequence.value.length)
 
+// Some items can be in inventory but not currently usable — the use-item modal shows
+// why instead of a "Yes" button when that's the case
+const itemUseBlockedReason = computed(() => {
+  if (!pendingUseItem.value) return ''
+  if (pendingUseItem.value.effect === 'vorpal-sword' && !isBossFight.value) return 'Wait until boss fight to use'
+  if (pendingUseItem.value.effect === 'ouija-board' && mediumReadyLetters.value.length === 0) return 'No letters remembered yet'
+  return ''
+})
+
 // Journey-dot helpers: the last dot is always the boss fight; any earlier dot
 // flagged 'miniboss' in the stage sequence gets its own marker too.
 function isMinibossDot(i) {
@@ -1255,6 +1269,22 @@ const keyboardStatuses = computed(() => {
   // Fortune Teller: pre-reveal absent letters (only if not already known from guesses)
   for (const letter of fortuneTellerGreyLetters.value) {
     if (!base[letter]) base[letter] = 'absent'
+  }
+
+  // Ouija Board: once used, show what color every letter from the ready pool would be
+  // against every board still active in this fight
+  if (ouijaRevealed.value) {
+    for (const letter of mediumReadyLetters.value) {
+      const inAnyActiveBoard = boards.value.some(board => {
+        if (board.solved && boards.value.length > 1) return false
+        return board.secretWord.includes(letter)
+      })
+      if (inAnyActiveBoard) {
+        if (!base[letter] || base[letter] === 'absent') base[letter] = 'present'
+      } else if (!base[letter]) {
+        base[letter] = 'absent'
+      }
+    }
   }
 
   return base
@@ -1652,6 +1682,9 @@ async function handleAllBoardsSolved() {
 
   if (enemyHealth.value <= 0) {
     recordCurrentRound()
+    // Medium: this fight's guessed letters become the Ouija Board's "ready" pool for
+    // the next one
+    mediumReadyLetters.value = [...new Set(allGuessedWords.value.join('').split(''))]
     const regen = currentEnemy.value.regen
     const healAmt = plagueLordHeal(Math.min(regen, playerMaxHealth.value - playerHealth.value))
     lastRegen.value = healAmt
@@ -2186,6 +2219,8 @@ function handleModalAction() {
     purchasedShopItemIds.value = []
     validating.value = false
     fortuneTellerGreyLetters.value = []
+    mediumReadyLetters.value = []
+    ouijaRevealed.value = false
     giantSnoreBars.value = 0
   damageBlockActive.value = false
   vampiricDaggerStacks.value = 0
@@ -2239,6 +2274,8 @@ function restartJourney() {
   purchasedShopItemIds.value = []
   validating.value = false
   fortuneTellerGreyLetters.value = []
+  mediumReadyLetters.value = []
+  ouijaRevealed.value = false
   giantSnoreBars.value = 0
   damageBlockActive.value = false
   vampiricDaggerStacks.value = 0
@@ -2514,6 +2551,9 @@ function beginJourney() {
   if (playerClass.value === 'archer') {
     inventory.value.push('bow-and-arrow')
     inventory.value.push('bow-and-arrow')
+  }
+  if (playerClass.value === 'medium') {
+    inventory.value.push('ouija-board')
   }
   if (playerClass.value === 'treasurer') {
     if (props.mode === 'daily' && dailyConfig.value?.treasurerItemIds?.length) {
@@ -2870,6 +2910,8 @@ async function loadWord(showModal) {
   fortuneTellerGreyLetters.value = []
   giantSnoreBars.value = 0
   damageBlockActive.value = false
+  // Ouija Board's reveal was only ever accurate against the fight it was used in
+  ouijaRevealed.value = false
   // Necromancer: guessed words stay double-damage and in the graveyard for the whole game
   if (currentBoss.value?.id !== 'necromancer') {
     allGuessedWords.value = []
@@ -3050,6 +3092,8 @@ function useItem() {
     vampiricDaggerStacks.value = Math.min(vampiricDaggerStacks.value + 1, MAX_VAMPIRIC_DAGGER_STACKS)
   } else if (item.effect === 'recorder') {
     recorderStacks.value = Math.min(recorderStacks.value + 1, MAX_RECORDER_STACKS)
+  } else if (item.effect === 'ouija-board') {
+    ouijaRevealed.value = true
   } else if (item.effect === 'ancient-tome') {
     const idx = inventory.value.indexOf(item.id)
     if (idx !== -1) inventory.value.splice(idx, 1)
