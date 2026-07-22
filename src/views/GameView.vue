@@ -109,7 +109,7 @@
               <div v-if="recorderStacks > 0" class="buff-indicator">
                 <img v-if="ITEM_IMAGES['recorder']" :src="ITEM_IMAGES['recorder']" alt="Recorder" class="buff-img" />
                 <div v-else class="art-placeholder art-placeholder--buff">Recorder</div>
-                <p class="buff-label">+{{ recorderStacks }} hp every 4 guesses</p>
+                <p class="buff-label">+{{ recorderStacks }} hp every 5 guesses</p>
               </div>
               <div v-if="vorpalSwordActive" class="buff-indicator">
                 <img v-if="ITEM_IMAGES['vorpalSword']" :src="ITEM_IMAGES['vorpalSword']" alt="Vorpal Sword" class="buff-img" />
@@ -399,7 +399,7 @@ c-30 269 -53 363 -170 695 -158 448 -189 566 -244 938 -67 443 -86 687 -86
               <div v-if="recorderStacks > 0" class="buff-indicator">
                 <img v-if="ITEM_IMAGES['recorder']" :src="ITEM_IMAGES['recorder']" alt="Recorder" class="buff-img" />
                 <div v-else class="art-placeholder art-placeholder--buff">Recorder</div>
-                <p class="buff-label">+{{ recorderStacks }} hp every 4 guesses</p>
+                <p class="buff-label">+{{ recorderStacks }} hp every 5 guesses</p>
               </div>
               <div v-if="vorpalSwordActive" class="buff-indicator">
                 <img v-if="ITEM_IMAGES['vorpalSword']" :src="ITEM_IMAGES['vorpalSword']" alt="Vorpal Sword" class="buff-img" />
@@ -1752,7 +1752,7 @@ function triggerDwarvenPuzzleBox(onDone) {
   inventory.value.splice(idx, 1)
   const pool = availableShopItems.value.filter(i => i.id !== 'dwarven-puzzle-box')
   const granted = [...pool].sort(() => Math.random() - 0.5).slice(0, 2)
-  inventory.value = [...inventory.value, ...granted.map(i => i.id)]
+  granted.forEach(i => grantItem(i.id))
   dwarvenPuzzleBoxItems.value = granted
   puzzleBoxFlippedId.value = null
   _dwarvenPuzzleBoxContinue = onDone
@@ -2014,7 +2014,7 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
     && enemyHealth.value - hitDamageForBlowCheck <= 0
 
   if (!isGameEndingBlow) {
-    if (recorderStacks.value > 0 && recorderGuessCount.value % 4 === 0) {
+    if (recorderStacks.value > 0 && recorderGuessCount.value % 5 === 0) {
       await animatePlayerHeal(plagueLordHeal(recorderStacks.value))
     }
     if (anyBoardSolvedThisGuess) {
@@ -2427,7 +2427,7 @@ function testDamage() {
 const testAddedItemId = ref(null)
 let testAddedTimer = null
 function testAddItem(item) {
-  inventory.value.push(item.id)
+  grantItem(item.id)
   testAddedItemId.value = item.id
   clearTimeout(testAddedTimer)
   testAddedTimer = setTimeout(() => { testAddedItemId.value = null }, 900)
@@ -2450,18 +2450,18 @@ function applyChangelingSecondAbilityBonus() {
   if (latest === 'knight') {
     playerMaxHealth.value += 3
     playerHealth.value = Math.min(playerHealth.value + 3, playerMaxHealth.value)
-    inventory.value.push('shield')
+    grantItem('shield')
   } else if (latest === 'treasurer') {
     if (props.mode === 'daily' && dailyConfig.value?.treasurerItemIds?.length) {
-      dailyConfig.value.treasurerItemIds.forEach(id => inventory.value.push(id))
+      dailyConfig.value.treasurerItemIds.forEach(id => grantItem(id))
     } else {
       const pool = availableShopItems.value
       const shuffled = [...pool].sort(() => Math.random() - 0.5)
-      shuffled.slice(0, 2).forEach(item => inventory.value.push(item.id))
+      shuffled.slice(0, 2).forEach(item => grantItem(item.id))
     }
   } else if (latest === 'archer') {
-    inventory.value.push('bow-and-arrow')
-    inventory.value.push('bow-and-arrow')
+    grantItem('bow-and-arrow')
+    grantItem('bow-and-arrow')
   }
 }
 
@@ -2525,19 +2525,19 @@ function beginJourney() {
   allGuessedWords.value = []
   usedSecretWords.value = []
   if (playerClass.value === 'knight') {
-    inventory.value.push('shield')
+    grantItem('shield')
   }
   if (playerClass.value === 'archer') {
-    inventory.value.push('bow-and-arrow')
-    inventory.value.push('bow-and-arrow')
+    grantItem('bow-and-arrow')
+    grantItem('bow-and-arrow')
   }
   if (playerClass.value === 'treasurer') {
     if (props.mode === 'daily' && dailyConfig.value?.treasurerItemIds?.length) {
-      dailyConfig.value.treasurerItemIds.forEach(id => inventory.value.push(id))
+      dailyConfig.value.treasurerItemIds.forEach(id => grantItem(id))
     } else {
       const pool = availableShopItems.value
       const shuffled = [...pool].sort(() => Math.random() - 0.5)
-      shuffled.slice(0, 2).forEach(item => inventory.value.push(item.id))
+      shuffled.slice(0, 2).forEach(item => grantItem(item.id))
     }
   }
   if (playerClass.value === 'changeling') {
@@ -2971,7 +2971,7 @@ function buySelectedItem() {
 }
 
 function buyItem(item) {
-  inventory.value.push(item.id)
+  grantItem(item.id)
   purchasedShopItemIds.value = [...purchasedShopItemIds.value, item.id]
   shopPicksRemaining.value -= 1
   if (shopPicksRemaining.value <= 0) {
@@ -3031,6 +3031,20 @@ function triggerSneakAttack() {
   if (boards.value.every(b => b.solved)) handleAllBoardsSolved()
 }
 
+// Vampiric Dagger and Recorder are passive, always-on effects with nothing left to decide
+// once you have them — there's no point letting them sit in inventory waiting to be
+// "used", so every grant path (shop, puzzle box, treasurer, testing) routes through here
+// instead of pushing straight into inventory, and they activate immediately instead.
+function grantItem(id) {
+  if (id === 'vampiric-dagger') {
+    vampiricDaggerStacks.value = Math.min(vampiricDaggerStacks.value + 1, MAX_VAMPIRIC_DAGGER_STACKS)
+  } else if (id === 'recorder') {
+    recorderStacks.value = Math.min(recorderStacks.value + 1, MAX_RECORDER_STACKS)
+  } else {
+    inventory.value.push(id)
+  }
+}
+
 function useItem() {
   const item = pendingUseItem.value
   if (!item) return
@@ -3062,10 +3076,6 @@ function useItem() {
     for (const board of boards.value) {
       board.abilityBlockedRows = new Set([...board.abilityBlockedRows, rowToBlock])
     }
-  } else if (item.effect === 'vampiric-dagger') {
-    vampiricDaggerStacks.value = Math.min(vampiricDaggerStacks.value + 1, MAX_VAMPIRIC_DAGGER_STACKS)
-  } else if (item.effect === 'recorder') {
-    recorderStacks.value = Math.min(recorderStacks.value + 1, MAX_RECORDER_STACKS)
   } else if (item.effect === 'ancient-tome') {
     const idx = inventory.value.indexOf(item.id)
     if (idx !== -1) inventory.value.splice(idx, 1)

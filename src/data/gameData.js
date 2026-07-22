@@ -94,7 +94,7 @@ export const SHOP_ITEMS = [
   {
     id: 'vampiric-dagger',
     name: 'Vampiric Dagger',
-    description: 'When used, you begin to heal +1 for each correct guess',
+    description: 'Automatically heals +1 for each correct guess',
     effect: 'vampiric-dagger',
     cost: 2,
   },
@@ -115,7 +115,7 @@ export const SHOP_ITEMS = [
         {
     id: 'recorder',
     name: 'Recorder',
-    description: 'Once used, begin to heal one health every 4 guesses',
+    description: 'Automatically heals one health every 5 guesses',
     effect: 'recorder',
     cost: 2,
   },
