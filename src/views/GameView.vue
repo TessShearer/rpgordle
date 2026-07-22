@@ -13,9 +13,20 @@
       <!-- Intro -->
       <div v-else-if="screen === 'intro'" class="text-center">
         <div class="art-placeholder art-placeholder--hero mb-4">Art goes here</div>
-        <button class="btn btn-press px-5 py-3 fs-5" @click="showClassSelect">
-          Start Adventure
-        </button>
+        <template v-if="mode === 'daily'">
+          <button class="btn btn-press px-5 py-3 fs-5" @click="showClassSelect">
+            Start Adventure
+          </button>
+        </template>
+        <template v-else>
+          <button class="btn btn-press px-5 py-3 fs-5" @click="showClassSelect">
+            Choose my Adventure
+          </button>
+          <br>
+          <button class="btn btn-press px-5 py-3 fs-5 mt-3" @click="beginRandomQuest">
+            Embark on a Random Quest
+          </button>
+        </template>
       </div>
 
       <!-- Class Select -->
@@ -2376,6 +2387,17 @@ function confirmBossSelect(bossId) {
 function confirmMinibossSelect(minibossId) {
   selectedMiniboss.value = minibossId
   beginJourney()
+}
+
+// Picks a random option at every step, same as if the player had clicked each
+// screen's own "Random" tile in sequence
+function beginRandomQuest() {
+  const randomOf = (list) => list[Math.floor(Math.random() * list.length)]
+  selectClass(randomOf(selectableClasses.value).id)
+  confirmBossSelect(randomOf(selectableBosses.value).id)
+  if (screen.value === 'miniboss-select') {
+    confirmMinibossSelect(randomOf(testingMinibossOptions.value).id)
+  }
 }
 
 // ── Testing helpers ───────────────────────────────────────────────────────────
