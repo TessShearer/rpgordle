@@ -2496,30 +2496,19 @@ body {
   padding: 0.5rem 0;
 }
 
-.won-progress-track {
-  margin-top: 0.6rem;
-  height: 4px;
-  border-radius: 2px;
-  background: var(--gs-200);
-  overflow: hidden;
+/* Continue button: pulses so it's impossible to miss while waiting to advance */
+.won-continue-btn {
+  animation: won-continue-pulse 1s ease-in-out infinite;
 }
 
-@keyframes progress-fill {
-  from {
-    width: 0;
+@keyframes won-continue-pulse {
+  0%, 100% {
+    transform: scale(1);
   }
 
-  to {
-    width: 100%;
+  50% {
+    transform: scale(1.12);
   }
-}
-
-.won-progress-fill {
-  height: 100%;
-  width: 0;
-  background: var(--gs-800);
-  border-radius: 2px;
-  animation: progress-fill 1.5s ease forwards;
 }
 
 .won-message-text {

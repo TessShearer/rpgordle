@@ -296,9 +296,6 @@ c-30 269 -53 363 -170 695 -158 448 -189 566 -244 938 -67 443 -86 687 -86
                 <p class="won-message-text"><span v-if="wonDamage > 0">{{ wonDamage }} damage!</span><span v-else>{{
         currentEnemy?.name }} defeated!</span></p>
                 <p v-if="lastRegen > 0" class="won-message-sub">{{ lastRegen }} healed!</p>
-                <div class="won-progress-track">
-                  <div class="won-progress-fill"></div>
-                </div>
               </div>
             </Transition>
 
@@ -312,7 +309,10 @@ c-30 269 -53 363 -170 695 -158 448 -189 566 -244 938 -67 443 -86 687 -86
             </p>
 
             <!-- Submit + Keyboard -->
-            <div v-if="gameState === 'playing'" class="submit-row mb-2">
+            <div v-if="wonMessage" class="submit-row mb-2">
+              <button class="btn btn-press won-continue-btn px-4 py-1" @click="continueAfterWin">Continue</button>
+            </div>
+            <div v-else-if="gameState === 'playing'" class="submit-row mb-2">
               <button class="btn btn-press px-4 py-1" @click="handleKey('ENTER')">Submit</button>
               <button v-if="inventory.includes('sneak-attack')" class="btn btn-sneak-attack px-4 py-1"
                 @click="triggerSneakAttack">
@@ -1670,10 +1670,9 @@ async function handleAllBoardsSolved() {
       recordGameEnd('won')
       wonDamage.value = 0
       wonMessage.value = true
-      setTimeout(() => {
-        wonMessage.value = false
+      _wonContinue = () => {
         modal.value = 'stats'
-      }, 1800)
+      }
     } else if (shopOpensNext) {
       wonDamage.value = 0
       wonMessage.value = true
@@ -1688,8 +1687,7 @@ async function handleAllBoardsSolved() {
       }
       shopPicksRemaining.value = hasAbility('thief') ? 2 : 1
       shopTotalPicks.value = shopPicksRemaining.value
-      setTimeout(() => {
-        wonMessage.value = false
+      _wonContinue = () => {
         const proceedToShop = () => {
           if (needsSecondAbility && props.mode === 'testing') {
             showChangelingTestPick(true, () => {
@@ -1705,16 +1703,15 @@ async function handleAllBoardsSolved() {
         }
         if (inventory.value.includes('dwarven-puzzle-box')) triggerDwarvenPuzzleBox(proceedToShop)
         else proceedToShop()
-      }, 1800)
+      }
     } else {
       wonDamage.value = 0
       wonMessage.value = true
-      setTimeout(() => {
-        wonMessage.value = false
+      _wonContinue = () => {
         const proceedToNextStage = () => startStage(stage.value + 1)
         if (inventory.value.includes('dwarven-puzzle-box')) triggerDwarvenPuzzleBox(proceedToNextStage)
         else proceedToNextStage()
-      }, 1800)
+      }
     }
   } else {
     recordCurrentRound()
@@ -1722,12 +1719,22 @@ async function handleAllBoardsSolved() {
     wonDamage.value = hitDamage
     wonMessage.value = true
     const advancing = isBossFight.value
-    setTimeout(() => {
-      wonMessage.value = false
+    _wonContinue = () => {
       if (advancing) bossWordIndex.value++
       loadWord(false)
-    }, 1800)
+    }
   }
+}
+
+// The player advances past a win with a "Continue" button now, rather than an
+// auto-advancing timer — see the submit-row template for where it renders.
+let _wonContinue = null
+function continueAfterWin() {
+  if (!_wonContinue) return
+  const proceed = _wonContinue
+  _wonContinue = null
+  wonMessage.value = false
+  proceed()
 }
 
 // Dwarven Puzzle Box: consumed the moment the next enemy (of any kind) is defeated,
@@ -2174,6 +2181,7 @@ function handleModalAction() {
     usedSecretWords.value = []
     vorpalSwordActive.value = false
     wonMessage.value = false
+    _wonContinue = null
     wonDamage.value = 0
     lastRegen.value = 0
     selectedBoss.value = null
@@ -2228,6 +2236,7 @@ function restartJourney() {
   vorpalSwordActive.value = false
   bowTargeting.value = false
   wonMessage.value = false
+  _wonContinue = null
   wonDamage.value = 0
   lastRegen.value = 0
   selectedBoss.value = null

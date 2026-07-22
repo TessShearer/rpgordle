@@ -15,7 +15,7 @@
             <RouterLink class="nav-link" to="/testing">Testing</RouterLink>
           </li>
           <li class="nav-item">
-            <RouterLink class="nav-link" to="/info">Info</RouterLink>
+            <RouterLink class="nav-link" to="/notes">Info</RouterLink>
           </li>
         </ul>
     </div>
