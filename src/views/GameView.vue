@@ -487,6 +487,21 @@ c-30 269 -53 363 -170 695 -158 448 -189 566 -244 938 -67 443 -86 687 -86
               </div>
             </template>
 
+            <!-- Wizard's spell book -->
+            <template v-else-if="modal === 'spell-book'">
+              <button class="modal-close-btn" type="button" aria-label="Close" @click="modal = null">✕</button>
+              <p class="modal-message">Spell Book</p>
+              <table>
+                <tbody>
+                  <tr v-for="spell in SPELLS" :key="spell.id">
+                    <td>{{ spell.name }}</td>
+                    <td>{{ spell.description }}</td>
+                  </tr>
+                </tbody>
+              </table>
+              <button class="btn btn-press px-5 py-2 mt-3" @click="modal = null">Close</button>
+            </template>
+
             <!-- Know it all -->
             <template v-else-if="modal === 'know-it-all'">
               <Transition name="kit-fade" mode="out-in">
@@ -685,7 +700,7 @@ c-30 269 -53 363 -170 695 -158 448 -189 566 -244 938 -67 443 -86 687 -86
             <template v-else>
               <p class="modal-message">{{ MODAL_CONTENT[modal].message }}</p>
             </template>
-            <button v-if="modal !== 'shop' && modal !== 'use-item' && modal !== 'know-it-all' && modal !== 'scholar-definition' && modal !== 'scholar-jealous' && modal !== 'ancient-tome' && modal !== 'dwarven-puzzle-box' && modal !== 'test-shop' && modal !== 'defeat' && modal !== 'stats' && modal !== 'changeling-reveal' && modal !== 'changeling-test-pick' && modal !== 'enemy-intro'" class="btn btn-press px-5 py-2 mt-3"
+            <button v-if="modal !== 'shop' && modal !== 'use-item' && modal !== 'know-it-all' && modal !== 'scholar-definition' && modal !== 'scholar-jealous' && modal !== 'ancient-tome' && modal !== 'dwarven-puzzle-box' && modal !== 'test-shop' && modal !== 'defeat' && modal !== 'stats' && modal !== 'changeling-reveal' && modal !== 'changeling-test-pick' && modal !== 'enemy-intro' && modal !== 'spell-book'" class="btn btn-press px-5 py-2 mt-3"
               @click="handleModalAction">
               {{ MODAL_CONTENT[modal].button }}
             </button>
@@ -725,7 +740,7 @@ c-30 269 -53 363 -170 695 -158 448 -189 566 -244 938 -67 443 -86 687 -86
 
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
-import { CLASSES, ENEMIES, MINIBOSSES, BOSSES, SHOP_ITEMS, ALL_ITEMS, CHANGELING_POOL, getStageSequence, getJourneyLength } from '@/data/gameData.js'
+import { CLASSES, ENEMIES, MINIBOSSES, BOSSES, SHOP_ITEMS, ALL_ITEMS, CHANGELING_POOL, SPELLS, getStageSequence, getJourneyLength } from '@/data/gameData.js'
 import { useGameNavStore } from '@/stores/gameNav.js'
 import BossIntro from '@/components/BossIntro.vue'
 import BossFightIntro from '@/components/BossFightIntro.vue'
@@ -1789,6 +1804,8 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
   const activeBoards = boards.value.filter(b => !b.solved)
   if (!activeBoards.length) return
 
+  if (hasAbility('wizard') && castSpell(currentGuess.value)) return
+
   if (currentGuess.value.length < wordLength.value) {
     inputError.value = `Guess must be ${wordLength.value} letters`
     return
@@ -2555,6 +2572,9 @@ function beginJourney() {
   if (playerClass.value === 'medium') {
     inventory.value.push('ouija-board')
   }
+  if (playerClass.value === 'wizard') {
+    inventory.value.push('spell-book')
+  }
   if (playerClass.value === 'treasurer') {
     if (props.mode === 'daily' && dailyConfig.value?.treasurerItemIds?.length) {
       dailyConfig.value.treasurerItemIds.forEach(id => inventory.value.push(id))
@@ -3007,6 +3027,10 @@ function buyItem(item) {
 }
 
 function confirmUseItem(item) {
+  if (item.effect === 'spell-book') {
+    modal.value = 'spell-book'
+    return
+  }
   if (item.effect === 'sneak-attack') {
     if (gameState.value !== 'playing') return
     pendingUseItem.value = item
@@ -3057,6 +3081,39 @@ function triggerSneakAttack() {
   if (boards.value.every(b => b.solved)) handleAllBoardsSolved()
 }
 
+function applySmokeBombEffect() {
+  const rowToBlock = boards.value[0]?.guesses.length ?? 0
+  for (const board of boards.value) {
+    board.abilityBlockedRows = new Set([...board.abilityBlockedRows, rowToBlock])
+  }
+}
+
+function applyCaltropsEffect() {
+  const allWordLetters = new Set(boards.value.flatMap(b => b.secretWord.split('')))
+  const already = new Set(fortuneTellerGreyLetters.value)
+  const revealed = keyboardStatuses.value
+  const pool = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').filter(l => !allWordLetters.has(l) && !already.has(l) && revealed[l] !== 'absent')
+  const shuffled = [...pool].sort(() => Math.random() - 0.5)
+  const newLetters = shuffled.slice(0, 4)
+  caltropsFlyingAnim.value = true
+  setTimeout(() => {
+    caltropsFlyingAnim.value = false
+    queueKeyboardPops(newLetters, (l) => {
+      fortuneTellerGreyLetters.value = [...fortuneTellerGreyLetters.value, l]
+    })
+  }, 850)
+}
+
+// Wizard: guessing a spell's name casts it instead of submitting a word guess.
+function castSpell(guess) {
+  const spell = SPELLS.find(s => s.name.toUpperCase() === guess)
+  if (!spell) return false
+  currentGuess.value = ''
+  if (spell.id === 'smoke') applySmokeBombEffect()
+  else if (spell.id === 'blast') applyCaltropsEffect()
+  return true
+}
+
 function useItem() {
   const item = pendingUseItem.value
   if (!item) return
@@ -3084,10 +3141,7 @@ function useItem() {
   } else if (item.effect === 'vorpal-sword') {
     vorpalSwordActive.value = true
   } else if (item.effect === 'smoke-bomb') {
-    const rowToBlock = boards.value[0]?.guesses.length ?? 0
-    for (const board of boards.value) {
-      board.abilityBlockedRows = new Set([...board.abilityBlockedRows, rowToBlock])
-    }
+    applySmokeBombEffect()
   } else if (item.effect === 'vampiric-dagger') {
     vampiricDaggerStacks.value = Math.min(vampiricDaggerStacks.value + 1, MAX_VAMPIRIC_DAGGER_STACKS)
   } else if (item.effect === 'recorder') {
@@ -3101,19 +3155,7 @@ function useItem() {
     useAncientTome()
     return
   } else if (item.effect === 'caltrops') {
-    const allWordLetters = new Set(boards.value.flatMap(b => b.secretWord.split('')))
-    const already = new Set(fortuneTellerGreyLetters.value)
-    const revealed = keyboardStatuses.value
-    const pool = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').filter(l => !allWordLetters.has(l) && !already.has(l) && revealed[l] !== 'absent')
-    const shuffled = [...pool].sort(() => Math.random() - 0.5)
-    const newLetters = shuffled.slice(0, 4)
-    caltropsFlyingAnim.value = true
-    setTimeout(() => {
-      caltropsFlyingAnim.value = false
-      queueKeyboardPops(newLetters, (l) => {
-        fortuneTellerGreyLetters.value = [...fortuneTellerGreyLetters.value, l]
-      })
-    }, 850)
+    applyCaltropsEffect()
   } else if (item.effect === 'sneak-attack') {
     // Auto-solve the first unsolved board by inserting its answer directly
     const board = boards.value.find(b => !b.solved)

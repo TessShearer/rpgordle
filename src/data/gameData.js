@@ -142,9 +142,21 @@ export const SPECIAL_ITEMS = [
     description: 'Reveal all the letters used in the previous fight on your keyboard now.',
     effect: 'ouija-board',
   },
+  {
+    id: 'spell-book',
+    name: 'Spell Book',
+    description: 'Say a spell\'s name as your guess to cast it.',
+    effect: 'spell-book',
+  },
 ]
 
 export const ALL_ITEMS = [...SHOP_ITEMS, ...SPECIAL_ITEMS]
+
+// Spells the Wizard can cast by guessing the spell's name instead of a word.
+export const SPELLS = [
+  { id: 'smoke', name: 'Smoke', description: 'Hide yourself from the boss for one turn' },
+  { id: 'blast', name: 'Blast', description: 'remove 4 letters that aren\'t in the word' },
+]
 
 export const STAGE_SEQUENCE = ['enemy', 'enemy', 'miniboss']
 export const JOURNEY_LENGTH = STAGE_SEQUENCE.length + 1
