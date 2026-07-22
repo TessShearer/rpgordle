@@ -10,6 +10,8 @@ export const CLASSES = [
   { id: 'thief', name: 'Thief', health: 12, description: 'Thieves take 2 items from the shop instead of 1' },
   { id: 'fortune-teller', name: 'Fortune Teller', health: 12, description: 'Fortune Tellers reveal some letters that are not in the word' },
   { id: 'archer', name: 'Archer', health: 13, description: 'Archers shoot the gameboard to reveal a green letter' },
+  { id: 'medium', name: 'Medium', health: 12, description: 'Mediums store letters from the last battle and reveal them in the current one' },
+  { id: 'wizard', name: 'Wizard', health: 13, description: 'Wizards have a spell book of magical words' },
   { id: 'changeling', name: 'Changeling', health: 10, description: 'Gain take on the ability of a random character, and gain another later on' },
 ]
 
@@ -98,21 +100,21 @@ export const SHOP_ITEMS = [
     effect: 'vampiric-dagger',
     cost: 2,
   },
-    {
+  {
     id: 'ancient-tome',
     name: 'Ancient Tome',
     description: 'Reveal the definition of the word.',
     effect: 'ancient-tome',
     cost: 2,
   },
-      {
+  {
     id: 'dwarven-puzzle-box',
     name: 'Dwarven Puzzle Box',
     description: 'Gain two items after defeating the next enemy.',
     effect: 'dwarven-puzzle-box',
     cost: 2,
   },
-        {
+  {
     id: 'recorder',
     name: 'Recorder',
     description: 'Once used, begin to heal one health every 4 guesses',
@@ -271,7 +273,7 @@ export const BOSSES = [
     announcement: 'Your quest is to defeat the Hydra by cutting off its head(s?)',
     enhancedAnnouncement: 'The Hydra grew more heads and returned! Give it another go.',
   },
-    {
+  {
     id: 'bug-guy',
     name: 'Dev Version of Beetle Guy',
     health: 2,
