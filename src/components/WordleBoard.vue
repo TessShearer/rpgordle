@@ -1,5 +1,5 @@
 <template>
-  <div class="wordle-board" :class="{ 'wordle-board--solved': board.solved, 'wordle-board--compact': compact && board.solved }">
+  <div class="wordle-board" :class="{ 'wordle-board--solved': board.solved, 'wordle-board--compact': compact }">
     <!-- Per-board hints (hidden in compact mode) -->
     <template v-if="!(compact && board.solved)">
       <div class="text-center mb-2">

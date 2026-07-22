@@ -272,7 +272,7 @@ c-30 269 -53 363 -170 695 -158 448 -189 566 -244 938 -67 443 -86 687 -86
                   :has-seer="hasAbility('seer')" :has-scholar="hasAbility('scholar')"
                   :shadow-obscured-col="shadowObscuredCol" :board-shaking="boardShaking" :zombie-rising="zombieRising"
                   :graveyard-wobble="graveyardWobble"
-                  :compact="false" :bow-targeting="bowTargeting && !board.solved" :danger-letters="dangerLetters"
+                  :compact="boards.length > 1" :bow-targeting="bowTargeting && !board.solved" :danger-letters="dangerLetters"
                   :fire-letters="dragonFireBypassed ? [] : fireLetters" :key-letter-colors="keyLetterColors"
                   :mimic-danger-letters="mimicDangerLetters" :beetle-colors="beetleColors"
                   @shake-end="boardShaking = false"
