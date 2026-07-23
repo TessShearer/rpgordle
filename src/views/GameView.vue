@@ -726,7 +726,9 @@ c-30 269 -53 363 -170 695 -158 448 -189 566 -244 938 -67 443 -86 687 -86
             </template>
             <template v-else-if="modal === 'enemy-intro'">
               <p class="modal-message">{{ enemyIntroHeadline }}</p>
-              <div class="art-placeholder art-placeholder--modal-monster my-2">Art of {{ currentEnemy.name }}</div>
+              <img v-if="CHARACTER_IMAGES[currentEnemy.id]" :src="CHARACTER_IMAGES[currentEnemy.id]"
+                :alt="currentEnemy.name" class="modal-monster-img my-2" />
+              <div v-else class="art-placeholder art-placeholder--modal-monster my-2">Art of {{ currentEnemy.name }}</div>
               <div class="enemy-intro-stats mt-1" style="align-items:center">
                 <div class="enemy-stat-row">
                   <span class="enemy-stat-label">HP</span>

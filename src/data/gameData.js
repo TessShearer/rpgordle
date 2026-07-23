@@ -18,14 +18,16 @@ export const CLASSES = [
 export const CHANGELING_POOL = ['seer', 'scholar', 'assassin', 'cleric', 'village-idiot', 'thief', 'knight', 'treasurer', 'archer']
 
 export const ENEMIES = [
-  { id: 'useless-goblin', name: 'Goblin', regen: 2, health: 1, effect: '' },
-  { id: 'cave-spider', name: 'Cave Spider', regen: 2, health: 1, effect: '' },
-  { id: 'imp', name: 'Imp', regen: 2, health: 1, effect: '' },
-  { id: 'zombie', name: 'Zombie', regen: 2, health: 1, effect: '' },
+  // { id: 'useless-goblin', name: 'Goblin', regen: 2, health: 1, effect: '' },
+  // { id: 'cave-spider', name: 'Cave Spider', regen: 2, health: 1, effect: '' },
+  // { id: 'imp', name: 'Imp', regen: 2, health: 1, effect: '' },
+  // { id: 'zombie', name: 'Zombie', regen: 2, health: 1, effect: '' },
   { id: 'orc', name: 'Orc', regen: 2, health: 1, effect: '' },
   { id: 'skeleton', name: 'Skeleton', regen: 2, health: 1, effect: '' },
-  { id: 'dire-wolf', name: 'Dire Wolf', regen: 2, health: 1, effect: '' },
-  { id: 'bandit', name: 'Bandit', regen: 2, health: 1, effect: '' },
+  // { id: 'dire-wolf', name: 'Dire Wolf', regen: 2, health: 1, effect: '' },
+  // { id: 'bandit', name: 'Bandit', regen: 2, health: 1, effect: '' },
+  // { id: 'harpy', name: 'Harpy', regen: 2, health: 1, effect: '' },
+  // { id: 'ghoul', name: 'Ghoul', regen: 2, health: 1, effect: '' },
 
 ]
 
