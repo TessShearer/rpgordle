@@ -1401,6 +1401,14 @@ textarea {
   pointer-events: none;
 }
 
+/* Blast spell: the key's own JS-driven fly-off animation ends with opacity 0 and an
+   inline transform reset — this class just holds that empty, unusable state afterward,
+   for the rest of the round. */
+.key--blasted {
+  opacity: 0;
+  pointer-events: none;
+}
+
 /* Mimic: a letter reused from the last guess — retyping it deals +1 damage this guess.
    Rendered as a row of glowing teeth biting in from the top and bottom of the tile
    (a nod to the monster itself) rather than a plain highlight border. Each strip is a

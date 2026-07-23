@@ -885,6 +885,8 @@ const validating = ref(false)
 const annoyingKidTyping = ref(false)
 const zombieRising = ref(false)
 const fortuneTellerGreyLetters = ref([])
+// Blast spell: letters blown off the keyboard entirely — unusable for the rest of this round
+const blastedLetters = ref([])
 // Medium: letters from the fight before last, ready for the Ouija Board to reveal.
 // Refilled from allGuessedWords whenever an enemy is defeated (see handleAllBoardsSolved) —
 // stays put across stage transitions until the next enemy defeat overwrites it.
@@ -1339,6 +1341,7 @@ function keyClass(key) {
   const isFire = fireLetters.value.length > 0 && fireLetters.value.includes(key) && !dragonFireBypassed.value
   const isLocked = !!lockedLetterColors.value[key] && !keyMasterLocksBypassed.value
   const isStolen = littleElfStolenLetter.value === key
+  const isBlasted = blastedLetters.value.includes(key)
   const status = keyboardStatuses.value[key]
   const classes = []
   if (status) classes.push(`key--${status}`)
@@ -1346,6 +1349,7 @@ function keyClass(key) {
   if (isFire) classes.push('key--fire')
   if (isLocked) classes.push('key--locked')
   if (isStolen) classes.push('key--stolen')
+  if (isBlasted) classes.push('key--blasted')
   return classes.join(' ')
 }
 
@@ -1364,6 +1368,8 @@ function handleKey(key) {
     setTimeout(() => { if (shakingKey.value === key) shakingKey.value = null }, 400)
   } else if (currentEnemy.value?.id === 'little-elves' && littleElfStolenLetter.value === key) {
     // Stolen letter — does nothing until the elf hands it back
+  } else if (blastedLetters.value.includes(key)) {
+    // Blasted letter — gone for the rest of this round
   } else if (currentGuess.value.length < wordLength.value) {
     currentGuess.value += key
   }
@@ -2282,6 +2288,7 @@ function handleModalAction() {
     purchasedShopItemIds.value = []
     validating.value = false
     fortuneTellerGreyLetters.value = []
+    blastedLetters.value = []
     mediumReadyLetters.value = []
     ouijaRevealed.value = false
     giantSnoreBars.value = 0
@@ -2338,6 +2345,7 @@ function restartJourney() {
   purchasedShopItemIds.value = []
   validating.value = false
   fortuneTellerGreyLetters.value = []
+  blastedLetters.value = []
   mediumReadyLetters.value = []
   ouijaRevealed.value = false
   giantSnoreBars.value = 0
@@ -2978,6 +2986,7 @@ async function loadWord(showModal) {
   littleElfStolenLetter.value = null
   beetleColors.value = {}
   fortuneTellerGreyLetters.value = []
+  blastedLetters.value = []
   giantSnoreBars.value = 0
   damageBlockActive.value = false
   // Ouija Board's reveal was only ever accurate against the fight it was used in
@@ -3154,16 +3163,57 @@ function applyCaltropsEffect() {
   }, 850)
 }
 
+// Blast spell: picks 4 not-in-word letters exactly like Caltrops, but instead of revealing
+// them as grey on the keyboard, sends each key flying off toward a random point beyond the
+// screen edge with some spin, then leaves it gone (unusable) for the rest of the round.
+function applyBlastSpellEffect() {
+  const allWordLetters = new Set(boards.value.flatMap(b => b.secretWord.split('')))
+  const already = new Set([...fortuneTellerGreyLetters.value, ...blastedLetters.value])
+  const revealed = keyboardStatuses.value
+  const pool = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').filter(l => !allWordLetters.has(l) && !already.has(l) && revealed[l] !== 'absent')
+  const shuffled = [...pool].sort(() => Math.random() - 0.5)
+  const newLetters = shuffled.slice(0, 4)
+  blastKeysOffScreen(newLetters)
+}
+
+function blastKeysOffScreen(letters) {
+  const targets = letters.filter(l => keyRefs[l])
+  if (!targets.length) return
+  const travel = Math.max(window.innerWidth, window.innerHeight)
+  targets.forEach(letter => {
+    const el = keyRefs[letter]
+    const angle = Math.random() * Math.PI * 2
+    const dx = Math.cos(angle) * travel
+    const dy = Math.sin(angle) * travel
+    const spin = (Math.random() < 0.5 ? -1 : 1) * (360 + Math.random() * 360)
+    el.style.transition = 'none'
+    el.style.transform = 'translate(0, 0) rotate(0deg)'
+    el.getBoundingClientRect() // force reflow before animating
+    el.style.transition = 'transform 0.6s cubic-bezier(0.5, 0, 0.75, 0), opacity 0.6s ease-in'
+    el.style.transform = `translate(${dx}px, ${dy}px) rotate(${spin}deg)`
+    el.style.opacity = '0'
+  })
+  setTimeout(() => {
+    targets.forEach(letter => {
+      const el = keyRefs[letter]
+      if (el) {
+        el.style.transition = ''
+        el.style.transform = ''
+        el.style.opacity = ''
+      }
+    })
+    blastedLetters.value = [...blastedLetters.value, ...letters]
+  }, 620)
+}
+
 // Wizard: guessing a spell's name casts it, in addition to submitting normally as a guess.
 function castSpell(guess, guessWillWin) {
   const spell = SPELLS.find(s => s.name.toUpperCase() === guess)
   if (!spell) return
   if (spell.id === 'smoke') applySmokeBombEffect()
-  else if (spell.id === 'blast') applyCaltropsEffect()
-  else if (spell.id === 'block') {
-    shieldAnim.value = true
-    setTimeout(() => { shieldAnim.value = false }, 950)
-    damageBlockActive.value = true
+  else if (spell.id === 'blast') applyBlastSpellEffect()
+  else if (spell.id === 'charm') {
+    revealCrystalHint(1 + Math.floor(Math.random() * 5))
   } else if (spell.id === 'wager') {
     if (Math.random() < 0.1) {
       // The guess itself is already about to land the winning hit — don't also
@@ -3233,11 +3283,11 @@ function useItem() {
   modal.value = null
 }
 
-function revealCrystalHint() {
+function revealCrystalHint(targetLetters = 2) {
   const unsolvedBoards = boards.value.filter(b => !b.solved)
   if (!unsolvedBoards.length) return
   const revealed = keyboardStatuses.value
-  const TARGET_LETTERS = 2
+  const TARGET_LETTERS = targetLetters
   const pickedLetters = new Set()
   const letterBoardPairs = []
 
