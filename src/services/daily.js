@@ -74,6 +74,12 @@ async function generateDaily(dateKey) {
   const shopPool = ['hydra', 'giant-slime'].includes(boss.id) ? SHOP_ITEMS.filter(s => s.id !== 'smoke-bomb') : SHOP_ITEMS
   const shopItemIds = pickRandom(shopPool, 3).map(s => s.id)
 
+  // Hydra's post-miniboss reward: 3 free item choices, pre-seeded so every player gets the
+  // same options that day (only ever used when boss.id === 'hydra')
+  const hydraRewardItemIds = boss.id === 'hydra'
+    ? pickRandom(SHOP_ITEMS.filter(s => s.id !== 'smoke-bomb'), 3).map(s => s.id)
+    : []
+
   // Pre-generate Changeling abilities so all players get the same two
   const changelingAbilities = pickRandom([...CHANGELING_POOL], 2).map(id => id)
 
@@ -85,9 +91,13 @@ async function generateDaily(dateKey) {
   const stageSequence = getStageSequence(boss.id)
   const stageEnemies = {}
   for (let i = 0; i < stageSequence.length; i++) {
-    // Hydra has no miniboss at all — its sequence is just two 'enemy' stages, so this
-    // always draws from ENEMIES for it, same as any other regular-enemy stage.
-    let pool = stageSequence[i] === 'miniboss' ? MINIBOSSES : ENEMIES
+    // Hydra's miniboss slot is always forced to the two-headed Hydra encounter, never a
+    // random pick — mirrors the same override in GameView.vue's startStage.
+    if (stageSequence[i] === 'miniboss' && boss.id === 'hydra') {
+      stageEnemies[i] = 'hydra-heads'
+      continue
+    }
+    let pool = stageSequence[i] === 'miniboss' ? MINIBOSSES.filter(m => !m.hydraOnly) : ENEMIES
     // Cerberus's 3-board mechanic conflicts with the Abominable Snowman's letter-freezing,
     // and so does Little Elves' letter-stealing — both fight over the same keyboard letters
     if (stageSequence[i] === 'miniboss' && boss.id === 'abominable-snowman') {
@@ -177,6 +187,7 @@ async function generateDaily(dateKey) {
     bossId: boss.id,
     stageEnemies,
     shopItemIds,
+    hydraRewardItemIds,
     changelingAbilities,
     treasurerItemIds,
     words,

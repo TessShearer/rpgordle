@@ -12,7 +12,8 @@
           @click="choose(boss.id)"
         >
           <div class="art-with-shadow">
-            <div class="art-placeholder art-placeholder--class">Art of {{ boss.name }}</div>
+            <img v-if="CHARACTER_IMAGES[boss.id]" :src="CHARACTER_IMAGES[boss.id]" :alt="boss.name" class="class-img" />
+            <div v-else class="art-placeholder art-placeholder--class">Art of {{ boss.name }}</div>
             <div class="class-option-shadow"></div>
           </div>
           <div class="class-text">
@@ -36,6 +37,8 @@
 </template>
 
 <script setup>
+import { CHARACTER_IMAGES } from '@/assets/characterImages.js'
+
 const props = defineProps({
   bosses:         { type: Array,  required: true },
   selectedBossId: { type: String, default: null },

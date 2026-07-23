@@ -39,6 +39,9 @@ export const MINIBOSSES = [
   { id: 'wily-magician', name: 'Wily Magician', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'He places one piece of false information in every guess' },
   { id: 'little-elves', name: 'Little Elves', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'They steal the last letter from your guess...but always bring it back' },
   { id: 'mimic', name: 'Mimic', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'Using any letters two guesses in a row will do extra damage, unless you put them in the right place.' },
+  // Only ever fought when the Hydra is the chosen boss (forced in place of a random
+  // miniboss pick — see startStage/daily.js) — never offered as a regular miniboss option.
+  { id: 'hydra-heads', name: 'Hydra', regen: 3, health: 1, boardCount: 2, wordLength: 5, hydraOnly: true, effect: 'Two heads, two words. Solve them both at once to cut them off.' },
 ]
 
 export const SHOP_ITEMS = [
@@ -162,13 +165,10 @@ export const STAGE_SEQUENCE = ['enemy', 'enemy', 'miniboss']
 export const JOURNEY_LENGTH = STAGE_SEQUENCE.length + 1
 
 // Giant Slime splits into more pieces, so its journey is shortened by one regular enemy
-// to compensate for the extra boss rounds. Hydra has no miniboss at all — just two regular
-// enemies before its 3-round boss fight (see the shop-timing note in GameView.vue's
-// handleAllBoardsSolved, which opens the shop before the boss fight instead of a miniboss
-// whenever a boss's sequence has no 'miniboss' stage).
+// to compensate for the extra boss rounds. Hydra uses the default sequence — its miniboss
+// stage is always forced to the two-headed Hydra encounter (see startStage/daily.js).
 const STAGE_SEQUENCE_OVERRIDES = {
   'giant-slime': ['enemy', 'miniboss'],
-  'hydra': ['enemy', 'enemy'],
 }
 
 export function getStageSequence(bossId) {
@@ -278,25 +278,23 @@ export const BOSSES = [
   {
     id: 'hydra',
     name: 'Hydra',
-    health: 3,
+    health: 2,
     regen: 0,
     wordLength: 5,
-    boardCount: 1,
+    boardCount: 4,
     rounds: [
-      { boardCount: 1, wordLength: 5 },
-      { boardCount: 2, wordLength: 5 },
       { boardCount: 4, wordLength: 5 },
+      { boardCount: 8, wordLength: 5 },
     ],
     effect: 'The Hydra grows more heads as you cut them off',
     announcement: 'Your quest is to defeat the Hydra by cutting off its head(s?)',
-    enhancedAnnouncement: 'The Hydra grew more heads and returned! Give it another go.',
+    enhancedAnnouncement: "Oh no... it's getting back up!",
   },
   {
     id: 'bug-guy',
     name: 'Beetle Handler',
     health: 2,
     regen: 0,
-    testOnly: true,
     wordLength: 5,
     effect: 'Each green beetle on the board can heal you, and each red one will harm you',
     enhancedEffect: 'So...many...beetles',

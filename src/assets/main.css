@@ -310,6 +310,13 @@ textarea {
   margin: 0 auto;
 }
 
+.intro-logo {
+  width: min(280px, 75vw);
+  height: auto;
+  margin: 0 auto;
+  display: block;
+}
+
 .class-img {
   width: 70px;
   height: 70px;

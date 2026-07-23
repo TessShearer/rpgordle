@@ -12,7 +12,7 @@
 
       <!-- Intro -->
       <div v-else-if="screen === 'intro'" class="text-center">
-        <div class="art-placeholder art-placeholder--hero mb-4">Art goes here</div>
+        <img :src="logo" alt="RPGordle" class="intro-logo mb-4" />
         <template v-if="mode === 'daily'">
           <button class="btn btn-press px-5 py-3 fs-5" @click="showClassSelect">
             Start Adventure
@@ -424,7 +424,7 @@ c-30 269 -53 363 -170 695 -158 448 -189 566 -244 938 -67 443 -86 687 -86
       <!-- Modal -->
       <Transition name="modal">
         <div v-if="modal" class="modal-overlay">
-          <div class="modal-card-glow" :class="{ 'modal-card--wide': modal === 'shop' || modal === 'test-shop' || modal === 'stats' || modal === 'changeling-test-pick' || modal === 'dwarven-puzzle-box' || modal === 'spell-book' }">
+          <div class="modal-card-glow" :class="{ 'modal-card--wide': modal === 'shop' || modal === 'test-shop' || modal === 'stats' || modal === 'changeling-test-pick' || modal === 'dwarven-puzzle-box' || modal === 'spell-book' || modal === 'hydra-reward' }">
           <div class="modal-card">
 
             <!-- Boss announcement -->
@@ -591,6 +591,33 @@ c-30 269 -53 363 -170 695 -158 448 -189 566 -244 938 -67 443 -86 687 -86
               <button class="btn btn-press px-5 py-2 mt-3" @click="dismissDwarvenPuzzleBoxModal">Got it</button>
             </template>
 
+            <!-- Hydra reward: free item pick after the two-headed miniboss is defeated -->
+            <template v-else-if="modal === 'hydra-reward'">
+              <p class="modal-message">You defeated the hydra and saved the citizens of the kingdom! They offer you one item as a reward.</p>
+              <p class="modal-submessage">Choose</p>
+              <div class="shop-items">
+                <div v-for="item in hydraRewardItems" :key="item.id" class="shop-item"
+                  :class="{ 'shop-item--flipped': selectedHydraRewardItemId === item.id }"
+                  @click="selectedHydraRewardItemId = item.id">
+                  <div class="shop-item-inner">
+                    <div class="shop-item-front">
+                      <img v-if="ITEM_IMAGES[item.id]" :src="ITEM_IMAGES[item.id]" :alt="item.name" class="shop-img" />
+                      <div v-else class="art-placeholder art-placeholder--item">{{ item.name }}</div>
+                      <p class="shop-item-name">{{ item.name }}</p>
+                    </div>
+                    <div class="shop-item-back">
+                      <p class="shop-item-desc">{{ item.description }}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <Transition name="slide-in">
+                <button v-if="selectedHydraRewardItemId" class="btn btn-press px-5 py-2 mt-3" @click="pickHydraReward">
+                  Choose
+                </button>
+              </Transition>
+            </template>
+
             <!-- Test shop -->
             <template v-else-if="modal === 'test-shop'">
               <button class="modal-close-btn" type="button" aria-label="Close" @click="modal = null">✕</button>
@@ -728,7 +755,7 @@ c-30 269 -53 363 -170 695 -158 448 -189 566 -244 938 -67 443 -86 687 -86
             <template v-else>
               <p class="modal-message">{{ MODAL_CONTENT[modal].message }}</p>
             </template>
-            <button v-if="modal !== 'shop' && modal !== 'use-item' && modal !== 'know-it-all' && modal !== 'scholar-definition' && modal !== 'scholar-jealous' && modal !== 'ancient-tome' && modal !== 'dwarven-puzzle-box' && modal !== 'test-shop' && modal !== 'defeat' && modal !== 'stats' && modal !== 'changeling-reveal' && modal !== 'changeling-test-pick' && modal !== 'enemy-intro' && modal !== 'boss-fight-intro' && modal !== 'spell-book' && modal !== 'slime-split'" class="btn btn-press px-5 py-2 mt-3"
+            <button v-if="modal !== 'shop' && modal !== 'use-item' && modal !== 'know-it-all' && modal !== 'scholar-definition' && modal !== 'scholar-jealous' && modal !== 'ancient-tome' && modal !== 'dwarven-puzzle-box' && modal !== 'test-shop' && modal !== 'defeat' && modal !== 'stats' && modal !== 'changeling-reveal' && modal !== 'changeling-test-pick' && modal !== 'enemy-intro' && modal !== 'boss-fight-intro' && modal !== 'spell-book' && modal !== 'slime-split' && modal !== 'hydra-reward'" class="btn btn-press px-5 py-2 mt-3"
               @click="handleModalAction">
               {{ MODAL_CONTENT[modal].button }}
             </button>
@@ -781,6 +808,7 @@ import blueKeyImg from '@/assets/blue-key.png'
 import redKeyImg from '@/assets/red-key.png'
 import purpleKeyImg from '@/assets/purple-key.png'
 import spellbookImg from '@/assets/spellbook.png'
+import logo from '@/assets/logo.png'
 import { fetchOrCreateDaily } from '@/services/daily.js'
 import { fetchGameWord, fetchWordData } from '@/services/words.js'
 import { recordGameResult } from '@/services/stats.js'
@@ -927,6 +955,9 @@ const ancientTomeDefinition = ref('')
 // Dwarven Puzzle Box
 const dwarvenPuzzleBoxItems = ref([])
 let _dwarvenPuzzleBoxContinue = null
+// Hydra reward
+const hydraRewardItems = ref([])
+const selectedHydraRewardItemId = ref(null)
 const changelingRevealPhase = ref(0)
 const changelingRevealFromId = ref(null)
 const changelingRevealToId = ref(null)
@@ -1173,7 +1204,7 @@ const selectableBosses = computed(() => {
 // forces every guess to be a palindrome, which combined with the Key Master's locked
 // letters can leave too few usable letters to form any valid guess.
 const testingMinibossOptions = computed(() => {
-  let pool = MINIBOSSES
+  let pool = MINIBOSSES.filter(m => !m.hydraOnly)
   if (currentBoss.value?.id === 'abominable-snowman') {
     pool = pool.filter(m => m.id !== 'cerberus' && m.id !== 'little-elves')
   }
@@ -1198,6 +1229,15 @@ const availableShopItems = computed(() => {
 const currentShopItems = computed(() => {
   const pool = props.mode === 'daily' ? availableShopItems.value : freeplayShopItems.value
   return pool.filter(item => !purchasedShopItemIds.value.includes(item.id))
+})
+
+// Hydra reward: 3 free items offered after the two-headed miniboss is defeated. Daily mode
+// uses a pre-seeded pool (like the shop) so every player sees the same 3 that day.
+const availableHydraRewardItems = computed(() => {
+  if (props.mode === 'daily' && dailyConfig.value?.hydraRewardItemIds) {
+    return SHOP_ITEMS.filter(s => dailyConfig.value.hydraRewardItemIds.includes(s.id))
+  }
+  return SHOP_ITEMS.filter(s => s.id !== 'smoke-bomb')
 })
 
 function openShop() {
@@ -1817,13 +1857,6 @@ function pickUpSlimeSplitPotion() {
 }
 
 async function finishBoardsSolved(hitDamage) {
-  // Hydra takes 3 hits to bring down — heal the player 2 HP for each one landed (including
-  // the killing blow), to offset the length of the fight. Giant Slime used to get the same
-  // treatment, but now gets a one-time health potion on its first hit instead (see above).
-  if (isBossFight.value && currentBoss.value?.id === 'hydra') {
-    await animatePlayerHeal(plagueLordHeal(2))
-  }
-
   if (enemyHealth.value <= 0) {
     recordCurrentRound()
     // Medium: this fight's guessed letters become the Ouija Board's "ready" pool for
@@ -1884,10 +1917,11 @@ async function finishBoardsSolved(hitDamage) {
       wonDamage.value = 0
       wonMessage.value = true
       inventoryLockedForContinue.value = true
+      const defeatedHydraHeads = currentEnemy.value?.id === 'hydra-heads'
       _wonContinue = () => {
-        const proceedToNextStage = () => startStage(stage.value + 1)
-        if (inventory.value.includes('dwarven-puzzle-box')) triggerDwarvenPuzzleBox(proceedToNextStage)
-        else proceedToNextStage()
+        const proceed = defeatedHydraHeads ? showHydraReward : () => startStage(stage.value + 1)
+        if (inventory.value.includes('dwarven-puzzle-box')) triggerDwarvenPuzzleBox(proceed)
+        else proceed()
       }
     }
   } else {
@@ -1950,6 +1984,27 @@ function dismissDwarvenPuzzleBoxModal() {
   const cb = _dwarvenPuzzleBoxContinue
   _dwarvenPuzzleBoxContinue = null
   if (cb) cb()
+}
+
+// Hydra reward: shown after the two-headed miniboss falls, before the real Hydra fight
+// begins. Picking an item (or its dismissal) starts the boss stage directly — the
+// boss-fight-intro modal that startStage triggers doubles as the "it's getting back up"
+// beat via the boss's enhancedAnnouncement text.
+function showHydraReward() {
+  hydraRewardItems.value = props.mode === 'daily'
+    ? availableHydraRewardItems.value
+    : [...availableHydraRewardItems.value].sort(() => Math.random() - 0.5).slice(0, 3)
+  selectedHydraRewardItemId.value = null
+  modal.value = 'hydra-reward'
+}
+
+function pickHydraReward() {
+  const item = hydraRewardItems.value.find(i => i.id === selectedHydraRewardItemId.value)
+  if (!item) return
+  grantItem(item.id)
+  selectedHydraRewardItemId.value = null
+  modal.value = null
+  startStage(stageSequence.value.length)
 }
 
 async function submitGuess(skipValidation = false, skipScramble = false) {
@@ -2646,8 +2701,8 @@ function selectClass(cls) {
 
 function confirmBossSelect(bossId) {
   currentBoss.value = BOSSES.find(b => b.id === bossId)
-  // Hydra has no miniboss at all — just two regular enemies before its boss fight — so it
-  // skips the miniboss-select screen entirely rather than asking a moot question.
+  // Hydra's miniboss slot is always forced to the Hydra encounter itself — so it skips
+  // the dev miniboss-select screen entirely rather than asking a moot question.
   if (bossId === 'hydra') {
     selectedMiniboss.value = null
     beginJourney()
@@ -2846,12 +2901,14 @@ async function startStage(stageNum) {
   } else {
     const stageType = stageSequence.value[stageNum]
     if (stageType === 'miniboss') {
-      if (selectedMiniboss.value) {
+      if (currentBoss.value?.id === 'hydra') {
+        // Hydra's miniboss slot is always the two-headed Hydra encounter, never a random pick
+        currentEnemy.value = MINIBOSSES.find(m => m.hydraOnly)
+      } else if (selectedMiniboss.value) {
         // Use the forced miniboss chosen on the dev test screen
         currentEnemy.value = MINIBOSSES.find(m => m.id === selectedMiniboss.value)
       } else {
-        // Hydra never reaches this branch at all — its stage sequence has no 'miniboss' entry
-        let pool = MINIBOSSES
+        let pool = MINIBOSSES.filter(m => !m.hydraOnly)
         // Cerberus's 3-board mechanic conflicts with the Abominable Snowman's letter-freezing,
         // and so does Little Elf's letter-stealing — both fight over the same keyboard letters
         if (currentBoss.value?.id === 'abominable-snowman') pool = pool.filter(m => m.id !== 'cerberus' && m.id !== 'little-elves')
