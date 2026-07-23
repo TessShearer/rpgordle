@@ -152,9 +152,9 @@
           <!-- character and inventory column on browser -->
           <aside class="game-panel game-panel--left">
             <div class="class-feature">
-              <div ref="desktopPortraitRef" class="class-feature-img-col"
-                :class="{ 'health-hit': playerDamageAnim === 'damage', 'health-heal': playerDamageAnim === 'heal' }">
-                <div class="small-card">
+              <div ref="desktopPortraitRef" class="class-feature-img-col">
+                <div class="small-card"
+                  :class="{ 'health-hit': playerDamageAnim === 'damage', 'health-heal': playerDamageAnim === 'heal' }">
                   <div v-if="mode === 'testing'" class="test-health-btns">
                     <button class="btn-test-health btn-test-heal" @click="testHeal">Heal</button>
                     <button class="btn-test-health btn-test-damage" @click="testDamage">Damage</button>
@@ -1510,6 +1510,17 @@ function onKeyDown(e) {
   }
   if (wonMessage.value) {
     if (e.key === 'Enter') continueAfterWin()
+    return
+  }
+  // Generic fallback so every other modal's primary button works with Enter, without
+  // needing per-modal wiring — skips the X close button and any disabled button, and
+  // picks whichever actionable button is first in the modal (works even for buttons
+  // that only appear after another action, like Buy/Choose, since this queries live).
+  if (modal.value) {
+    if (e.key === 'Enter') {
+      const btn = document.querySelector('.modal-card button:not(.modal-close-btn):not(:disabled)')
+      btn?.click()
+    }
     return
   }
   if (/^[1-9]$/.test(e.key) && gameState.value === 'playing' && !modal.value && !validating.value) {

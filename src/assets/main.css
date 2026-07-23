@@ -1689,7 +1689,8 @@ textarea {
 /* ── Health damage / heal animations ─────────────────────────────────────── */
 .portrait-img-col,
 .class-feature-img-col,
-.enemy-section {
+.enemy-section,
+.small-card {
   position: relative;
 }
 
