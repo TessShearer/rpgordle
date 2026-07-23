@@ -39,9 +39,7 @@ export const MINIBOSSES = [
   { id: 'wily-magician', name: 'Wily Magician', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'He places one piece of false information in every guess' },
   { id: 'little-elves', name: 'Little Elves', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'They steal the last letter from your guess...but always bring it back' },
   { id: 'mimic', name: 'Mimic', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'Using any letters two guesses in a row will do extra damage, unless you put them in the right place.' },
-  // Only ever fought when the Hydra is the chosen boss (forced in place of a random
-  // miniboss pick — see startStage/daily.js) — never offered as a regular miniboss option.
-  { id: 'hydra-heads', name: 'Hydra', regen: 3, health: 1, boardCount: 2, wordLength: 5, hydraOnly: true, effect: 'Two heads, two words. Solve them both at once to cut them off.' },
+  { id: 'hydra-heads', name: 'Hydra', regen: 3, health: 1, boardCount: 2, wordLength: 5, hydraOnly: true, effect: 'A fearsome beast with two heads' },
 ]
 
 export const SHOP_ITEMS = [
@@ -259,9 +257,9 @@ export const BOSSES = [
     health: 2,
     regen: 0,
     wordLength: 5,
-    effect: 'Guessing an on fire letter will deal an extra damage and douse the flame.',
+    effect: 'Guess burning letters to douse them, a fire on your keyboard will hurt you.',
     enhancedEffect: 'Be careful of the flames',
-    announcement: 'Your quest is to defeat the Dragon, he will breathe fire that spreads onto your keyboard. Every burning letter in your guess will deal an extra damager"',
+    announcement: 'Your quest is to defeat the Dragon, he will breathe fire that spreads onto your keyboard. Guess burning letters to douse them, any fire left on your keyboard will harm you',
     enhancedAnnouncement: 'You found the boss! Be careful of the flames.',
   },
   {

@@ -2151,17 +2151,16 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
     castSpell(submitted, guessWillWin)
   }
 
-  // Dragon: guessing an on-fire letter puts it out — snapshot which fire letters this
-  // guess actually touches (dragonFireHitLetters, used by the damage penalty further
-  // down) before extinguishing them. The guess counter/spread trigger itself happens at
-  // the very end of this function, AFTER damage is applied — a newly-spread letter must
-  // never be blamed for damage from the same guess that lit it.
-  let dragonFireHitLetters = []
+  // Dragon: guessing an on-fire letter puts it out, no damage for doing so. But if any
+  // fire letters are still burning after this guess's dousing, the flames that got away
+  // deal an extra point of damage (used by the penalty further down). The guess
+  // counter/spread trigger itself happens at the very end of this function, AFTER damage
+  // is applied — a newly-spread letter must never be blamed for damage from the same
+  // guess that lit it.
+  let dragonFireRemains = false
   if (currentBoss.value?.id === 'dragon') {
-    dragonFireHitLetters = fireLetters.value.filter(l => submitted.includes(l))
-    if (dragonFireHitLetters.length) {
-      fireLetters.value = fireLetters.value.filter(l => !submitted.includes(l))
-    }
+    fireLetters.value = fireLetters.value.filter(l => !submitted.includes(l))
+    dragonFireRemains = fireLetters.value.length > 0
   }
 
   // Recorder: every guess (correct or not, across the whole game) counts toward the next
@@ -2324,11 +2323,10 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
       necroPenalty += 1
     }
 
-    // Every on-fire letter actually typed in this guess deals its own point of damage
-    // (a repeated on-fire letter counts once per occurrence), not just a flat +1.
-    const dragonPenalty = (!abilityBlocked && currentBoss.value?.id === 'dragon')
-      ? submitted.split('').filter(l => dragonFireHitLetters.includes(l)).length
-      : 0
+    // Dragon: if any fire letters are still burning after this guess doused whatever it
+    // touched, the ones that got away deal a flat extra point of damage — guessing a fire
+    // letter itself is never punished.
+    const dragonPenalty = (!abilityBlocked && currentBoss.value?.id === 'dragon' && dragonFireRemains) ? 1 : 0
 
     // Bug Guy: every green beetle typed heals 1, every red beetle typed deals 1. A
     // beetle can only be used once per guess, so a letter typed twice (e.g. a beetle on
