@@ -17,7 +17,7 @@ html {
 body {
   background-color: var(--gs-050);
   color: var(--gs-800);
-  font-family: 'MedievalSharp', 'Segoe UI', system-ui, sans-serif;
+  font-family: 'Cormorant Unicase', 'Segoe UI', system-ui, sans-serif;
   touch-action: manipulation;
   overscroll-behavior: none;
 }

@@ -3140,8 +3140,12 @@ function triggerSneakAttack() {
   if (boards.value.every(b => b.solved)) handleAllBoardsSolved()
 }
 
-function applySmokeBombEffect() {
-  const rowToBlock = boards.value[0]?.guesses.length ?? 0
+// rowOffset lets the wizard's smoke spell target the guess AFTER the one it's cast on
+// (it's called mid-submission, before this guess's own row is recorded) — the item calls
+// this with the default of 0, since it's used as its own standalone action before typing,
+// so guesses.length already points at the upcoming, not-yet-made guess.
+function applySmokeBombEffect(rowOffset = 0) {
+  const rowToBlock = (boards.value[0]?.guesses.length ?? 0) + rowOffset
   for (const board of boards.value) {
     board.abilityBlockedRows = new Set([...board.abilityBlockedRows, rowToBlock])
   }
@@ -3210,7 +3214,7 @@ function blastKeysOffScreen(letters) {
 function castSpell(guess, guessWillWin) {
   const spell = SPELLS.find(s => s.name.toUpperCase() === guess)
   if (!spell) return
-  if (spell.id === 'smoke') applySmokeBombEffect()
+  if (spell.id === 'smoke') applySmokeBombEffect(1)
   else if (spell.id === 'blast') applyBlastSpellEffect()
   else if (spell.id === 'charm') {
     revealCrystalHint(1 + Math.floor(Math.random() * 5))

@@ -10,7 +10,7 @@ export const CLASSES = [
   { id: 'thief', name: 'Thief', health: 12, description: 'Thieves take 2 items from the shop instead of 1' },
   { id: 'fortune-teller', name: 'Fortune Teller', health: 12, description: 'Fortune Tellers reveal some letters that are not in the word' },
   { id: 'archer', name: 'Archer', health: 13, description: 'Archers shoot the gameboard to reveal a green letter' },
-  { id: 'medium', name: 'Medium', health: 12, description: 'Mediums store letters from the last battle and reveal them in the current one' },
+  { id: 'medium', name: 'Medium', health: 12, description: 'Mediums can store letters from the last battle and reveal them in the current one' },
   { id: 'wizard', name: 'Wizard', health: 13, description: 'Wizards have a spell book of magical words' },
   { id: 'changeling', name: 'Changeling', health: 10, description: 'Gain take on the ability of a random character, and gain another later on' },
 ]
