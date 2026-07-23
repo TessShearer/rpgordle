@@ -185,7 +185,8 @@
                   </div>
                   <div class="inventory-list">
                     <div v-for="(item, i) in inventoryItems" :key="i" class="inventory-item"
-                      @click="confirmUseItem(item)">
+                      :class="{ 'inventory-item--disabled': inventoryLockedForContinue }"
+                      @click="!inventoryLockedForContinue && confirmUseItem(item)">
                       <div class="inventory-item-inner">
                         <div class="inventory-item-front">
                           <img v-if="ITEM_IMAGES[item.id]" :src="ITEM_IMAGES[item.id]" :alt="item.name"
@@ -342,7 +343,8 @@ c-30 269 -53 363 -170 695 -158 448 -189 566 -244 938 -67 443 -86 687 -86
                 <p class="boss-strip-inv-label">Inventory</p>
                 <div class="boss-strip-inv-list">
                   <div v-for="(item, i) in inventoryItems" :key="i" class="boss-strip-inv-item"
-                    @click="confirmUseItem(item)">
+                    :class="{ 'inventory-item--disabled': inventoryLockedForContinue }"
+                    @click="!inventoryLockedForContinue && confirmUseItem(item)">
                     <img v-if="ITEM_IMAGES[item.id]" :src="ITEM_IMAGES[item.id]" :alt="item.name" class="boss-inv-img" />
                     <div v-else class="art-placeholder art-placeholder--boss-inv">{{ item.name }}</div>
                   </div>
@@ -835,6 +837,9 @@ const bossIntroRef = ref(null)
 const bossFightIntroRef = ref(null)
 const wonMessage = ref(false)
 const wonDamage = ref(0)
+// True only while the Continue button is up after killing a non-final enemy — items
+// used mid-transition (e.g. between stages, right before the shop) can break the game.
+const inventoryLockedForContinue = ref(false)
 
 // Game state 
 const stage = ref(0)
@@ -1441,6 +1446,10 @@ function onKeyDown(e) {
     if (e.key === 'Enter') beginEnemyEncounter()
     return
   }
+  if (wonMessage.value) {
+    if (e.key === 'Enter') continueAfterWin()
+    return
+  }
   if (/^[1-9]$/.test(e.key) && gameState.value === 'playing' && !modal.value && !validating.value) {
     const item = inventoryItems.value[parseInt(e.key) - 1]
     if (item) { confirmUseItem(item); return }
@@ -1747,6 +1756,7 @@ async function handleAllBoardsSolved() {
     } else if (shopOpensNext) {
       wonDamage.value = 0
       wonMessage.value = true
+      inventoryLockedForContinue.value = true
       const needsSecondAbility = playerClass.value === 'changeling' && changelingAbilities.value.length < 2
       if (needsSecondAbility && props.mode !== 'testing') {
         if (props.mode === 'daily' && dailyConfig.value?.changelingAbilities?.[1]) {
@@ -1778,6 +1788,7 @@ async function handleAllBoardsSolved() {
     } else {
       wonDamage.value = 0
       wonMessage.value = true
+      inventoryLockedForContinue.value = true
       _wonContinue = () => {
         const proceedToNextStage = () => startStage(stage.value + 1)
         if (inventory.value.includes('dwarven-puzzle-box')) triggerDwarvenPuzzleBox(proceedToNextStage)
@@ -1805,6 +1816,7 @@ function continueAfterWin() {
   const proceed = _wonContinue
   _wonContinue = null
   wonMessage.value = false
+  inventoryLockedForContinue.value = false
   proceed()
 }
 
