@@ -15,8 +15,6 @@ export const CLASSES = [
   { id: 'changeling', name: 'Changeling', health: 10, description: 'Gain take on the ability of a random character, and gain another later on' },
 ]
 
-// Abilities the Changeling can roll — kept in one place so freeplay/testing and the
-// daily pre-generation draw from the exact same pool.
 export const CHANGELING_POOL = ['seer', 'scholar', 'assassin', 'cleric', 'village-idiot', 'thief', 'knight', 'treasurer', 'archer']
 
 export const ENEMIES = [
@@ -139,7 +137,7 @@ export const SPECIAL_ITEMS = [
   {
     id: 'ouija-board',
     name: 'Ouija Board',
-    description: 'Reveal all the letters used in the previous fight on your keyboard now.',
+    description: 'Reveal all letters guessed in the previous fight on your keyboard now.',
     effect: 'ouija-board',
   },
   {

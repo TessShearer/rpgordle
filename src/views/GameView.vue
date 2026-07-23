@@ -1175,7 +1175,7 @@ const isBossFight = computed(() => stage.value >= stageSequence.value.length)
 const itemUseBlockedReason = computed(() => {
   if (!pendingUseItem.value) return ''
   if (pendingUseItem.value.effect === 'vorpal-sword' && !isBossFight.value) return 'Wait until boss fight to use'
-  if (pendingUseItem.value.effect === 'ouija-board' && mediumReadyLetters.value.length === 0) return 'No letters remembered yet'
+  if (pendingUseItem.value.effect === 'ouija-board' && mediumReadyLetters.value.length === 0) return 'No Previous Fight Yet'
   return ''
 })
 
@@ -1789,6 +1789,20 @@ function continueAfterWin() {
   _wonContinue = null
   wonMessage.value = false
   proceed()
+}
+
+// Vampiric Dagger and Recorder are passive, always-on effects with nothing left to decide
+// once you have them — there's no point letting them sit in inventory waiting to be
+// "used", so every grant path (shop, puzzle box, treasurer, testing) routes through here
+// instead of pushing straight into inventory, and they activate immediately instead.
+function grantItem(id) {
+  if (id === 'vampiric-dagger') {
+    vampiricDaggerStacks.value = Math.min(vampiricDaggerStacks.value + 1, MAX_VAMPIRIC_DAGGER_STACKS)
+  } else if (id === 'recorder') {
+    recorderStacks.value = Math.min(recorderStacks.value + 1, MAX_RECORDER_STACKS)
+  } else {
+    inventory.value.push(id)
+  }
 }
 
 // Dwarven Puzzle Box: consumed the moment the next enemy (of any kind) is defeated,
@@ -3161,10 +3175,6 @@ function useItem() {
     vorpalSwordActive.value = true
   } else if (item.effect === 'smoke-bomb') {
     applySmokeBombEffect()
-  } else if (item.effect === 'vampiric-dagger') {
-    vampiricDaggerStacks.value = Math.min(vampiricDaggerStacks.value + 1, MAX_VAMPIRIC_DAGGER_STACKS)
-  } else if (item.effect === 'recorder') {
-    recorderStacks.value = Math.min(recorderStacks.value + 1, MAX_RECORDER_STACKS)
   } else if (item.effect === 'ouija-board') {
     ouijaRevealed.value = true
   } else if (item.effect === 'ancient-tome') {

@@ -11,11 +11,11 @@
         <li class="nav-item">
           <RouterLink class="nav-link" to="/freeplay">Custom Play</RouterLink>
         </li>
-        <li class="nav-item">
+        <li class="nav-item pt-2 px-4">
           <button type="button" class="feedback-bubble-btn" @click="feedbackOpen = true">Feedback</button>
         </li>
         <!-- <li class="nav-item">
-          <RouterLink class="nav-link" to="/testing">Testing</RouterLink>
+          <RouterLink class="nav-link" to="/test">Testing</RouterLink>
         </li>
         <li class="nav-item">
           <RouterLink class="nav-link" to="/notes">Info</RouterLink>
