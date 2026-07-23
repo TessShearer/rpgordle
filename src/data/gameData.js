@@ -38,7 +38,7 @@ export const MINIBOSSES = [
   { id: 'slumbering-giant', name: 'Slumbering Giant', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'You won\'t take any damage from a wrong guess...until you wake her up.' },
   { id: 'wily-magician', name: 'Wily Magician', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'He places one piece of false information in every guess' },
   { id: 'little-elves', name: 'Little Elves', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'They steal the last letter from your guess...but always bring it back' },
-  { id: 'mimic', name: 'Mimic', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'Using a letter two guesses in a row will do extra damage, unless you put it in the right place.' },
+  { id: 'mimic', name: 'Mimic', regen: 3, health: 1, wordLength: 5, boardCount: 1, effect: 'Using any letters two guesses in a row will do extra damage, unless you put them in the right place.' },
 ]
 
 export const SHOP_ITEMS = [
@@ -293,14 +293,14 @@ export const BOSSES = [
   },
   {
     id: 'bug-guy',
-    name: 'Dev Version of Beetle Guy',
+    name: 'Beetle Handler',
     health: 2,
     regen: 0,
     testOnly: true,
     wordLength: 5,
-    effect: 'Beetles on the board can heal or harm you',
+    effect: 'Each green beetle on the board can heal you, and each red one will harm you',
     enhancedEffect: 'So...many...beetles',
-    announcement: 'Your quest is to defeat mr. evil beetle man. Each health beetle heals you each poison beetle harms you."',
-    enhancedAnnouncement: 'You found the boss! eheheheh...more beetles. Many more beetles.',
+    announcement: 'Your quest is to defeat the beetle handler. Each green beetle in your guess heals you each red beetle harms you."',
+    enhancedAnnouncement: 'You found the boss! eheheheh...more beetles.',
   },
 ]

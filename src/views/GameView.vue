@@ -47,10 +47,6 @@
       <BossIntro v-else-if="screen === 'boss-intro'" ref="bossIntroRef" :boss="currentBoss" :player-class="playerClass"
         @begin="beginJourney" />
 
-      <!-- Boss Fight Intro - BossFightIntro.vue -->
-      <BossFightIntro v-else-if="screen === 'boss-fight-intro'" ref="bossFightIntroRef" :boss="currentBoss"
-        @begin="beginBossFight" />
-
       <!-- Game  -->
       <template v-else>
 
@@ -286,7 +282,7 @@ c-30 269 -53 363 -170 695 -158 448 -189 566 -244 938 -67 443 -86 687 -86
                   :graveyard-wobble="graveyardWobble"
                   :compact="boards.length > 1" :bow-targeting="bowTargeting && !board.solved" :danger-letters="dangerLetters"
                   :fire-letters="dragonFireBypassed ? [] : fireLetters" :key-letter-colors="keyLetterColors"
-                  :mimic-danger-letters="mimicDangerLetters" :beetle-colors="beetleColors"
+                  :mimic-danger-letters="mimicDangerLetters" :beetle-colors="bugGuyBeetlesBypassed ? {} : beetleColors"
                   @shake-end="boardShaking = false"
                   @bow-target="useBowAtCol($event)" />
               </template>
@@ -327,7 +323,7 @@ c-30 269 -53 363 -170 695 -158 448 -189 566 -244 938 -67 443 -86 687 -86
               <div v-for="(row, r) in KEY_ROWS" :key="r" class="key-row">
                 <button v-for="key in row" :key="key" class="key" :ref="(el) => setKeyRef(key, el)"
                   :class="[keyClass(key), { 'key--pop': poppingKey === key, 'h-shake': shakingKey === key }]" @click="handleKey(key)">
-                  <span v-if="lockedLetterColors[key] && !keyMasterLocksBypassed" class="lock-icon" :class="`lock-icon--${lockedLetterColors[key]}`"></span><img v-if="keyLetterColors[key]" :src="KEY_IMAGES[keyLetterColors[key]]" class="key-icon" alt="" /><span v-if="dangerLetters.includes(key)" class="slime-icon"></span><template v-if="mimicDangerLetters.includes(key)"><span class="mimic-teeth mimic-teeth--top"></span><span class="mimic-teeth mimic-teeth--bottom"></span></template><span v-if="beetleColors[key]" class="beetle-icon" :class="`beetle-icon--${beetleColors[key]}`" :ref="(el) => setBeetleRef(key, el)"></span><span class="key-letter">{{ key }}</span>
+                  <span v-if="lockedLetterColors[key] && !keyMasterLocksBypassed" class="lock-icon" :class="`lock-icon--${lockedLetterColors[key]}`"></span><img v-if="keyLetterColors[key]" :src="KEY_IMAGES[keyLetterColors[key]]" class="key-icon" alt="" /><span v-if="dangerLetters.includes(key)" class="slime-icon"></span><template v-if="mimicDangerLetters.includes(key)"><span class="mimic-teeth mimic-teeth--top"></span><span class="mimic-teeth mimic-teeth--bottom"></span></template><span v-if="beetleColors[key] && !bugGuyBeetlesBypassed" class="beetle-icon" :class="`beetle-icon--${beetleColors[key]}`" :ref="(el) => setBeetleRef(key, el)"></span><span class="key-letter">{{ key }}</span>
                 </button>
               </div>
             </div>
@@ -554,6 +550,12 @@ c-30 269 -53 363 -170 695 -158 448 -189 566 -244 938 -67 443 -86 687 -86
               <button class="btn btn-press px-5 py-2 mt-3" @click="modal = null">Got it</button>
             </template>
 
+            <!-- Giant Slime splits open on the first hit -->
+            <template v-else-if="modal === 'slime-split'">
+              <p class="modal-message">The slime splits and a health potion falls out!</p>
+              <button class="btn btn-press px-5 py-2 mt-3" @click="pickUpSlimeSplitPotion">Pick up</button>
+            </template>
+
             <!-- Ancient Tome -->
             <template v-else-if="modal === 'ancient-tome'">
               <p class="modal-message">
@@ -714,10 +716,19 @@ c-30 269 -53 363 -170 695 -158 448 -189 566 -244 938 -67 443 -86 687 -86
               </div>
               <button class="btn btn-press px-5 py-2 mt-3" @click="beginEnemyEncounter">Fight!</button>
             </template>
+
+            <!-- Boss Fight Intro -->
+            <template v-else-if="modal === 'boss-fight-intro'">
+              <img v-if="CHARACTER_IMAGES[currentBoss.id]" :src="CHARACTER_IMAGES[currentBoss.id]"
+                :alt="currentBoss.name" class="modal-monster-img my-3" />
+              <div v-else class="art-placeholder art-placeholder--modal-monster my-3">Art of {{ currentBoss.name }}</div>
+              <p class="modal-message">{{ currentBoss.enhancedAnnouncement }}</p>
+              <button class="btn btn-press px-5 py-2 mt-3" @click="beginEnemyEncounter">Fight!</button>
+            </template>
             <template v-else>
               <p class="modal-message">{{ MODAL_CONTENT[modal].message }}</p>
             </template>
-            <button v-if="modal !== 'shop' && modal !== 'use-item' && modal !== 'know-it-all' && modal !== 'scholar-definition' && modal !== 'scholar-jealous' && modal !== 'ancient-tome' && modal !== 'dwarven-puzzle-box' && modal !== 'test-shop' && modal !== 'defeat' && modal !== 'stats' && modal !== 'changeling-reveal' && modal !== 'changeling-test-pick' && modal !== 'enemy-intro' && modal !== 'spell-book'" class="btn btn-press px-5 py-2 mt-3"
+            <button v-if="modal !== 'shop' && modal !== 'use-item' && modal !== 'know-it-all' && modal !== 'scholar-definition' && modal !== 'scholar-jealous' && modal !== 'ancient-tome' && modal !== 'dwarven-puzzle-box' && modal !== 'test-shop' && modal !== 'defeat' && modal !== 'stats' && modal !== 'changeling-reveal' && modal !== 'changeling-test-pick' && modal !== 'enemy-intro' && modal !== 'boss-fight-intro' && modal !== 'spell-book' && modal !== 'slime-split'" class="btn btn-press px-5 py-2 mt-3"
               @click="handleModalAction">
               {{ MODAL_CONTENT[modal].button }}
             </button>
@@ -760,7 +771,6 @@ import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { CLASSES, ENEMIES, MINIBOSSES, BOSSES, SHOP_ITEMS, ALL_ITEMS, CHANGELING_POOL, SPELLS, getStageSequence, getJourneyLength } from '@/data/gameData.js'
 import { useGameNavStore } from '@/stores/gameNav.js'
 import BossIntro from '@/components/BossIntro.vue'
-import BossFightIntro from '@/components/BossFightIntro.vue'
 import ClassSelect from '@/components/ClassSelect.vue'
 import BossSelect from '@/components/BossSelect.vue'
 import WordleBoard from '@/components/WordleBoard.vue'
@@ -834,7 +844,6 @@ const playerClass = ref(null)
 const changelingAbilities = ref([])
 const selectedClass = ref(null)
 const bossIntroRef = ref(null)
-const bossFightIntroRef = ref(null)
 const wonMessage = ref(false)
 const wonDamage = ref(0)
 // True only while the Continue button is up after killing a non-final enemy — items
@@ -899,6 +908,10 @@ const mediumReadyLetters = ref([])
 const ouijaRevealed = ref(false)
 const giantSnoreBars = ref(0)
 const giantAwake = ref(false)
+// First hit landed on the Giant Slime splits it open for a health potion instead of
+// the usual heal-on-hit effect — only happens once per fight.
+const slimeSplitPotionGranted = ref(false)
+let _slimeSplitContinue = null
 const damageBlockActive = ref(false)
 // Counting vampiric daggers
 const vampiricDaggerStacks = ref(0)
@@ -1046,6 +1059,10 @@ const keyMasterLocksBypassed = computed(() =>
 
 const dragonFireBypassed = computed(() =>
   currentBoss.value?.id === 'dragon' && smokeBombActive.value
+)
+
+const bugGuyBeetlesBypassed = computed(() =>
+  currentBoss.value?.id === 'bug-guy' && smokeBombActive.value
 )
 // End smoke bomb logic
 
@@ -1435,14 +1452,7 @@ function onKeyDown(e) {
     }
     return
   }
-  if (screen.value === 'boss-fight-intro') {
-    if (e.key === 'Enter') {
-      if (bossFightIntroRef.value?.allVisible) beginBossFight()
-      else bossFightIntroRef.value?.skip()
-    }
-    return
-  }
-  if (modal.value === 'enemy-intro') {
+  if (modal.value === 'enemy-intro' || modal.value === 'boss-fight-intro') {
     if (e.key === 'Enter') beginEnemyEncounter()
     return
   }
@@ -1597,18 +1607,18 @@ async function doFairyScramble(board) {
 }
 
 // ── Bug Guy FLIP beetle slide ─────────────────────────────────────────────────
-// Scatters the beetles to a fresh set of letters (never reusing any letter that was
-// just occupied) and slides each one from its old keyboard key to its new one, using
-// the same FLIP technique as doFairyScramble above — except here the "tile" being
+// Scatters the surviving beetles to a fresh set of letters (never reusing any letter
+// that was just occupied) and slides each one from its old keyboard key to its new one,
+// using the same FLIP technique as doFairyScramble above — except here the "tile" being
 // animated is a freshly-created element (the v-if'd beetle icon on the new key), not a
 // persistent one, so the invert step measures the OLD key's rect rather than the
-// element's own previous rect.
+// element's own previous rect. Beetles that were typed this guess are already gone from
+// beetleColors (see the bugGuyHeal/bugGuyDamage handling above) and are never replaced —
+// the swarm only shrinks over the course of a round.
 async function relocateBugGuyBeetles() {
-  const isBoss = isBossFight.value
-  const greenCount = isBoss ? 4 : 1
-  const redCount = isBoss ? 9 : 3
   const oldColors = beetleColors.value
   const oldLetters = Object.keys(oldColors)
+  if (!oldLetters.length) return
 
   const oldRects = {}
   for (const letter of oldLetters) {
@@ -1616,23 +1626,23 @@ async function relocateBugGuyBeetles() {
     if (el) oldRects[letter] = el.getBoundingClientRect()
   }
 
+  const oldGreens = oldLetters.filter(l => oldColors[l] === 'green')
+  const oldReds = oldLetters.filter(l => oldColors[l] === 'red')
+
   const alpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').filter(l => !oldLetters.includes(l))
   const shuffled = [...alpha].sort(() => Math.random() - 0.5)
-  const newLetters = shuffled.slice(0, greenCount + redCount)
+  const newGreens = shuffled.slice(0, oldGreens.length)
+  const newReds = shuffled.slice(oldGreens.length, oldGreens.length + oldReds.length)
   const newColors = {}
-  newLetters.slice(0, greenCount).forEach(l => { newColors[l] = 'green' })
-  newLetters.slice(greenCount).forEach(l => { newColors[l] = 'red' })
+  newGreens.forEach(l => { newColors[l] = 'green' })
+  newReds.forEach(l => { newColors[l] = 'red' })
 
   // Pair old → new within each color group. All beetles of the same color look
   // identical, so it doesn't matter which specific old one "becomes" which new one —
   // only that the counts line up.
-  const oldGreens = oldLetters.filter(l => oldColors[l] === 'green')
-  const oldReds = oldLetters.filter(l => oldColors[l] === 'red')
-  const newGreens = newLetters.slice(0, greenCount)
-  const newReds = newLetters.slice(greenCount)
   const fromLetterFor = {}
-  newGreens.forEach((l, i) => { if (oldGreens[i]) fromLetterFor[l] = oldGreens[i] })
-  newReds.forEach((l, i) => { if (oldReds[i]) fromLetterFor[l] = oldReds[i] })
+  newGreens.forEach((l, i) => { fromLetterFor[l] = oldGreens[i] })
+  newReds.forEach((l, i) => { fromLetterFor[l] = oldReds[i] })
 
   beetleColors.value = newColors
   await nextTick()
@@ -1721,9 +1731,29 @@ async function handleAllBoardsSolved() {
 
   await animateEnemyDamage(hitDamage)
 
-  // Hydra and Giant Slime both take 3 hits to bring down — heal the player 2 HP for each
-  // one landed (including the killing blow), to offset the length of their boss fights.
-  if (isBossFight.value && ['hydra', 'giant-slime'].includes(currentBoss.value?.id)) {
+  if (isBossFight.value && currentBoss.value?.id === 'giant-slime' && !slimeSplitPotionGranted.value) {
+    slimeSplitPotionGranted.value = true
+    _slimeSplitContinue = () => finishBoardsSolved(hitDamage)
+    modal.value = 'slime-split'
+    return
+  }
+
+  await finishBoardsSolved(hitDamage)
+}
+
+function pickUpSlimeSplitPotion() {
+  grantItem('health-potion')
+  modal.value = null
+  const cb = _slimeSplitContinue
+  _slimeSplitContinue = null
+  if (cb) cb()
+}
+
+async function finishBoardsSolved(hitDamage) {
+  // Hydra takes 3 hits to bring down — heal the player 2 HP for each one landed (including
+  // the killing blow), to offset the length of the fight. Giant Slime used to get the same
+  // treatment, but now gets a one-time health potion on its first hit instead (see above).
+  if (isBossFight.value && currentBoss.value?.id === 'hydra') {
     await animatePlayerHeal(plagueLordHeal(2))
   }
 
@@ -1746,13 +1776,11 @@ async function handleAllBoardsSolved() {
       && stage.value + 1 === stageSequence.value.length
     const shopOpensNext = nextIsMiniboss || nextIsBossWithNoMiniboss
     if (isLast) {
-      gameResult.value = 'won'
       recordGameEnd('won')
-      wonDamage.value = 0
-      wonMessage.value = true
-      _wonContinue = () => {
+      setTimeout(() => {
+        gameResult.value = 'won'
         modal.value = 'stats'
-      }
+      }, 1000)
     } else if (shopOpensNext) {
       wonDamage.value = 0
       wonMessage.value = true
@@ -2155,14 +2183,23 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
 
     // Bug Guy: every green beetle typed heals 1, every red beetle typed deals 1 — both
     // stack per occurrence, same counting rule as the dragon's fire above. A smoke bomb
-    // silences the beetles entirely for the guess (neither bite nor heal).
+    // silences the beetles entirely for the guess (neither bite nor heal), and since they
+    // were never "found" they aren't removed either. Any beetle actually typed is squashed
+    // for good — it does not come back when relocateBugGuyBeetles scatters the survivors.
+    // The heal itself is applied AFTER this guess's damage below (not here) so a green
+    // beetle can't be wasted healing a player who's still sitting at full health.
     let bugGuyHeal = 0
     let bugGuyDamage = 0
     if (!abilityBlocked && currentBoss.value?.id === 'bug-guy') {
-      bugGuyHeal = submitted.split('').filter(l => beetleColors.value[l] === 'green').length
-      bugGuyDamage = submitted.split('').filter(l => beetleColors.value[l] === 'red').length
+      const typedLetters = submitted.split('')
+      bugGuyHeal = typedLetters.filter(l => beetleColors.value[l] === 'green').length
+      bugGuyDamage = typedLetters.filter(l => beetleColors.value[l] === 'red').length
+      if (bugGuyHeal > 0 || bugGuyDamage > 0) {
+        const remaining = { ...beetleColors.value }
+        typedLetters.forEach(l => { delete remaining[l] })
+        beetleColors.value = remaining
+      }
     }
-    if (bugGuyHeal > 0) await animatePlayerHeal(plagueLordHeal(bugGuyHeal))
 
     if (currentEnemy.value?.id === 'slumbering-giant') {
       // Slumbering Giant: wrong guesses fill snore bars while asleep, not player health.
@@ -2185,9 +2222,11 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
           if (playerHealth.value <= 0) {
             recordCurrentRound()
             gameState.value = 'lost'
-            gameResult.value = 'lost'
             recordGameEnd('lost')
-            setTimeout(() => { modal.value = 'defeat' }, 1200)
+            setTimeout(() => {
+              gameResult.value = 'lost'
+              modal.value = 'defeat'
+            }, 1000)
           }
         }
       }
@@ -2200,9 +2239,11 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
         if (playerHealth.value <= 0) {
           recordCurrentRound()
           gameState.value = 'lost'
-          gameResult.value = 'lost'
           recordGameEnd('lost')
-          setTimeout(() => { modal.value = 'defeat' }, 1200)
+          setTimeout(() => {
+            gameResult.value = 'lost'
+            modal.value = 'defeat'
+          }, 1000)
           return
         }
       }
@@ -2233,6 +2274,8 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
         }
       }
     }
+
+    if (bugGuyHeal > 0) await animatePlayerHeal(plagueLordHeal(bugGuyHeal))
   }
   // If anyBoardSolvedThisGuess but not allSolved: game continues, no damage
 
@@ -2316,6 +2359,8 @@ function handleModalAction() {
     knowItAllModalPhase.value = 'taunt'
     knowItAllCanDismiss.value = false
     scholarJealousShown.value = false
+    slimeSplitPotionGranted.value = false
+    _slimeSplitContinue = null
   }
 }
 
@@ -2373,6 +2418,8 @@ function restartJourney() {
   knowItAllModalPhase.value = 'taunt'
   knowItAllCanDismiss.value = false
   scholarJealousShown.value = false
+  slimeSplitPotionGranted.value = false
+  _slimeSplitContinue = null
 }
 
 // ── Know It All modal ─────────────────────────────────────────────────────────
@@ -2680,11 +2727,6 @@ function beginEnemyEncounter() {
   flushPendingKeyPops()
 }
 
-function beginBossFight() {
-  screen.value = 'playing'
-  loadWord(false)
-}
-
 // ── Game lifecycle ────────────────────────────────────────────────────────────
 async function startStage(stageNum) {
   stage.value = stageNum
@@ -2692,7 +2734,7 @@ async function startStage(stageNum) {
     currentEnemy.value = currentBoss.value
     enemyHealth.value = currentBoss.value.health
     bossWordIndex.value = 0
-    screen.value = 'boss-fight-intro'
+    await loadWord(true)
   } else {
     const stageType = stageSequence.value[stageNum]
     if (stageType === 'miniboss') {
@@ -2975,7 +3017,7 @@ function finishWordLoad(showModal) {
   gameState.value = 'ready'
   if (showModal) {
     screen.value = 'playing'
-    modal.value = 'enemy-intro'
+    modal.value = isBossFight.value ? 'boss-fight-intro' : 'enemy-intro'
     // pops deferred to beginEnemyEncounter, after keyboard renders
   } else if (currentEnemy.value?.id === 'annoying-kid') {
     applyAnnoyingKidGuess()
