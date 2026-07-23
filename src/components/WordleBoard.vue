@@ -188,7 +188,11 @@ function keyLetterColorAt(row, col) {
 function beetleColorAt(row, col) {
   if (!isInputRow(row)) return null
   const typed = props.currentGuess[col]
-  return typed ? (props.beetleColors[typed] ?? null) : null
+  if (!typed) return null
+  // A beetle can only ever be used once per guess — on a repeated letter, only its
+  // first occurrence carries the beetle; later occurrences show nothing.
+  if (props.currentGuess.indexOf(typed) !== col) return null
+  return props.beetleColors[typed] ?? null
 }
 
 // Shadow Sorcerer, already-submitted row: fully hidden, letter never rendered.

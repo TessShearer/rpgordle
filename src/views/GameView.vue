@@ -1618,6 +1618,16 @@ async function doFairyScramble(board) {
   })
 }
 
+// Bug Guy: removes a single typed beetle's letter from beetleColors for good — used one
+// beetle at a time, right as that beetle's own turn starts, so its keyboard marker
+// disappears in sync with its tile clone leaving to fly toward the player portrait.
+function squashBugGuyBeetle(letter) {
+  if (!(letter in beetleColors.value)) return
+  const remaining = { ...beetleColors.value }
+  delete remaining[letter]
+  beetleColors.value = remaining
+}
+
 // ── Bug Guy FLIP beetle slide ─────────────────────────────────────────────────
 // Scatters the surviving beetles to a fresh set of letters (never reusing any letter
 // that was just occupied) and slides each one from its old keyboard key to its new one,
@@ -1687,33 +1697,44 @@ async function relocateBugGuyBeetles() {
   }
 }
 
-// Bug Guy: sends a single typed beetle tumbling from its input tile to the player
-// portrait — translating toward the character while rotating like it's rolling there —
-// resolving once it arrives. Purely visual; the caller applies its own heal/damage
-// right after, one beetle at a time, rather than batching every beetle at once.
-async function flyBugGuyBeetle({ rect, color }) {
-  const targetEl = getVisiblePortraitEl()
-  if (!targetEl) return
-
-  const targetRect = targetEl.getBoundingClientRect()
-  const targetX = targetRect.left + targetRect.width / 2
-  const targetY = targetRect.top + targetRect.height / 2
-
+// Bug Guy: creates a static beetle clone pinned over a just-typed input tile, standing
+// in for the real tile beetle-icon the instant it vanishes (the real one only renders
+// for the live input row, which this guess is about to leave). It just sits there,
+// looking exactly like it did on the tile, until flyBugGuyBeetle animates it away.
+function createBeetleClone(rect, color) {
   const size = Math.min(rect.width, rect.height) * 0.55
-  const startX = rect.left + rect.width / 2
-  const startY = rect.top + rect.height / 2
-  const dx = targetX - startX
-  const dy = targetY - startY
-  const spin = (dx < 0 ? -1 : 1) * 720
-
   const el = document.createElement('div')
   el.className = `beetle-flying beetle-flying--${color}`
   el.style.width = `${size}px`
   el.style.height = `${size}px`
-  el.style.left = `${startX - size / 2}px`
-  el.style.top = `${startY - size / 2}px`
+  el.style.left = `${rect.left + rect.width / 2 - size / 2}px`
+  el.style.top = `${rect.top + rect.height / 2 - size / 2}px`
   document.body.appendChild(el)
-  el.getBoundingClientRect() // force reflow before animating
+  return el
+}
+
+// Bug Guy: sends a single already-placed beetle clone (see createBeetleClone) tumbling
+// from its pinned spot to the player portrait — translating toward the character while
+// rotating like it's rolling there — resolving once it arrives, then removing the
+// clone. Purely visual; the caller applies its own heal/damage right after, one beetle
+// at a time, rather than batching every beetle at once.
+async function flyBugGuyBeetle(el) {
+  const targetEl = getVisiblePortraitEl()
+  if (!targetEl) {
+    el.remove()
+    return
+  }
+
+  const startRect = el.getBoundingClientRect()
+  const targetRect = targetEl.getBoundingClientRect()
+  const startX = startRect.left + startRect.width / 2
+  const startY = startRect.top + startRect.height / 2
+  const targetX = targetRect.left + targetRect.width / 2
+  const targetY = targetRect.top + targetRect.height / 2
+  const dx = targetX - startX
+  const dy = targetY - startY
+  const spin = (dx < 0 ? -1 : 1) * 720
+
   el.style.transform = `translate(${dx}px, ${dy}px) rotate(${spin}deg)`
   el.style.opacity = '0'
 
@@ -2024,16 +2045,34 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
     allGuessedWords.value = [...allGuessedWords.value, submitted]
   }
 
-  // Bug Guy: snapshot each beetle-occupied input tile's on-screen position and color
-  // now, while the row is still the live input row — currentGuess is about to clear and
-  // the row is about to be committed, after which this position is no longer recoverable.
-  // Used below to fly the beetles to the player portrait before their heal/damage lands.
+  // Bug Guy: snapshot each beetle-occupied input tile now, while the row is still the
+  // live input row — currentGuess is about to clear and the row is about to be
+  // committed, after which the real tile's beetle icon vanishes (it only ever renders
+  // for the live input row). A static clone is created immediately, pinned over that
+  // same on-screen spot, so the beetle visually keeps sitting on its letter — it isn't
+  // touched again until flyBugGuyBeetle animates it away right as that beetle's own
+  // turn comes up, further down. Skipped when this row is smoke-bombed (matching the
+  // bypass that already hides beetles for a blocked guess) or when the guess is correct
+  // (beetles never bite/heal on a board-solving guess, so a clone would never get
+  // claimed and would be left dangling in the DOM).
   let beetleTileSnapshots = []
-  if (currentBoss.value?.id === 'bug-guy') {
+  if (currentBoss.value?.id === 'bug-guy' && !isCorrectAnswer
+    && !firstActive.abilityBlockedRows.has(firstActive.guesses.length)) {
     const rects = boardRefs[firstActive.id]?.getInputRowRects() ?? []
+    const seenLetters = new Set()
     beetleTileSnapshots = rects
+      // A beetle can only be used once per guess — on a repeated letter, only its first
+      // occurrence (lowest column) counts; later occurrences are skipped entirely.
+      .filter(r => {
+        if (seenLetters.has(r.letter)) return false
+        seenLetters.add(r.letter)
+        return true
+      })
       .filter(r => beetleColors.value[r.letter])
-      .map(r => ({ rect: r.rect, color: beetleColors.value[r.letter] }))
+      .map(r => {
+        const color = beetleColors.value[r.letter]
+        return { letter: r.letter, color, el: createBeetleClone(r.rect, color) }
+      })
   }
 
   currentGuess.value = ''
@@ -2225,26 +2264,22 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
       ? submitted.split('').filter(l => dragonFireHitLetters.includes(l)).length
       : 0
 
-    // Bug Guy: every green beetle typed heals 1, every red beetle typed deals 1 — both
-    // stack per occurrence, same counting rule as the dragon's fire above. A smoke bomb
+    // Bug Guy: every green beetle typed heals 1, every red beetle typed deals 1. A
+    // beetle can only be used once per guess, so a letter typed twice (e.g. a beetle on
+    // "E" guessed in TEETH) still only counts once — hence the Set dedupe below, unlike
+    // the dragon fire penalty above, which does stack per occurrence. A smoke bomb
     // silences the beetles entirely for the guess (neither bite nor heal), and since they
-    // were never "found" they aren't removed either. Any beetle actually typed is squashed
-    // for good — it does not come back when relocateBugGuyBeetles scatters the survivors.
-    // Neither effect is applied here — both land further down, after this guess's other
-    // damage/heals and the beetle-run animation, so a green beetle can't be wasted
-    // healing a player who's still sitting at full health, and the beetle bite reads as
-    // its own clear beat rather than being folded into the guess's other damage.
+    // were never "found" they aren't removed either. Neither effect (nor the keyboard
+    // removal of a squashed beetle) is applied here — both land further down, one beetle
+    // at a time as each one's own turn comes up, after this guess's other damage/heals,
+    // so a green beetle can't be wasted healing a player who's still at full health, and
+    // the beetle bite reads as its own clear beat rather than a folded-in modifier.
     let bugGuyHeal = 0
     let bugGuyDamage = 0
     if (!abilityBlocked && currentBoss.value?.id === 'bug-guy') {
-      const typedLetters = submitted.split('')
+      const typedLetters = [...new Set(submitted.split(''))]
       bugGuyHeal = typedLetters.filter(l => beetleColors.value[l] === 'green').length
       bugGuyDamage = typedLetters.filter(l => beetleColors.value[l] === 'red').length
-      if (bugGuyHeal > 0 || bugGuyDamage > 0) {
-        const remaining = { ...beetleColors.value }
-        typedLetters.forEach(l => { delete remaining[l] })
-        beetleColors.value = remaining
-      }
     }
 
     // Whether this guess's "regular" damage phase actually landed (not shielded, and —
@@ -2271,15 +2306,6 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
           bugGuyDamageLands = true
           const giantPenalty = justWoke ? 5 : 1
           await animatePlayerDamage((doubleDamage ? 2 : 1) + necroPenalty + dragonPenalty + giantPenalty + mimicPenalty)
-          if (playerHealth.value <= 0) {
-            recordCurrentRound()
-            gameState.value = 'lost'
-            recordGameEnd('lost')
-            setTimeout(() => {
-              gameResult.value = 'lost'
-              modal.value = 'defeat'
-            }, 1000)
-          }
         }
       }
     } else {
@@ -2289,19 +2315,11 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
       } else {
         bugGuyDamageLands = true
         await animatePlayerDamage((doubleDamage ? 2 : 1) + necroPenalty + dragonPenalty + mimicPenalty)
-        if (playerHealth.value <= 0) {
-          recordCurrentRound()
-          gameState.value = 'lost'
-          recordGameEnd('lost')
-          setTimeout(() => {
-            gameResult.value = 'lost'
-            modal.value = 'defeat'
-          }, 1000)
-          return
-        }
       }
 
-      // These run on any wrong guess regardless of smoke bomb
+      // These run on any wrong guess regardless of smoke bomb — including one that just
+      // dropped health to 0, since a Bug Guy healing beetle further down may still save
+      // the player this same guess (see the final health check at the end of this branch).
       if (hasAbility('assassin') && !inventory.value.includes('sneak-attack')) {
         // 3/5 yellow letters (60%) unlocks the sneak attack — scaled by word length so
         // longer words aren't harder to qualify for
@@ -2328,34 +2346,43 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
       }
     }
 
-    // Bug Guy: every beetle actually typed this guess goes one at a time — its own tumble
-    // from its input tile to the player portrait, then its own single point of
-    // damage/heal — after the guess's other damage above. Red (damage) beetles all go
-    // before green (heal) ones, matching the guess's own damage-then-heal order.
+    // Bug Guy: every beetle actually typed this guess goes one at a time — it stays put
+    // on its input tile (see createBeetleClone above) until its own turn, then tumbles
+    // to the player portrait and lands its own single point of damage/heal — after the
+    // guess's other damage above. Red (damage) beetles all go before green (heal) ones,
+    // matching the guess's own damage-then-heal order. Each beetle is squashed for good
+    // right as its turn starts — it does not come back when relocateBugGuyBeetles
+    // scatters the survivors afterward.
     if (bugGuyHeal > 0 || bugGuyDamage > 0) {
       const redBeetles = beetleTileSnapshots.filter(s => s.color === 'red')
       const greenBeetles = beetleTileSnapshots.filter(s => s.color === 'green')
 
       for (const snapshot of redBeetles) {
-        await flyBugGuyBeetle(snapshot)
-        if (bugGuyDamageLands) {
-          await animatePlayerDamage(1)
-          if (playerHealth.value <= 0 && gameState.value !== 'lost') {
-            recordCurrentRound()
-            gameState.value = 'lost'
-            recordGameEnd('lost')
-            setTimeout(() => {
-              gameResult.value = 'lost'
-              modal.value = 'defeat'
-            }, 1000)
-          }
-        }
+        squashBugGuyBeetle(snapshot.letter)
+        await flyBugGuyBeetle(snapshot.el)
+        if (bugGuyDamageLands) await animatePlayerDamage(1)
       }
 
       for (const snapshot of greenBeetles) {
-        await flyBugGuyBeetle(snapshot)
+        squashBugGuyBeetle(snapshot.letter)
+        await flyBugGuyBeetle(snapshot.el)
         await animatePlayerHeal(plagueLordHeal(1))
       }
+    }
+
+    // Death is only checked once, here, after every source of damage AND healing for
+    // this guess — regular damage, Slumbering Giant/Dragon/etc. penalties, and any Bug
+    // Guy beetles — has been fully applied. This is the safety net for Bug Guy: a
+    // healing beetle in the same guess gets a chance to bring health back up before the
+    // game is allowed to end, instead of a lethal hit ending it before the heal lands.
+    if (playerHealth.value <= 0) {
+      recordCurrentRound()
+      gameState.value = 'lost'
+      recordGameEnd('lost')
+      setTimeout(() => {
+        gameResult.value = 'lost'
+        modal.value = 'defeat'
+      }, 1000)
     }
   }
   // If anyBoardSolvedThisGuess but not allSolved: game continues, no damage
