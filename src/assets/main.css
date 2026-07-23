@@ -1538,6 +1538,40 @@ textarea {
   box-shadow: 0 0 6px 2px rgba(239, 68, 68, 0.7);
 }
 
+/* Bug Guy beetle run: a transient clone (created/positioned/removed in JS, see
+   runBugGuyBeetleAttack) fixed at the typed tile's on-screen spot, then translated to
+   the player portrait while it spins — the ::after highlight near its "top" edge is what
+   makes that spin actually read as a tumble rather than a plain fade-and-slide. */
+.beetle-flying {
+  position: fixed;
+  z-index: 500;
+  border-radius: 50%;
+  pointer-events: none;
+  transition: transform 0.56s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.56s ease-in;
+}
+
+.beetle-flying::after {
+  content: '';
+  position: absolute;
+  top: 10%;
+  left: 50%;
+  width: 30%;
+  height: 30%;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+  transform: translateX(-50%);
+}
+
+.beetle-flying--green {
+  background: #22c55e;
+  box-shadow: 0 0 6px 2px rgba(34, 197, 94, 0.7);
+}
+
+.beetle-flying--red {
+  background: #ef4444;
+  box-shadow: 0 0 6px 2px rgba(239, 68, 68, 0.7);
+}
+
 /* ── Dragon fire: small CSS flame licking up behind a lit key/tile ──────────*/
 .key--fire::before,
 .key--fire::after,

@@ -64,7 +64,7 @@
           <!-- character info on mobile  -->
           <div class="mobile-portraits">
             <div class="portrait-slot">
-              <div class="portrait-img-col small-card"
+              <div ref="mobilePortraitRef" class="portrait-img-col small-card"
                 :class="{ 'health-hit': playerDamageAnim === 'damage', 'health-heal': playerDamageAnim === 'heal' }">
                 <!-- Damage and Heal in testing -->
                 <div v-if="mode === 'testing'" class="test-health-btns">
@@ -152,7 +152,7 @@
           <!-- character and inventory column on browser -->
           <aside class="game-panel game-panel--left">
             <div class="class-feature">
-              <div class="class-feature-img-col"
+              <div ref="desktopPortraitRef" class="class-feature-img-col"
                 :class="{ 'health-hit': playerDamageAnim === 'damage', 'health-heal': playerDamageAnim === 'heal' }">
                 <div class="small-card">
                   <div v-if="mode === 'testing'" class="test-health-btns">
@@ -964,6 +964,18 @@ function setBoardRef(id, el) {
   else delete boardRefs[id]
 }
 
+// Player portrait elements — duplicated once for the mobile strip and once for the
+// desktop side panel, with CSS showing only one at a time. Bug Guy's beetle-run
+// animation targets whichever copy is actually visible.
+const mobilePortraitRef = ref(null)
+const desktopPortraitRef = ref(null)
+
+function getVisiblePortraitEl() {
+  if (desktopPortraitRef.value?.offsetParent) return desktopPortraitRef.value
+  if (mobilePortraitRef.value?.offsetParent) return mobilePortraitRef.value
+  return null
+}
+
 // Keyboard key button refs (by letter) and Bug Guy beetle icon refs (by letter) — used
 // by relocateBugGuyBeetles' FLIP slide to measure old/new positions
 const keyRefs = {}
@@ -1675,6 +1687,40 @@ async function relocateBugGuyBeetles() {
   }
 }
 
+// Bug Guy: sends a single typed beetle tumbling from its input tile to the player
+// portrait — translating toward the character while rotating like it's rolling there —
+// resolving once it arrives. Purely visual; the caller applies its own heal/damage
+// right after, one beetle at a time, rather than batching every beetle at once.
+async function flyBugGuyBeetle({ rect, color }) {
+  const targetEl = getVisiblePortraitEl()
+  if (!targetEl) return
+
+  const targetRect = targetEl.getBoundingClientRect()
+  const targetX = targetRect.left + targetRect.width / 2
+  const targetY = targetRect.top + targetRect.height / 2
+
+  const size = Math.min(rect.width, rect.height) * 0.55
+  const startX = rect.left + rect.width / 2
+  const startY = rect.top + rect.height / 2
+  const dx = targetX - startX
+  const dy = targetY - startY
+  const spin = (dx < 0 ? -1 : 1) * 720
+
+  const el = document.createElement('div')
+  el.className = `beetle-flying beetle-flying--${color}`
+  el.style.width = `${size}px`
+  el.style.height = `${size}px`
+  el.style.left = `${startX - size / 2}px`
+  el.style.top = `${startY - size / 2}px`
+  document.body.appendChild(el)
+  el.getBoundingClientRect() // force reflow before animating
+  el.style.transform = `translate(${dx}px, ${dy}px) rotate(${spin}deg)`
+  el.style.opacity = '0'
+
+  await new Promise(r => setTimeout(r, 560))
+  el.remove()
+}
+
 async function animatePlayerDamage(amount) {
   animatingHealth.value = true
   for (let i = 0; i < amount; i++) {
@@ -1977,6 +2023,19 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
   if (!allGuessedWords.value.includes(submitted)) {
     allGuessedWords.value = [...allGuessedWords.value, submitted]
   }
+
+  // Bug Guy: snapshot each beetle-occupied input tile's on-screen position and color
+  // now, while the row is still the live input row — currentGuess is about to clear and
+  // the row is about to be committed, after which this position is no longer recoverable.
+  // Used below to fly the beetles to the player portrait before their heal/damage lands.
+  let beetleTileSnapshots = []
+  if (currentBoss.value?.id === 'bug-guy') {
+    const rects = boardRefs[firstActive.id]?.getInputRowRects() ?? []
+    beetleTileSnapshots = rects
+      .filter(r => beetleColors.value[r.letter])
+      .map(r => ({ rect: r.rect, color: beetleColors.value[r.letter] }))
+  }
+
   currentGuess.value = ''
 
   // Wizard: guessing a spell's name casts it, on top of submitting normally as a guess.
@@ -2020,17 +2079,6 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
   // Mimic: set below, once the guess just submitted is checked against the danger
   // letters left over from the previous guess. Combined into the damage total further down.
   let mimicPenalty = 0
-
-  // Snapshot absent letters from PREVIOUS guesses before this one is recorded.
-  // Used by the Necromancer boss-fight penalty — must be computed here, not after
-  // board.guesses is updated, or the current guess would evaluate itself as absent.
-  const prevAbsentLetters = new Set()
-  if (currentBoss.value?.id === 'necromancer' && isBossFight.value) {
-    const prevStatuses = getUnionLetterStatuses()
-    for (const [l, s] of Object.entries(prevStatuses)) {
-      if (s === 'absent') prevAbsentLetters.add(l)
-    }
-  }
 
   // Apply guess to each active board
   let anyBoardSolvedThisGuess = false
@@ -2167,12 +2215,8 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
       && dangerLetters.value.some(l => submitted.includes(l))
 
     let necroPenalty = 0
-    if (currentBoss.value?.id === 'necromancer') {
-      if (alreadyGuessed && !isCorrectAnswer) necroPenalty += 1
-      if (isBossFight.value) {
-        const hasAbsentLetter = submitted.split('').some(l => prevAbsentLetters.has(l))
-        if (hasAbsentLetter) necroPenalty += 1
-      }
+    if (currentBoss.value?.id === 'necromancer' && alreadyGuessed && !isCorrectAnswer) {
+      necroPenalty += 1
     }
 
     // Every on-fire letter actually typed in this guess deals its own point of damage
@@ -2186,8 +2230,10 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
     // silences the beetles entirely for the guess (neither bite nor heal), and since they
     // were never "found" they aren't removed either. Any beetle actually typed is squashed
     // for good — it does not come back when relocateBugGuyBeetles scatters the survivors.
-    // The heal itself is applied AFTER this guess's damage below (not here) so a green
-    // beetle can't be wasted healing a player who's still sitting at full health.
+    // Neither effect is applied here — both land further down, after this guess's other
+    // damage/heals and the beetle-run animation, so a green beetle can't be wasted
+    // healing a player who's still sitting at full health, and the beetle bite reads as
+    // its own clear beat rather than being folded into the guess's other damage.
     let bugGuyHeal = 0
     let bugGuyDamage = 0
     if (!abilityBlocked && currentBoss.value?.id === 'bug-guy') {
@@ -2200,6 +2246,11 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
         beetleColors.value = remaining
       }
     }
+
+    // Whether this guess's "regular" damage phase actually landed (not shielded, and —
+    // for Slumbering Giant — awake). bugGuyDamage only ever fires alongside a landed hit,
+    // matching the gating it used to share when it was folded into that hit's own total.
+    let bugGuyDamageLands = false
 
     if (currentEnemy.value?.id === 'slumbering-giant') {
       // Slumbering Giant: wrong guesses fill snore bars while asleep, not player health.
@@ -2217,8 +2268,9 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
         if (damageBlockActive.value) {
           damageBlockActive.value = false
         } else {
+          bugGuyDamageLands = true
           const giantPenalty = justWoke ? 5 : 1
-          await animatePlayerDamage((doubleDamage ? 2 : 1) + necroPenalty + dragonPenalty + giantPenalty + mimicPenalty + bugGuyDamage)
+          await animatePlayerDamage((doubleDamage ? 2 : 1) + necroPenalty + dragonPenalty + giantPenalty + mimicPenalty)
           if (playerHealth.value <= 0) {
             recordCurrentRound()
             gameState.value = 'lost'
@@ -2235,7 +2287,8 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
       if (damageBlockActive.value) {
         damageBlockActive.value = false
       } else {
-        await animatePlayerDamage((doubleDamage ? 2 : 1) + necroPenalty + dragonPenalty + mimicPenalty + bugGuyDamage)
+        bugGuyDamageLands = true
+        await animatePlayerDamage((doubleDamage ? 2 : 1) + necroPenalty + dragonPenalty + mimicPenalty)
         if (playerHealth.value <= 0) {
           recordCurrentRound()
           gameState.value = 'lost'
@@ -2275,7 +2328,35 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
       }
     }
 
-    if (bugGuyHeal > 0) await animatePlayerHeal(plagueLordHeal(bugGuyHeal))
+    // Bug Guy: every beetle actually typed this guess goes one at a time — its own tumble
+    // from its input tile to the player portrait, then its own single point of
+    // damage/heal — after the guess's other damage above. Red (damage) beetles all go
+    // before green (heal) ones, matching the guess's own damage-then-heal order.
+    if (bugGuyHeal > 0 || bugGuyDamage > 0) {
+      const redBeetles = beetleTileSnapshots.filter(s => s.color === 'red')
+      const greenBeetles = beetleTileSnapshots.filter(s => s.color === 'green')
+
+      for (const snapshot of redBeetles) {
+        await flyBugGuyBeetle(snapshot)
+        if (bugGuyDamageLands) {
+          await animatePlayerDamage(1)
+          if (playerHealth.value <= 0 && gameState.value !== 'lost') {
+            recordCurrentRound()
+            gameState.value = 'lost'
+            recordGameEnd('lost')
+            setTimeout(() => {
+              gameResult.value = 'lost'
+              modal.value = 'defeat'
+            }, 1000)
+          }
+        }
+      }
+
+      for (const snapshot of greenBeetles) {
+        await flyBugGuyBeetle(snapshot)
+        await animatePlayerHeal(plagueLordHeal(1))
+      }
+    }
   }
   // If anyBoardSolvedThisGuess but not allSolved: game continues, no damage
 
