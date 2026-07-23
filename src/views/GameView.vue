@@ -426,7 +426,7 @@ c-30 269 -53 363 -170 695 -158 448 -189 566 -244 938 -67 443 -86 687 -86
       <!-- Modal -->
       <Transition name="modal">
         <div v-if="modal" class="modal-overlay">
-          <div class="modal-card-glow" :class="{ 'modal-card--wide': modal === 'shop' || modal === 'test-shop' || modal === 'stats' || modal === 'changeling-test-pick' || modal === 'dwarven-puzzle-box' }">
+          <div class="modal-card-glow" :class="{ 'modal-card--wide': modal === 'shop' || modal === 'test-shop' || modal === 'stats' || modal === 'changeling-test-pick' || modal === 'dwarven-puzzle-box' || modal === 'spell-book' }">
           <div class="modal-card">
 
             <!-- Boss announcement -->
@@ -491,14 +491,24 @@ c-30 269 -53 363 -170 695 -158 448 -189 566 -244 938 -67 443 -86 687 -86
             <template v-else-if="modal === 'spell-book'">
               <button class="modal-close-btn" type="button" aria-label="Close" @click="modal = null">✕</button>
               <p class="modal-message">Spell Book</p>
-              <table>
-                <tbody>
-                  <tr v-for="spell in SPELLS" :key="spell.id">
-                    <td>{{ spell.name }}</td>
-                    <td>{{ spell.description }}</td>
-                  </tr>
-                </tbody>
-              </table>
+              <p class="modal-submessage pb-2">Guess these words to cast them as spells</p>
+              <div class="spellbook-wrap">
+                <img :src="spellbookImg" alt="Spell book" class="spellbook-img" />
+                <div class="spellbook-overlay">
+                  <div class="spellbook-page">
+                    <div v-for="spell in SPELLS.slice(0, 2)" :key="spell.id" class="spellbook-entry">
+                      <p class="spellbook-name">{{ spell.name }}</p>
+                      <p class="spellbook-desc">{{ spell.description }}</p>
+                    </div>
+                  </div>
+                  <div class="spellbook-page">
+                    <div v-for="spell in SPELLS.slice(2, 4)" :key="spell.id" class="spellbook-entry">
+                      <p class="spellbook-name">{{ spell.name }}</p>
+                      <p class="spellbook-desc">{{ spell.description }}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
               <button class="btn btn-press px-5 py-2 mt-3" @click="modal = null">Close</button>
             </template>
 
@@ -758,6 +768,7 @@ import { ITEM_IMAGES } from '@/assets/itemImages.js'
 import blueKeyImg from '@/assets/blue-key.png'
 import redKeyImg from '@/assets/red-key.png'
 import purpleKeyImg from '@/assets/purple-key.png'
+import spellbookImg from '@/assets/spellbook.png'
 import { fetchOrCreateDaily } from '@/services/daily.js'
 import { fetchGameWord, fetchWordData } from '@/services/words.js'
 import { recordGameResult } from '@/services/stats.js'
@@ -1832,8 +1843,6 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
   const activeBoards = boards.value.filter(b => !b.solved)
   if (!activeBoards.length) return
 
-  if (hasAbility('wizard') && castSpell(currentGuess.value)) return
-
   if (currentGuess.value.length < wordLength.value) {
     inputError.value = `Guess must be ${wordLength.value} letters`
     return
@@ -1923,6 +1932,14 @@ async function submitGuess(skipValidation = false, skipScramble = false) {
     allGuessedWords.value = [...allGuessedWords.value, submitted]
   }
   currentGuess.value = ''
+
+  // Wizard: guessing a spell's name casts it, on top of submitting normally as a guess.
+  // guessWillWin tells Wager whether this same guess is about to clear the last board,
+  // so it doesn't also trigger its own hit-and-defeat-check below and double them up.
+  if (hasAbility('wizard')) {
+    const guessWillWin = activeBoards.every(b => submitted === b.secretWord)
+    castSpell(submitted, guessWillWin)
+  }
 
   // Dragon: guessing an on-fire letter puts it out — snapshot which fire letters this
   // guess actually touches (dragonFireHitLetters, used by the damage penalty further
@@ -3137,14 +3154,25 @@ function applyCaltropsEffect() {
   }, 850)
 }
 
-// Wizard: guessing a spell's name casts it instead of submitting a word guess.
-function castSpell(guess) {
+// Wizard: guessing a spell's name casts it, in addition to submitting normally as a guess.
+function castSpell(guess, guessWillWin) {
   const spell = SPELLS.find(s => s.name.toUpperCase() === guess)
-  if (!spell) return false
-  currentGuess.value = ''
+  if (!spell) return
   if (spell.id === 'smoke') applySmokeBombEffect()
   else if (spell.id === 'blast') applyCaltropsEffect()
-  return true
+  else if (spell.id === 'block') {
+    shieldAnim.value = true
+    setTimeout(() => { shieldAnim.value = false }, 950)
+    damageBlockActive.value = true
+  } else if (spell.id === 'wager') {
+    if (Math.random() < 0.1) {
+      // The guess itself is already about to land the winning hit — don't also
+      // apply Wager's own hit-and-defeat-check on top of it.
+      if (!guessWillWin) handleAllBoardsSolved()
+    } else {
+      animatePlayerDamage(1)
+    }
+  }
 }
 
 function useItem() {

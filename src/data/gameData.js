@@ -153,7 +153,9 @@ export const ALL_ITEMS = [...SHOP_ITEMS, ...SPECIAL_ITEMS]
 // Spells the Wizard can cast by guessing the spell's name instead of a word.
 export const SPELLS = [
   { id: 'smoke', name: 'Smoke', description: 'Hide yourself from the boss for one turn' },
-  { id: 'blast', name: 'Blast', description: 'remove 4 letters that aren\'t in the word' },
+  { id: 'blast', name: 'Blast', description: 'Blast away 4 letters that aren\'t in the word' },
+  { id: 'charm', name: 'Charm', description: 'Charm the enemy into giving you some information' },
+  { id: 'wager', name: 'Wager', description: '90% chance to damage yourself, 10% chance to damage your enemy' },
 ]
 
 export const STAGE_SEQUENCE = ['enemy', 'enemy', 'miniboss']
